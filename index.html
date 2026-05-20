@@ -1,54 +1,181 @@
-# Content Plan
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Family Learning Coach</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="学生与学习路径">
+        <div class="brand">
+          <div class="brand-mark">FL</div>
+          <div>
+            <p class="eyebrow">Family Learning Coach</p>
+            <h1>家庭学习平台原型</h1>
+          </div>
+        </div>
 
-This project uses a source-controlled content workflow so learning material is traceable before it appears in the app.
+        <section class="panel">
+          <h2>选择学生</h2>
+          <div class="student-list" id="studentList"></div>
+        </section>
 
-## Official Sources
+        <section class="panel">
+          <h2>学习设置</h2>
+          <label>
+            年级
+            <select id="gradeSelect"></select>
+          </label>
+          <label>
+            学科
+            <select id="subjectSelect"></select>
+          </label>
+          <label>
+            学习目标
+            <select id="goalSelect">
+              <option value="summer">暑假预习与补弱</option>
+              <option value="staar">STAAR / EOC 准备</option>
+              <option value="school">学校课程同步</option>
+              <option value="honors">Honor / Advanced 预备</option>
+            </select>
+          </label>
+        </section>
 
-- TEKS machine-readable documentation: https://teks.texasgateway.org/
-- STAAR overview: https://tea.texas.gov/student-assessment/staar
-- STAAR released test questions: https://tea.texas.gov/student-assessment/staar/staar-released-test-questions
+        <section class="panel muted-panel">
+          <h2>今日建议</h2>
+          <p id="dailySuggestion"></p>
+        </section>
+      </aside>
 
-Important constraints:
+      <section class="workspace">
+        <nav class="top-tabs" aria-label="平台模块">
+          <button class="tab active" data-view="diagnostic">诊断测试</button>
+          <button class="tab" data-view="report">掌握报告</button>
+          <button class="tab" data-view="coach">AI 引导</button>
+          <button class="tab" data-view="parent">家长日报</button>
+          <button class="tab" data-view="roadmap">建设路线</button>
+        </nav>
 
-- STAAR questions are aligned to TEKS.
-- Recent STAAR released tests are primarily online, not static PDFs.
-- Released questions, answer keys, rationales, and student expectations should be stored as source references before being turned into app questions.
-- Do not copy paid commercial platform content into the question bank.
+        <section class="view active" id="diagnosticView">
+          <div class="view-header">
+            <div>
+              <p class="eyebrow">Diagnostic</p>
+              <h2 id="diagnosticTitle">诊断测试</h2>
+            </div>
+            <button id="runDiagnostic" class="primary-button">生成诊断报告</button>
+          </div>
 
-## First Coverage Target
+          <div class="question-card">
+            <div class="question-meta">
+              <span id="standardTag">TEKS aligned</span>
+              <span id="difficultyTag">中等</span>
+              <span id="questionProgress">1 / 1</span>
+            </div>
+            <h3 id="questionPrompt"></h3>
+            <div class="answer-grid" id="answerGrid"></div>
+            <div class="question-actions">
+              <button id="prevQuestion" class="secondary-button">上一题</button>
+              <button id="nextQuestion" class="secondary-button">下一题</button>
+            </div>
+          </div>
 
-Grade 7:
+          <div class="knowledge-grid" id="knowledgeGrid"></div>
+        </section>
 
-- Math: proportional reasoning, rational number operations, expressions, equations, multi-step word problems
-- RLA: central idea, text evidence, character analysis, theme, vocabulary in context, short constructed response
-- Science: ecosystems, matter and energy, force and motion, Earth systems, data interpretation
-- Pre-Algebra: variables, expressions, one-step and two-step equations, slope readiness
+        <section class="view" id="reportView">
+          <div class="view-header">
+            <div>
+              <p class="eyebrow">Mastery Report</p>
+              <h2>知识点掌握报告</h2>
+            </div>
+            <span class="status-pill" id="reportStatus">等待诊断</span>
+          </div>
+          <div class="report-layout">
+            <div class="score-card">
+              <p>综合掌握度</p>
+              <strong id="overallScore">--</strong>
+              <span id="overallNote">完成诊断后生成</span>
+            </div>
+            <div class="report-panel">
+              <h3>薄弱点</h3>
+              <ul id="weaknessList"></ul>
+            </div>
+            <div class="report-panel">
+              <h3>7 天学习方案</h3>
+              <ol id="studyPlan"></ol>
+            </div>
+          </div>
+        </section>
 
-Grade 8:
+        <section class="view" id="coachView">
+          <div class="view-header">
+            <div>
+              <p class="eyebrow">Guided Coach</p>
+              <h2>一问一答式辅导</h2>
+            </div>
+            <span class="status-pill">不直接给答案</span>
+          </div>
+          <div class="coach-layout">
+            <div class="chat-window" id="chatWindow"></div>
+            <form class="chat-form" id="chatForm">
+              <input id="studentReply" placeholder="让孩子先写自己的想法，例如：我觉得题目在问..." />
+              <button class="primary-button" type="submit">继续引导</button>
+            </form>
+          </div>
+        </section>
 
-- Math: proportional and linear relationships, equations, transformations, Pythagorean theorem, data
-- RLA: compare texts, argument, inference, author purpose, text evidence, written response
-- Science: matter, energy, force, Earth and space, organisms and environments, experimental design
-- Algebra I readiness: equations, functions, graph interpretation, word-problem modeling
+        <section class="view" id="parentView">
+          <div class="view-header">
+            <div>
+              <p class="eyebrow">Parent Digest</p>
+              <h2>家长日报预览</h2>
+            </div>
+            <div class="header-actions">
+              <span class="status-pill" id="cloudStatus">云端未同步</span>
+              <button id="copyDigest" class="secondary-button">复制日报内容</button>
+            </div>
+          </div>
+          <article class="email-preview" id="emailPreview"></article>
+          <div class="report-panel activity-panel">
+            <h3>本机学习记录</h3>
+            <ul id="activityList"></ul>
+          </div>
+        </section>
 
-Grade 9:
-
-- English I: central idea, text evidence, revision/editing, author's craft, argumentative response
-- Algebra I: linear functions, equations and inequalities, systems, quadratics, exponential functions
-- Geometry: congruence, similarity, proofs, circles, coordinate geometry, measurement
-- Biology: cells, genetics, evolution, ecology, biomolecules, data and scientific reasoning
-
-## Import Stages
-
-1. Build TEKS knowledge map for 7th, 8th, and 9th grade paths.
-2. Add 10 diagnostic questions per subject, written in-house and reviewed against TEKS.
-3. Add released STAAR source references and item rationales where available.
-4. Add AI coach prompts for each knowledge point.
-5. Add parent-facing report language for each weakness pattern.
-
-## Quality Rules
-
-- Every question must have grade, subject, knowledge point, difficulty, answer, explanation, and coaching hints.
-- The AI coach may ask questions and give hints, but should not directly reveal the answer first.
-- Imported or adapted questions must include a source URL and usage note.
-- Commercial paid content must not be scraped or copied.
+        <section class="view" id="roadmapView">
+          <div class="view-header">
+            <div>
+              <p class="eyebrow">Build Roadmap</p>
+              <h2>下一步开发计划</h2>
+            </div>
+          </div>
+          <div class="roadmap">
+            <div>
+              <span>1</span>
+              <h3>本地原型</h3>
+              <p>确认学生流程、年级学科、报告结构和家长端信息。</p>
+            </div>
+            <div>
+              <span>2</span>
+              <h3>云数据库</h3>
+              <p>接入 Supabase，保存学生档案、题目、答题记录和每日报告。</p>
+            </div>
+            <div>
+              <span>3</span>
+              <h3>AI 辅导</h3>
+              <p>接入 OpenAI，让辅导严格遵守“提示、追问、总结”，不直接报答案。</p>
+            </div>
+            <div>
+              <span>4</span>
+              <h3>邮件与上线</h3>
+              <p>接入邮件服务和 Vercel，把平台发布成可长期访问的网站。</p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

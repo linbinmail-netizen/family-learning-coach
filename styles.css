@@ -1,0 +1,22 @@
+# Family Learning Coach
+
+这是一个面向家庭长期使用的定制学习平台原型，当前版本可以直接在浏览器中打开 `index.html` 预览。
+
+## 当前已包含
+
+- 两个学生档案：将上高一的 MIA、将上初二的 EVA
+- 年级选择：7th Grade、8th Grade、9th Grade
+- 学科选择：English、Math、Science、Algebra readiness、Geometry、Biology
+- 诊断测试示例
+- 知识点掌握度报告
+- 7 天学习方案示例
+- 一问一答式辅导界面
+- 家长日报预览
+- 后续开发路线
+
+## 后续升级
+
+1. 接入 Supabase 数据库，保存学生、题库、学习记录和报告。
+2. 接入 OpenAI API，实现真正的 AI 引导式辅导。
+3. 接入邮件服务，自动发送家长日报。
+4. 使用 Next.js 升级为可登录、可部署的 Web/PWA 平台。

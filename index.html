@@ -22,6 +22,40 @@
           <div class="account-list" id="accountList"></div>
         </section>
 
+        <section class="panel auth-panel">
+          <h2>正式登录</h2>
+          <form id="authForm" class="auth-form">
+            <label>
+              邮箱
+              <input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" />
+            </label>
+            <label>
+              密码
+              <input id="authPassword" type="password" autocomplete="current-password" placeholder="输入密码" />
+            </label>
+            <label>
+              账号类型
+              <select id="authRole">
+                <option value="parent">家长</option>
+                <option value="student">孩子</option>
+              </select>
+            </label>
+            <label id="authStudentLabel">
+              孩子名字
+              <select id="authStudentName">
+                <option value="MIA">MIA</option>
+                <option value="EVA">EVA</option>
+              </select>
+            </label>
+            <div class="auth-actions">
+              <button class="primary-button" id="signInButton" type="submit">登录</button>
+              <button class="secondary-button" id="signUpButton" type="button">注册</button>
+              <button class="secondary-button" id="signOutButton" type="button">退出</button>
+            </div>
+            <p class="form-note" id="authStatus">可以先用账号入口试用；正式使用请登录。</p>
+          </form>
+        </section>
+
         <section class="panel">
           <h2>选择学生</h2>
           <div class="student-list" id="studentList"></div>
@@ -232,6 +266,7 @@
         </section>
       </section>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
   </body>
 </html>

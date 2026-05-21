@@ -1015,6 +1015,9 @@ let state = {
   chatHistory: [],
   reportReady: false,
   records: [],
+  authSession: null,
+  authProfile: null,
+  cloudStudents: {},
   planSettings: {
     older: { minutes: 30, focusSubject: "english1" },
     younger: { minutes: 30, focusSubject: "math8" },
@@ -1027,6 +1030,7 @@ const supabaseConfig = {
   url: "https://olyehadsblazpyxhsryn.supabase.co",
   key: "sb_publishable_5-n_a32xrCbk9O4UtLB0eg_-XXr9L6c",
 };
+const supabaseClient = window.supabase?.createClient(supabaseConfig.url, supabaseConfig.key);
 
 function loadSavedData() {
   try {
@@ -1067,11 +1071,12 @@ function saveData() {
 }
 
 async function supabaseRequest(path, options = {}) {
+  const token = state.authSession?.access_token || supabaseConfig.key;
   const response = await fetch(`${supabaseConfig.url}/rest/v1/${path}`, {
     ...options,
     headers: {
       apikey: supabaseConfig.key,
-      Authorization: `Bearer ${supabaseConfig.key}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       Prefer: "return=representation",
       ...(options.headers || {}),
@@ -1130,6 +1135,241 @@ async function saveReportToCloud(record, goal) {
   });
 
   $("cloudStatus").textContent = "云端已同步";
+}
+
+function localStudentIdFromName(name) {
+  const normalized = String(name || "").trim().toUpperCase();
+  if (normalized === "MIA") return "older";
+  if (normalized === "EVA") return "younger";
+  return "older";
+}
+
+function currentAuthUserLabel() {
+  if (!state.authSession?.user?.email) return "未登录";
+  const profile = state.authProfile;
+  const role = profile?.role === "parent" ? "家长" : "孩子";
+  return `${role}：${profile?.display_name || state.authSession.user.email}`;
+}
+
+function setAuthStatus(message) {
+  const status = $("authStatus");
+  if (status) status.textContent = message;
+}
+
+function applyProfileToLocalState(profile) {
+  if (!profile) return;
+  state.authProfile = profile;
+
+  if (profile.role === "parent") {
+    state.accountId = "parent";
+    state.accountRole = "parent";
+  } else {
+    const studentName = profile.display_name || (profile.student_id && Object.keys(state.cloudStudents).find((key) => state.cloudStudents[key] === profile.student_id));
+    const localStudentId = localStudentIdFromName(studentName);
+    const accountId = localStudentId === "younger" ? "eva" : "mia";
+    state.accountId = accountId;
+    state.accountRole = "student";
+    state.studentId = localStudentId;
+    state.grade = activeStudent().grade;
+    state.subject = planForStudent(localStudentId).focusSubject || subjects[state.grade][0].id;
+  }
+
+  saveData();
+}
+
+async function loadFamilyStudentsFromCloud() {
+  if (!supabaseClient || !state.authSession) return;
+  const { data, error } = await supabaseClient.rpc("get_my_family_students");
+  if (error) throw error;
+
+  state.cloudStudents = {};
+  (data || []).forEach((student) => {
+    const localStudentId = localStudentIdFromName(student.display_name);
+    state.cloudStudents[localStudentId] = student.student_id;
+  });
+}
+
+async function findCloudSubjectId(subjectId) {
+  const subject = subjectById(subjectId);
+  if (!subject) return null;
+  const { data, error } = await supabaseClient
+    .from("subjects")
+    .select("id,title")
+    .eq("title", subject.label)
+    .limit(1);
+  if (error) throw error;
+  return data?.[0]?.id || null;
+}
+
+async function findLocalSubjectByCloudId(cloudSubjectId) {
+  if (!cloudSubjectId || !supabaseClient) return null;
+  const { data, error } = await supabaseClient.from("subjects").select("title").eq("id", cloudSubjectId).limit(1);
+  if (error) throw error;
+  const title = data?.[0]?.title;
+  return Object.values(subjects).flat().find((subject) => subject.label === title) || null;
+}
+
+async function loadPlanSettingsFromCloud() {
+  if (!supabaseClient || !state.authSession) return;
+  const cloudStudentIds = Object.values(state.cloudStudents).filter(Boolean);
+  if (!cloudStudentIds.length) return;
+
+  const { data, error } = await supabaseClient
+    .from("study_plan_settings")
+    .select("student_id,minutes_per_day,focus_subject_id")
+    .in("student_id", cloudStudentIds);
+  if (error) throw error;
+
+  for (const plan of data || []) {
+    const localStudentId = Object.keys(state.cloudStudents).find((key) => state.cloudStudents[key] === plan.student_id);
+    if (!localStudentId) continue;
+    const localSubject = await findLocalSubjectByCloudId(plan.focus_subject_id);
+    state.planSettings[localStudentId] = {
+      minutes: plan.minutes_per_day || 30,
+      focusSubject: localSubject?.id || planForStudent(localStudentId).focusSubject,
+    };
+  }
+
+  saveData();
+}
+
+async function savePlanSettingsToCloud(studentId) {
+  if (!supabaseClient || !state.authSession || state.accountRole !== "parent") return;
+  const cloudStudentId = state.cloudStudents[studentId];
+  if (!cloudStudentId) {
+    setAuthStatus("已本机保存；云端还没有找到这个孩子的关联。");
+    return;
+  }
+
+  const plan = planForStudent(studentId);
+  const focusSubjectId = await findCloudSubjectId(plan.focusSubject);
+  const { error } = await supabaseClient.from("study_plan_settings").upsert(
+    {
+      student_id: cloudStudentId,
+      parent_user_id: state.authProfile?.id || state.authSession.user.id,
+      minutes_per_day: plan.minutes,
+      focus_subject_id: focusSubjectId,
+      goal: $("goalSelect").value || "summer",
+    },
+    { onConflict: "student_id" }
+  );
+  if (error) throw error;
+  setAuthStatus("学习计划已保存到云端。");
+}
+
+async function loadAuthProfile() {
+  if (!supabaseClient || !state.authSession?.user?.id) return;
+  const { data, error } = await supabaseClient
+    .from("user_profiles")
+    .select("id,display_name,role,student_id")
+    .eq("id", state.authSession.user.id)
+    .single();
+  if (error) throw error;
+
+  applyProfileToLocalState(data);
+  if (data.role === "parent") {
+    await supabaseClient.rpc("ensure_family_links");
+  }
+  await loadFamilyStudentsFromCloud();
+  await loadPlanSettingsFromCloud();
+  applyProfileToLocalState(data);
+  setAuthStatus(`已登录：${currentAuthUserLabel()}`);
+  renderAll();
+  loadCloudQuestions();
+}
+
+async function initAuth() {
+  if (!supabaseClient) {
+    setAuthStatus("Supabase 登录组件还没有载入，请刷新页面后再试。");
+    return;
+  }
+
+  const { data } = await supabaseClient.auth.getSession();
+  state.authSession = data.session || null;
+  if (state.authSession) {
+    try {
+      await loadAuthProfile();
+    } catch (error) {
+      console.error(error);
+      setAuthStatus("已登录，但读取账号资料失败。");
+    }
+  } else {
+    setAuthStatus("可以先用账号入口试用；正式使用请登录。");
+  }
+
+  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    state.authSession = session;
+    if (!session) {
+      state.authProfile = null;
+      state.cloudStudents = {};
+      setAuthStatus("已退出登录。");
+      renderAll();
+      return;
+    }
+    try {
+      await loadAuthProfile();
+    } catch (error) {
+      console.error(error);
+      setAuthStatus("登录成功，但读取账号资料失败。");
+    }
+  });
+}
+
+async function signInWithPassword() {
+  if (!supabaseClient) return;
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+  if (!email || !password) {
+    setAuthStatus("请先输入邮箱和密码。");
+    return;
+  }
+  setAuthStatus("正在登录...");
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    setAuthStatus(`登录失败：${error.message}`);
+    return;
+  }
+  setAuthStatus("登录成功，正在读取学习资料...");
+}
+
+async function signUp() {
+  if (!supabaseClient) return;
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+  const role = $("authRole").value;
+  const studentName = $("authStudentName").value;
+  if (!email || !password) {
+    setAuthStatus("请先输入邮箱和密码。");
+    return;
+  }
+
+  setAuthStatus("正在注册...");
+  const displayName = role === "parent" ? "家长" : studentName;
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        role,
+        display_name: displayName,
+        student_name: role === "student" ? studentName : "",
+      },
+    },
+  });
+  if (error) {
+    setAuthStatus(`注册失败：${error.message}`);
+    return;
+  }
+  if (!data.session) {
+    setAuthStatus("注册已提交。若 Supabase 要求邮件验证，请先打开邮箱确认。");
+    return;
+  }
+  setAuthStatus("注册成功，正在读取学习资料...");
+}
+
+async function signOut() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
 }
 
 function activeStudent() {
@@ -1346,6 +1586,20 @@ function renderAccounts() {
     .join("");
 }
 
+function renderAuth() {
+  const panel = document.querySelector(".auth-panel");
+  if (!panel) return;
+  const signedIn = Boolean(state.authSession);
+  panel.classList.toggle("signed-in", signedIn);
+  $("signOutButton").disabled = !signedIn;
+  $("signInButton").disabled = signedIn;
+  $("signUpButton").disabled = signedIn;
+  $("authStudentLabel").style.display = $("authRole").value === "student" ? "grid" : "none";
+  if (signedIn) {
+    setAuthStatus(`已登录：${currentAuthUserLabel()}`);
+  }
+}
+
 function renderStudents() {
   $("studentList").innerHTML = students
     .map(
@@ -1460,7 +1714,7 @@ function renderDiagnostic() {
     .join("");
 }
 
-function saveParentPlanSettings() {
+async function saveParentPlanSettings() {
   const studentId = $("planStudent").value;
   const student = students.find((item) => item.id === studentId) || activeStudent();
   state.planSettings[studentId] = {
@@ -1475,6 +1729,16 @@ function saveParentPlanSettings() {
   saveData();
   renderAll();
   $("planSaveStatus").textContent = `已保存 ${student.name} 的学习计划。孩子下次打开今日任务会看到新安排。`;
+  try {
+    await savePlanSettingsToCloud(studentId);
+    if (state.authSession && state.accountRole === "parent") {
+      $("planSaveStatus").textContent = `已保存 ${student.name} 的学习计划，并同步到云端。`;
+    }
+  } catch (error) {
+    console.error(error);
+    $("planSaveStatus").textContent = `已本机保存 ${student.name} 的学习计划；云端同步失败，请稍后再试。`;
+    setAuthStatus("计划已本机保存，但云端同步失败。");
+  }
 }
 
 function buildReport() {
@@ -1659,6 +1923,15 @@ function switchView(viewName) {
 }
 
 function bindEvents() {
+  $("authForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    signInWithPassword();
+  });
+
+  $("signUpButton").addEventListener("click", signUp);
+  $("signOutButton").addEventListener("click", signOut);
+  $("authRole").addEventListener("change", renderAuth);
+
   $("accountList").addEventListener("click", (event) => {
     const button = event.target.closest("[data-account]");
     if (!button) return;
@@ -1789,6 +2062,7 @@ function bindEvents() {
 }
 
 function renderAll() {
+  renderAuth();
   renderAccounts();
   renderStudents();
   renderSelectors();
@@ -1809,4 +2083,5 @@ function renderAll() {
 loadSavedData();
 bindEvents();
 renderAll();
+initAuth();
 loadCloudQuestions();

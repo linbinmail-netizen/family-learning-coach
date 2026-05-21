@@ -138,6 +138,31 @@ h3 {
   display: block;
 }
 
+.auth-form {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-form label {
+  margin-bottom: 0;
+}
+
+.auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.auth-actions .primary-button,
+.auth-actions .secondary-button {
+  padding-inline: 8px;
+}
+
+.auth-panel.signed-in {
+  border-color: rgba(40, 121, 92, 0.35);
+  background: #f7fbf8;
+}
+
 .account-button span {
   display: block;
   margin-top: 4px;
@@ -460,7 +485,8 @@ li {
   .view-header,
   .answer-grid,
   .knowledge-grid,
-  .chat-form {
+  .chat-form,
+  .auth-actions {
     grid-template-columns: 1fr;
     display: grid;
   }

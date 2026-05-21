@@ -30,10 +30,38 @@ input {
   font: inherit;
 }
 
+.login-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-view.hidden {
+  display: none;
+}
+
+.login-card {
+  width: min(460px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 28px;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr);
   min-height: 100vh;
+}
+
+#appShell {
+  display: none;
+}
+
+#appShell.authenticated {
+  display: grid;
 }
 
 .sidebar {
@@ -156,6 +184,10 @@ h3 {
 .auth-actions .primary-button,
 .auth-actions .secondary-button {
   padding-inline: 8px;
+}
+
+.full-width-button {
+  width: 100%;
 }
 
 .auth-panel.signed-in {

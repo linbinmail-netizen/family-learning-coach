@@ -7,7 +7,34 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <section class="login-view" id="loginView">
+      <div class="login-card">
+        <div class="brand">
+          <div class="brand-mark">FL</div>
+          <div>
+            <p class="eyebrow">Family Learning Coach</p>
+            <h1>家庭学习平台</h1>
+          </div>
+        </div>
+        <form id="authForm" class="auth-form">
+          <label>
+            邮箱
+            <input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" />
+          </label>
+          <label>
+            密码
+            <input id="authPassword" type="password" autocomplete="current-password" placeholder="输入密码" />
+          </label>
+          <div class="auth-actions">
+            <button class="primary-button" id="signInButton" type="submit">登录</button>
+            <button class="secondary-button" id="signUpButton" type="button">注册</button>
+          </div>
+          <p class="form-note" id="authStatus">登录后系统会自动进入家长、MIA 或 EVA 的学习界面。</p>
+        </form>
+      </div>
+    </section>
+
+    <main class="app-shell" id="appShell">
       <aside class="sidebar" aria-label="学生与学习路径">
         <div class="brand">
           <div class="brand-mark">FL</div>
@@ -17,43 +44,10 @@
           </div>
         </div>
 
-        <section class="panel">
-          <h2>账号入口</h2>
-          <div class="account-list" id="accountList"></div>
-        </section>
-
         <section class="panel auth-panel">
-          <h2>正式登录</h2>
-          <form id="authForm" class="auth-form">
-            <label>
-              邮箱
-              <input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" />
-            </label>
-            <label>
-              密码
-              <input id="authPassword" type="password" autocomplete="current-password" placeholder="输入密码" />
-            </label>
-            <label>
-              账号类型
-              <select id="authRole">
-                <option value="parent">家长</option>
-                <option value="student">孩子</option>
-              </select>
-            </label>
-            <label id="authStudentLabel">
-              孩子名字
-              <select id="authStudentName">
-                <option value="MIA">MIA</option>
-                <option value="EVA">EVA</option>
-              </select>
-            </label>
-            <div class="auth-actions">
-              <button class="primary-button" id="signInButton" type="submit">登录</button>
-              <button class="secondary-button" id="signUpButton" type="button">注册</button>
-              <button class="secondary-button" id="signOutButton" type="button">退出</button>
-            </div>
-            <p class="form-note" id="authStatus">可以先用账号入口试用；正式使用请登录。</p>
-          </form>
+          <h2>账号状态</h2>
+          <p class="form-note" id="accountStatus">正在读取账号...</p>
+          <button class="secondary-button full-width-button" id="signOutButton" type="button">退出</button>
         </section>
 
         <section class="panel">

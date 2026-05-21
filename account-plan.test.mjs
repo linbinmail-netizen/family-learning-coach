@@ -5,11 +5,11 @@ import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
 const js = readFileSync(new URL("./app.js", import.meta.url), "utf8");
 
-test("account role entry points exist", () => {
-  assert.match(html, /id="accountList"/);
+test("account roles are applied by login state, not manual role buttons", () => {
+  assert.doesNotMatch(html, /id="accountList"/);
   assert.match(js, /const accounts = \[/);
   assert.match(js, /accountRole/);
-  assert.match(js, /renderAccounts/);
+  assert.match(js, /applyProfileToLocalState/);
 });
 
 test("student daily task view exists", () => {
@@ -29,15 +29,26 @@ test("parent can adjust study plan settings", () => {
 });
 
 test("supabase auth sign in controls exist", () => {
+  assert.match(html, /id="loginView"/);
+  assert.match(html, /id="appShell"/);
   assert.match(html, /id="authForm"/);
   assert.match(html, /id="authEmail"/);
   assert.match(html, /id="authPassword"/);
-  assert.match(html, /id="authRole"/);
-  assert.match(html, /id="authStudentName"/);
+  assert.doesNotMatch(html, /id="authRole"/);
+  assert.doesNotMatch(html, /id="authStudentName"/);
   assert.match(html, /id="signInButton"/);
   assert.match(html, /id="signUpButton"/);
   assert.match(html, /id="signOutButton"/);
   assert.match(html, /@supabase\/supabase-js@2/);
+});
+
+test("login is separated from the learning app", () => {
+  assert.match(js, /renderAuthGate/);
+  assert.match(js, /loginView/);
+  assert.match(js, /appShell/);
+  assert.match(js, /inferSignupProfile/);
+  assert.doesNotMatch(js, /authRole/);
+  assert.doesNotMatch(js, /authStudentName/);
 });
 
 test("auth state maps signed in users to parent or student views", () => {

@@ -1154,6 +1154,19 @@ function currentAuthUserLabel() {
 function setAuthStatus(message) {
   const status = $("authStatus");
   if (status) status.textContent = message;
+  const accountStatus = $("accountStatus");
+  if (accountStatus && state.authSession) accountStatus.textContent = currentAuthUserLabel();
+}
+
+function inferSignupProfile(email) {
+  const localPart = String(email || "").split("@")[0].toLowerCase();
+  if (localPart.includes("+mia") || localPart.endsWith(".mia")) {
+    return { role: "student", displayName: "MIA", studentName: "MIA" };
+  }
+  if (localPart.includes("+eva") || localPart.endsWith(".eva")) {
+    return { role: "student", displayName: "EVA", studentName: "EVA" };
+  }
+  return { role: "parent", displayName: "家长", studentName: "" };
 }
 
 function applyProfileToLocalState(profile) {
@@ -1175,6 +1188,14 @@ function applyProfileToLocalState(profile) {
   }
 
   saveData();
+}
+
+function renderAuthGate() {
+  const signedIn = Boolean(state.authSession);
+  const loginView = $("loginView");
+  const appShell = $("appShell");
+  if (loginView) loginView.classList.toggle("hidden", signedIn);
+  if (appShell) appShell.classList.toggle("authenticated", signedIn);
 }
 
 async function loadFamilyStudentsFromCloud() {
@@ -1275,6 +1296,7 @@ async function loadAuthProfile() {
   applyProfileToLocalState(data);
   setAuthStatus(`已登录：${currentAuthUserLabel()}`);
   renderAll();
+  switchView(data.role === "parent" ? "parent" : "today");
   loadCloudQuestions();
 }
 
@@ -1294,7 +1316,8 @@ async function initAuth() {
       setAuthStatus("已登录，但读取账号资料失败。");
     }
   } else {
-    setAuthStatus("可以先用账号入口试用；正式使用请登录。");
+    setAuthStatus("登录后系统会自动进入家长、MIA 或 EVA 的学习界面。");
+    renderAuthGate();
   }
 
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
@@ -1304,6 +1327,7 @@ async function initAuth() {
       state.cloudStudents = {};
       setAuthStatus("已退出登录。");
       renderAll();
+      renderAuthGate();
       return;
     }
     try {
@@ -1336,23 +1360,21 @@ async function signUp() {
   if (!supabaseClient) return;
   const email = $("authEmail").value.trim();
   const password = $("authPassword").value;
-  const role = $("authRole").value;
-  const studentName = $("authStudentName").value;
   if (!email || !password) {
     setAuthStatus("请先输入邮箱和密码。");
     return;
   }
 
   setAuthStatus("正在注册...");
-  const displayName = role === "parent" ? "家长" : studentName;
+  const profile = inferSignupProfile(email);
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
       data: {
-        role,
-        display_name: displayName,
-        student_name: role === "student" ? studentName : "",
+        role: profile.role,
+        display_name: profile.displayName,
+        student_name: profile.studentName,
       },
     },
   });
@@ -1594,10 +1616,11 @@ function renderAuth() {
   $("signOutButton").disabled = !signedIn;
   $("signInButton").disabled = signedIn;
   $("signUpButton").disabled = signedIn;
-  $("authStudentLabel").style.display = $("authRole").value === "student" ? "grid" : "none";
   if (signedIn) {
+    $("accountStatus").textContent = currentAuthUserLabel();
     setAuthStatus(`已登录：${currentAuthUserLabel()}`);
   }
+  renderAuthGate();
 }
 
 function renderStudents() {
@@ -1930,29 +1953,6 @@ function bindEvents() {
 
   $("signUpButton").addEventListener("click", signUp);
   $("signOutButton").addEventListener("click", signOut);
-  $("authRole").addEventListener("change", renderAuth);
-
-  $("accountList").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-account]");
-    if (!button) return;
-    const account = accounts.find((item) => item.id === button.dataset.account);
-    if (!account) return;
-    state.accountId = account.id;
-    state.accountRole = account.role;
-    if (account.studentId) {
-      state.studentId = account.studentId;
-      state.grade = activeStudent().grade;
-      state.subject = planForStudent(account.studentId).focusSubject || subjects[state.grade][0].id;
-    }
-    state.selectedAnswer = null;
-    state.selectedAnswers = {};
-    state.currentQuestion = 0;
-    state.reportReady = false;
-    saveData();
-    renderAll();
-    loadCloudQuestions();
-    switchView(account.role === "parent" ? "parent" : "today");
-  });
 
   $("studentList").addEventListener("click", (event) => {
     if (state.accountRole === "student") return;
@@ -2063,7 +2063,6 @@ function bindEvents() {
 
 function renderAll() {
   renderAuth();
-  renderAccounts();
   renderStudents();
   renderSelectors();
   renderTodayPlan();

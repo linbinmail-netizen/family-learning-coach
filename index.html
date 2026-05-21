@@ -18,6 +18,11 @@
         </div>
 
         <section class="panel">
+          <h2>账号入口</h2>
+          <div class="account-list" id="accountList"></div>
+        </section>
+
+        <section class="panel">
           <h2>选择学生</h2>
           <div class="student-list" id="studentList"></div>
         </section>
@@ -51,14 +56,41 @@
 
       <section class="workspace">
         <nav class="top-tabs" aria-label="平台模块">
-          <button class="tab active" data-view="diagnostic">诊断测试</button>
+          <button class="tab active" data-view="today">今日任务</button>
+          <button class="tab" data-view="diagnostic">诊断测试</button>
           <button class="tab" data-view="report">掌握报告</button>
           <button class="tab" data-view="coach">AI 引导</button>
           <button class="tab" data-view="parent">家长日报</button>
           <button class="tab" data-view="roadmap">建设路线</button>
         </nav>
 
-        <section class="view active" id="diagnosticView">
+        <section class="view active" id="todayView">
+          <div class="view-header">
+            <div>
+              <p class="eyebrow">Daily Plan</p>
+              <h2 id="todayTitle">今日学习任务</h2>
+            </div>
+            <span class="status-pill" id="todayProgress">0 / 0</span>
+          </div>
+          <div class="today-layout">
+            <div class="score-card">
+              <p>今日预计学习</p>
+              <strong id="todayMinutes">--</strong>
+              <span id="todayFocus">等待计划</span>
+            </div>
+            <div class="report-panel">
+              <h3>今天要完成</h3>
+              <ul id="todayTaskList"></ul>
+            </div>
+            <div class="report-panel">
+              <h3>学习进度</h3>
+              <div class="progress today-progress-bar"><span id="todayProgressBar"></span></div>
+              <p id="todayEncouragement"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="diagnosticView">
           <div class="view-header">
             <div>
               <p class="eyebrow">Diagnostic</p>
@@ -130,13 +162,37 @@
           <div class="view-header">
             <div>
               <p class="eyebrow">Parent Digest</p>
-              <h2>家长日报预览</h2>
+              <h2>家长计划与日报</h2>
             </div>
             <div class="header-actions">
               <span class="status-pill" id="cloudStatus">云端未同步</span>
               <button id="copyDigest" class="secondary-button">复制日报内容</button>
             </div>
           </div>
+          <form class="parent-plan-form report-panel" id="parentPlanForm">
+            <h3>调整学习计划</h3>
+            <div class="form-grid">
+              <label>
+                孩子
+                <select id="planStudent"></select>
+              </label>
+              <label>
+                每天学习时间
+                <select id="planMinutes">
+                  <option value="20">20 分钟</option>
+                  <option value="30">30 分钟</option>
+                  <option value="45">45 分钟</option>
+                  <option value="60">60 分钟</option>
+                </select>
+              </label>
+              <label>
+                重点学科
+                <select id="planFocusSubject"></select>
+              </label>
+            </div>
+            <button class="primary-button" type="submit">保存计划</button>
+            <p class="form-note" id="planSaveStatus">家长可以根据报告调整孩子明天的时间和重点学科。</p>
+          </form>
           <article class="email-preview" id="emailPreview"></article>
           <div class="report-panel activity-panel">
             <h3>本机学习记录</h3>

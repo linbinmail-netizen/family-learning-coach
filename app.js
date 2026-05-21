@@ -15,6 +15,12 @@ const students = [
   },
 ];
 
+const accounts = [
+  { id: "parent", role: "parent", label: "家长", description: "查看两个孩子报告，调整学习时间和计划" },
+  { id: "mia", role: "student", studentId: "older", label: "MIA", description: "进入自己的今日任务" },
+  { id: "eva", role: "student", studentId: "younger", label: "EVA", description: "进入自己的今日任务" },
+];
+
 const subjects = {
   "7": [
     { id: "math7", label: "7th Grade Math", standard: "TEKS Grade 7 Math" },
@@ -996,6 +1002,8 @@ const expandedQuestionBank = {
 };
 
 let state = {
+  accountId: "parent",
+  accountRole: "parent",
   studentId: "older",
   grade: "9",
   subject: "english1",
@@ -1007,6 +1015,10 @@ let state = {
   chatHistory: [],
   reportReady: false,
   records: [],
+  planSettings: {
+    older: { minutes: 30, focusSubject: "english1" },
+    younger: { minutes: 30, focusSubject: "math8" },
+  },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -1022,6 +1034,17 @@ function loadSavedData() {
     if (saved && Array.isArray(saved.records)) {
       state.records = saved.records;
     }
+    if (saved?.accountId) state.accountId = saved.accountId;
+    if (saved?.accountRole) state.accountRole = saved.accountRole;
+    if (saved?.studentId) state.studentId = saved.studentId;
+    if (saved?.grade) state.grade = saved.grade;
+    if (saved?.subject) state.subject = saved.subject;
+    if (saved?.planSettings) {
+      state.planSettings = {
+        ...state.planSettings,
+        ...saved.planSettings,
+      };
+    }
   } catch {
     state.records = [];
   }
@@ -1032,6 +1055,12 @@ function saveData() {
     storageKey,
     JSON.stringify({
       records: state.records,
+      accountId: state.accountId,
+      accountRole: state.accountRole,
+      studentId: state.studentId,
+      grade: state.grade,
+      subject: state.subject,
+      planSettings: state.planSettings,
       lastUpdated: new Date().toISOString(),
     })
   );
@@ -1113,6 +1142,60 @@ function activeSubject() {
 
 function activeDiagnostic() {
   return diagnostics[state.subject];
+}
+
+function activeAccount() {
+  return accounts.find((account) => account.id === state.accountId) || accounts[0];
+}
+
+function subjectById(subjectId) {
+  return Object.values(subjects).flat().find((subject) => subject.id === subjectId);
+}
+
+function defaultSubjectForStudent(studentId) {
+  const student = students.find((item) => item.id === studentId) || students[0];
+  return subjects[student.grade][0].id;
+}
+
+function planForStudent(studentId) {
+  const fallbackSubject = defaultSubjectForStudent(studentId);
+  return state.planSettings[studentId] || { minutes: 30, focusSubject: fallbackSubject };
+}
+
+function todayRecordForStudent(studentName) {
+  const today = new Date().toLocaleDateString("zh-CN");
+  return state.records.find((record) => record.student === studentName && record.date?.includes(today));
+}
+
+function buildDailyTasks(student = activeStudent()) {
+  const plan = planForStudent(student.id);
+  const focusSubject = subjectById(plan.focusSubject) || subjects[student.grade][0];
+  const questions = activeQuestions();
+  const answeredCount = Object.keys(state.selectedAnswers).length;
+  const targetQuestions = Math.max(4, Math.min(10, Math.round(plan.minutes / 5)));
+  const done = Math.min(answeredCount, targetQuestions);
+  const report = todayRecordForStudent(student.name);
+
+  return [
+    {
+      title: `${focusSubject.label} 诊断练习`,
+      detail: `完成 ${targetQuestions} 道题，先找出今天最需要补的知识点。`,
+      done,
+      total: targetQuestions,
+    },
+    {
+      title: "AI 引导订正",
+      detail: "选择 1 道不会的题，写出自己的想法，让 AI 讲解概念并追问。",
+      done: state.chatHistory.some((message) => message.role === "student") ? 1 : 0,
+      total: 1,
+    },
+    {
+      title: "学习总结",
+      detail: "用一句话写下今天学会的方法，家长端会看到报告。",
+      done: report ? 1 : 0,
+      total: 1,
+    },
+  ];
 }
 
 function mergeQuestions(primary = [], secondary = []) {
@@ -1250,13 +1333,55 @@ async function loadCloudQuestions() {
   }
 }
 
+function renderAccounts() {
+  $("accountList").innerHTML = accounts
+    .map(
+      (account) => `
+        <button class="account-button ${account.id === state.accountId ? "active" : ""}" data-account="${account.id}">
+          <strong>${account.label}</strong>
+          <span>${account.description}</span>
+        </button>
+      `
+    )
+    .join("");
+}
+
 function renderStudents() {
   $("studentList").innerHTML = students
     .map(
       (student) => `
-        <button class="student-button ${student.id === state.studentId ? "active" : ""}" data-student="${student.id}">
+        <button class="student-button ${student.id === state.studentId ? "active" : ""}" data-student="${student.id}" ${state.accountRole === "student" ? "disabled" : ""}>
           <strong>${student.name}</strong>
         </button>
+      `
+    )
+    .join("");
+}
+
+function renderTodayPlan() {
+  const student = activeStudent();
+  const plan = planForStudent(student.id);
+  const focusSubject = subjectById(plan.focusSubject) || activeSubject();
+  const tasks = buildDailyTasks(student);
+  const completed = tasks.reduce((sum, task) => sum + Math.min(task.done, task.total), 0);
+  const total = tasks.reduce((sum, task) => sum + task.total, 0);
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+
+  $("todayTitle").textContent = `${student.name} 今日学习任务`;
+  $("todayMinutes").textContent = `${plan.minutes} 分钟`;
+  $("todayFocus").textContent = `重点：${focusSubject.label}`;
+  $("todayProgress").textContent = `${completed} / ${total}`;
+  $("todayProgressBar").style.width = `${percent}%`;
+  $("todayEncouragement").textContent =
+    percent >= 100 ? "今天的任务已完成，可以做错题复盘。" : `已完成 ${percent}%，先完成诊断，再进入 AI 讲解。`;
+  $("todayTaskList").innerHTML = tasks
+    .map(
+      (task) => `
+        <li>
+          <strong>${task.title}</strong><br />
+          ${task.detail}<br />
+          进度：${Math.min(task.done, task.total)} / ${task.total}
+        </li>
       `
     )
     .join("");
@@ -1276,6 +1401,22 @@ function renderSelectors() {
     .join("");
 }
 
+function renderParentPlanControls() {
+  $("planStudent").innerHTML = students
+    .map((student) => `<option value="${student.id}" ${student.id === state.studentId ? "selected" : ""}>${student.name}</option>`)
+    .join("");
+
+  const selectedStudent = students.find((student) => student.id === $("planStudent").value) || activeStudent();
+  const plan = planForStudent(selectedStudent.id);
+  $("planMinutes").value = String(plan.minutes);
+  $("planFocusSubject").innerHTML = subjects[selectedStudent.grade]
+    .map((subject) => `<option value="${subject.id}" ${subject.id === plan.focusSubject ? "selected" : ""}>${subject.label}</option>`)
+    .join("");
+
+  const isParent = state.accountRole === "parent";
+  $("parentPlanForm").style.display = isParent ? "block" : "none";
+}
+
 function renderDiagnostic() {
   const student = activeStudent();
   const subject = activeSubject();
@@ -1288,7 +1429,9 @@ function renderDiagnostic() {
   $("difficultyTag").textContent = question.difficulty;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
   $("questionPrompt").textContent = question.prompt;
-  $("dailySuggestion").textContent = `${student.name} 今天建议完成 ${subject.label} 诊断，并用 20 分钟复习最低掌握度的知识点。当前题组 ${questions.length} 题，包含云端题库与本地强化题。`;
+  const plan = planForStudent(student.id);
+  const focusSubject = subjectById(plan.focusSubject) || subject;
+  $("dailySuggestion").textContent = `${student.name} 今天计划学习 ${plan.minutes} 分钟，重点完成 ${focusSubject.label}。当前题组 ${questions.length} 题，包含云端题库与本地强化题。`;
 
   $("answerGrid").innerHTML = question.answers
     .map(
@@ -1315,6 +1458,23 @@ function renderDiagnostic() {
       `;
     })
     .join("");
+}
+
+function saveParentPlanSettings() {
+  const studentId = $("planStudent").value;
+  const student = students.find((item) => item.id === studentId) || activeStudent();
+  state.planSettings[studentId] = {
+    minutes: Number($("planMinutes").value),
+    focusSubject: $("planFocusSubject").value,
+  };
+
+  if (state.studentId === studentId) {
+    state.subject = state.planSettings[studentId].focusSubject;
+  }
+
+  saveData();
+  renderAll();
+  $("planSaveStatus").textContent = `已保存 ${student.name} 的学习计划。孩子下次打开今日任务会看到新安排。`;
 }
 
 function buildReport() {
@@ -1499,7 +1659,30 @@ function switchView(viewName) {
 }
 
 function bindEvents() {
+  $("accountList").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-account]");
+    if (!button) return;
+    const account = accounts.find((item) => item.id === button.dataset.account);
+    if (!account) return;
+    state.accountId = account.id;
+    state.accountRole = account.role;
+    if (account.studentId) {
+      state.studentId = account.studentId;
+      state.grade = activeStudent().grade;
+      state.subject = planForStudent(account.studentId).focusSubject || subjects[state.grade][0].id;
+    }
+    state.selectedAnswer = null;
+    state.selectedAnswers = {};
+    state.currentQuestion = 0;
+    state.reportReady = false;
+    saveData();
+    renderAll();
+    loadCloudQuestions();
+    switchView(account.role === "parent" ? "parent" : "today");
+  });
+
   $("studentList").addEventListener("click", (event) => {
+    if (state.accountRole === "student") return;
     const button = event.target.closest("[data-student]");
     if (!button) return;
     state.studentId = button.dataset.student;
@@ -1589,14 +1772,31 @@ function bindEvents() {
     $("copyDigest").textContent = "已复制";
     setTimeout(() => ($("copyDigest").textContent = "复制日报内容"), 1200);
   });
+
+  $("planStudent").addEventListener("change", (event) => {
+    state.studentId = event.target.value;
+    state.grade = activeStudent().grade;
+    state.subject = planForStudent(state.studentId).focusSubject || subjects[state.grade][0].id;
+    renderSelectors();
+    renderParentPlanControls();
+    renderTodayPlan();
+  });
+
+  $("parentPlanForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveParentPlanSettings();
+  });
 }
 
 function renderAll() {
+  renderAccounts();
   renderStudents();
   renderSelectors();
+  renderTodayPlan();
   renderDiagnostic();
   renderEmail();
   renderCoach();
+  renderParentPlanControls();
   $("reportStatus").textContent = state.reportReady ? "已生成" : "等待诊断";
   $("overallScore").textContent = state.reportReady ? $("overallScore").textContent : "--";
   $("overallNote").textContent = state.reportReady ? $("overallNote").textContent : "完成诊断后生成";

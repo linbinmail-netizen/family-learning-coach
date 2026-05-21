@@ -111,12 +111,14 @@ h3 {
   background: #edf5ef;
 }
 
-.student-list {
+.student-list,
+.account-list {
   display: grid;
   gap: 10px;
 }
 
-.student-button {
+.student-button,
+.account-button {
   border: 1px solid var(--line);
   background: #f9faf8;
   border-radius: 8px;
@@ -125,13 +127,22 @@ h3 {
   cursor: pointer;
 }
 
-.student-button.active {
+.student-button.active,
+.account-button.active {
   border-color: var(--green);
   box-shadow: inset 0 0 0 2px rgba(40, 121, 92, 0.14);
 }
 
-.student-button strong {
+.student-button strong,
+.account-button strong {
   display: block;
+}
+
+.account-button span {
+  display: block;
+  margin-top: 4px;
+  color: var(--soft-ink);
+  font-size: 13px;
 }
 
 label {
@@ -313,10 +324,30 @@ input {
   background: currentColor;
 }
 
-.report-layout {
+.report-layout,
+.today-layout {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr) minmax(0, 1.2fr);
   gap: 16px;
+}
+
+.today-progress-bar {
+  margin: 12px 0;
+}
+
+.parent-plan-form {
+  margin-bottom: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.form-note {
+  color: var(--soft-ink);
+  margin: 12px 0 0;
 }
 
 .score-card,
@@ -408,6 +439,8 @@ li {
 @media (max-width: 980px) {
   .app-shell,
   .report-layout,
+  .today-layout,
+  .form-grid,
   .roadmap {
     grid-template-columns: 1fr;
   }

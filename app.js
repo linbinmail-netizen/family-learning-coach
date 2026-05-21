@@ -680,6 +680,321 @@ const localQuestionBank = {
   ],
 };
 
+const expandedQuestionBank = {
+  math8: [
+    {
+      prompt: "A table shows x increases by 2 while y increases by 10 each time. What is the rate of change?",
+      standard: "Grade 8 Math: Linear Relationships",
+      difficulty: "中等",
+      answers: ["5", "10", "12", "20"],
+      correct: 0,
+      skill: "斜率概念",
+      explanation: "Rate of change is change in y divided by change in x, so 10 / 2 = 5.",
+      coachHints: ["How much does y change?", "How much does x change for the same step?"],
+    },
+    {
+      prompt: "Which statement describes y = 2x + 3?",
+      standard: "Grade 8 Math: Linear Equations",
+      difficulty: "中等",
+      answers: ["It starts at 3 and increases by 2 for each 1 in x", "It is proportional", "It has no y-intercept", "It decreases by 3"],
+      correct: 0,
+      skill: "数据图表",
+      explanation: "In y = mx + b, b is the starting value and m is the rate of change.",
+      coachHints: ["What number is added after 2x?", "What does the coefficient of x tell you?"],
+    },
+    {
+      prompt: "A cylinder has radius 3 and height 10. Which expression represents its volume?",
+      standard: "Grade 8 Math: Geometry and Measurement",
+      difficulty: "中等",
+      answers: ["π(3²)(10)", "π(3)(10²)", "2π(3)(10)", "3 + 10π"],
+      correct: 0,
+      skill: "多步文字题",
+      explanation: "Cylinder volume is V = πr²h.",
+      coachHints: ["What is the formula for cylinder volume?", "Which number is the radius?"],
+    },
+    {
+      prompt: "Which number is irrational?",
+      standard: "Grade 8 Math: Number Sense",
+      difficulty: "基础",
+      answers: ["√2", "0.75", "-4", "3/8"],
+      correct: 0,
+      skill: "比例关系",
+      explanation: "√2 cannot be written as a ratio of two integers, so it is irrational.",
+      coachHints: ["Which choices can be written as fractions?", "Does the square root simplify to a whole number?"],
+    },
+    {
+      prompt: "A scatterplot trends upward from left to right. What association does it show?",
+      standard: "Grade 8 Math: Data Analysis",
+      difficulty: "基础",
+      answers: ["Positive association", "Negative association", "No association", "A constant y-value"],
+      correct: 0,
+      skill: "数据图表",
+      explanation: "An upward trend means both variables tend to increase together.",
+      coachHints: ["What happens to y as x increases?", "Does the pattern go up or down?"],
+    },
+  ],
+  rla8: [
+    {
+      prompt: "An author uses the word 'relentless' to describe a storm. What should you infer about the tone?",
+      standard: "Grade 8 RLA: Vocabulary and Tone",
+      difficulty: "中等",
+      answers: ["The tone feels intense or threatening", "The tone is playful", "The tone is uncertain", "The tone is humorous"],
+      correct: 0,
+      skill: "词汇语境",
+      explanation: "Relentless suggests something that does not stop, creating an intense tone.",
+      coachHints: ["What feeling does 'relentless' create?", "Is the word light or forceful?"],
+    },
+    {
+      prompt: "Which evidence best supports the claim that a speaker is disappointed?",
+      standard: "Grade 8 RLA: Inference and Evidence",
+      difficulty: "中等",
+      answers: ["She folded the invitation and stared at the floor.", "The room had a window.", "The event began at noon.", "The invitation was printed in blue."],
+      correct: 0,
+      skill: "证据比较",
+      explanation: "Actions and body language can support an inference about feelings.",
+      coachHints: ["What does disappointed look like in behavior?", "Which detail shows emotion?"],
+    },
+    {
+      prompt: "When revising an argumentative paragraph, what should every reason connect back to?",
+      standard: "Grade 8 RLA: Argument Writing",
+      difficulty: "基础",
+      answers: ["The claim", "The font size", "The title length", "A random fact"],
+      correct: 0,
+      skill: "短文写作",
+      explanation: "Reasons in an argument must support the claim.",
+      coachHints: ["What is the argument trying to prove?", "What should reasons support?"],
+    },
+    {
+      prompt: "Two articles discuss school lunches. One focuses on cost, and the other focuses on nutrition. What is being compared?",
+      standard: "Grade 8 RLA: Compare Texts",
+      difficulty: "中等",
+      answers: ["The authors' focus or perspective", "The number of paragraphs only", "The publication dates only", "The font style"],
+      correct: 0,
+      skill: "主题与主张",
+      explanation: "Comparing texts often means comparing focus, perspective, claim, and evidence.",
+      coachHints: ["What does each article care about most?", "Are the authors looking at the same topic in the same way?"],
+    },
+    {
+      prompt: "Which sentence is the clearest topic sentence for a paragraph about sleep and learning?",
+      standard: "Grade 8 RLA: Organization",
+      difficulty: "基础",
+      answers: ["Getting enough sleep can improve how students learn.", "Sleep is a thing people do.", "School starts early.", "I have a bed."],
+      correct: 0,
+      skill: "短文写作",
+      explanation: "A topic sentence should state the main idea of the paragraph clearly.",
+      coachHints: ["Which sentence gives a clear main idea?", "Which one can the rest of the paragraph support?"],
+    },
+  ],
+  science8: [
+    {
+      prompt: "A student rubs a balloon on hair and it sticks to a wall. Which force is most related?",
+      standard: "Grade 8 Science: Force and Motion",
+      difficulty: "基础",
+      answers: ["Electric force", "Gravity only", "Magnetism only", "Weathering"],
+      correct: 0,
+      skill: "科学词汇",
+      explanation: "Static electricity can create electric attraction between objects.",
+      coachHints: ["What kind of charge effect can happen after rubbing?", "Is the wall acting like a magnet?"],
+    },
+    {
+      prompt: "A rock layer contains fossils of ocean organisms. What can scientists infer?",
+      standard: "Grade 8 Science: Earth History",
+      difficulty: "中等",
+      answers: ["The area may once have been covered by water", "The fossils formed yesterday", "The rock is made of metal", "No environment can be inferred"],
+      correct: 0,
+      skill: "数据解释",
+      explanation: "Fossils can give evidence about past environments.",
+      coachHints: ["Where do ocean organisms live?", "What does a fossil tell us about the past?"],
+    },
+    {
+      prompt: "Which change is chemical rather than physical?",
+      standard: "Grade 8 Science: Matter",
+      difficulty: "基础",
+      answers: ["Iron rusting", "Ice melting", "Paper being cut", "Water freezing"],
+      correct: 0,
+      skill: "科学词汇",
+      explanation: "Rusting forms a new substance, which is evidence of a chemical change.",
+      coachHints: ["Does a new substance form?", "Which option changes identity, not just shape or state?"],
+    },
+    {
+      prompt: "If an investigation has no control group, what is harder to determine?",
+      standard: "Grade 8 Science: Experimental Design",
+      difficulty: "中等",
+      answers: ["Whether the tested variable caused the result", "The color of the graph", "The title of the lab", "The number of pages"],
+      correct: 0,
+      skill: "实验设计",
+      explanation: "A control group gives a comparison point for judging the effect of a variable.",
+      coachHints: ["What does a control group help compare?", "Without comparison, what becomes uncertain?"],
+    },
+    {
+      prompt: "A model shows the Moon between Earth and the Sun. What event can this model represent?",
+      standard: "Grade 8 Science: Earth and Space",
+      difficulty: "中等",
+      answers: ["Solar eclipse", "Lunar eclipse", "Earthquake", "Tide from wind"],
+      correct: 0,
+      skill: "数据解释",
+      explanation: "A solar eclipse can occur when the Moon is between Earth and the Sun.",
+      coachHints: ["Which object is blocking sunlight?", "What eclipse happens when the Moon is between Earth and Sun?"],
+    },
+  ],
+  algebraReady: [
+    {
+      prompt: "Which expression is equivalent to 5x + 2x - 3?",
+      standard: "Algebra Readiness: Expressions",
+      difficulty: "基础",
+      answers: ["7x - 3", "7x + 3", "10x - 3", "5x - 1"],
+      correct: 0,
+      skill: "文字题翻译",
+      explanation: "Combine like terms: 5x + 2x = 7x.",
+      coachHints: ["Which terms have x?", "What happens when you combine like terms?"],
+    },
+    {
+      prompt: "Solve -2x = 14.",
+      standard: "Algebra Readiness: Equations",
+      difficulty: "基础",
+      answers: ["x = -7", "x = 7", "x = -12", "x = 16"],
+      correct: 0,
+      skill: "整数运算",
+      explanation: "Divide both sides by -2 to isolate x.",
+      coachHints: ["What operation is attached to x?", "What is 14 divided by -2?"],
+    },
+    {
+      prompt: "A taxi charges $4 plus $2 per mile. Which expression shows the cost for m miles?",
+      standard: "Algebra Readiness: Linear Modeling",
+      difficulty: "中等",
+      answers: ["2m + 4", "4m + 2", "6m", "2 + 4"],
+      correct: 0,
+      skill: "函数准备",
+      explanation: "The starting fee is 4, and each mile adds 2 dollars.",
+      coachHints: ["Which amount happens once?", "Which amount repeats per mile?"],
+    },
+    {
+      prompt: "Which graph feature shows the starting value in a linear relationship?",
+      standard: "Algebra Readiness: Graphs",
+      difficulty: "基础",
+      answers: ["The y-intercept", "The x-axis label", "The steepest point", "The last point only"],
+      correct: 0,
+      skill: "函数准备",
+      explanation: "The y-intercept shows the value when x = 0.",
+      coachHints: ["What does starting value mean for x?", "Where does a graph cross the y-axis?"],
+    },
+    {
+      prompt: "Which inequality represents 'more than 9'?",
+      standard: "Algebra Readiness: Inequalities",
+      difficulty: "基础",
+      answers: ["x > 9", "x < 9", "x ≤ 9", "x = 9"],
+      correct: 0,
+      skill: "方程逆运算",
+      explanation: "More than means greater than and does not include 9.",
+      coachHints: ["Does 'more than' include 9?", "Which symbol means greater than?"],
+    },
+  ],
+  geometry: [
+    {
+      prompt: "Two triangles have three pairs of corresponding sides congruent. Which congruence shortcut applies?",
+      standard: "Geometry: Congruence",
+      difficulty: "基础",
+      answers: ["SSS", "AAA", "SSA", "HL only"],
+      correct: 0,
+      skill: "全等判定",
+      explanation: "SSS proves triangle congruence when all three corresponding side pairs match.",
+      coachHints: ["What does each S represent?", "How many side pairs are given?"],
+    },
+    {
+      prompt: "A line segment has endpoints (2, 3) and (8, 3). What is its length?",
+      standard: "Geometry: Coordinate Geometry",
+      difficulty: "基础",
+      answers: ["6", "5", "8", "11"],
+      correct: 0,
+      skill: "几何词汇",
+      explanation: "The y-values are the same, so subtract x-values: 8 - 2 = 6.",
+      coachHints: ["Which coordinate changes?", "How far apart are the x-values?"],
+    },
+    {
+      prompt: "If a triangle has angles 40° and 65°, what is the third angle?",
+      standard: "Geometry: Triangle Angle Sum",
+      difficulty: "基础",
+      answers: ["75°", "85°", "105°", "115°"],
+      correct: 0,
+      skill: "角关系",
+      explanation: "Triangle angles add to 180°, so 180 - 40 - 65 = 75.",
+      coachHints: ["What is the angle sum of a triangle?", "How much is left after 40 and 65?"],
+    },
+    {
+      prompt: "A dilation has scale factor 2. What happens to side lengths?",
+      standard: "Geometry: Transformations",
+      difficulty: "中等",
+      answers: ["They double", "They are cut in half", "They stay the same", "They become negative"],
+      correct: 0,
+      skill: "几何词汇",
+      explanation: "A scale factor of 2 multiplies every length by 2.",
+      coachHints: ["What does scale factor multiply?", "Is 2 larger or smaller than 1?"],
+    },
+    {
+      prompt: "Which statement is needed to prove two lines are parallel using angle relationships?",
+      standard: "Geometry: Parallel Lines",
+      difficulty: "中等",
+      answers: ["A pair of alternate interior angles is congruent", "The lines look close", "The drawing uses arrows", "The segments have labels"],
+      correct: 0,
+      skill: "证明书写",
+      explanation: "Congruent alternate interior angles can prove two lines are parallel.",
+      coachHints: ["Which angle relationship has a theorem?", "What evidence is stronger than how the diagram looks?"],
+    },
+  ],
+  biology: [
+    {
+      prompt: "Which molecule carries genetic instructions in cells?",
+      standard: "Biology: Genetics",
+      difficulty: "基础",
+      answers: ["DNA", "Glucose", "Water", "Oxygen"],
+      correct: 0,
+      skill: "遗传基础",
+      explanation: "DNA stores hereditary information used by cells.",
+      coachHints: ["Which molecule is connected to genes?", "What carries inherited instructions?"],
+    },
+    {
+      prompt: "What is the main purpose of cellular respiration?",
+      standard: "Biology: Energy",
+      difficulty: "中等",
+      answers: ["To release usable energy from food molecules", "To make chromosomes disappear", "To copy sunlight directly", "To stop all cell processes"],
+      correct: 0,
+      skill: "能量转化",
+      explanation: "Cellular respiration releases energy stored in food molecules for cell use.",
+      coachHints: ["What do cells need energy for?", "Which process breaks down food for energy?"],
+    },
+    {
+      prompt: "In a food chain, arrows usually show...",
+      standard: "Biology: Ecology",
+      difficulty: "基础",
+      answers: ["The direction energy flows", "Which organism is largest", "Which organism is oldest", "The direction animals walk"],
+      correct: 0,
+      skill: "科学图表分析",
+      explanation: "Food-chain arrows show energy transfer from one organism to another.",
+      coachHints: ["What moves through a food chain?", "Do arrows point to who receives energy?"],
+    },
+    {
+      prompt: "A plant cell is placed in salt water and loses water. Which process explains the water movement?",
+      standard: "Biology: Cell Transport",
+      difficulty: "中等",
+      answers: ["Osmosis", "Mitosis", "Photosynthesis", "Mutation"],
+      correct: 0,
+      skill: "细胞结构功能",
+      explanation: "Osmosis is the movement of water across a membrane.",
+      coachHints: ["What substance is moving?", "What process describes water crossing a membrane?"],
+    },
+    {
+      prompt: "A graph shows enzyme activity dropping sharply after a high temperature. What is the best explanation?",
+      standard: "Biology: Enzymes",
+      difficulty: "进阶",
+      answers: ["The enzyme's shape changed and it works less well", "The enzyme became a carbohydrate", "Temperature has no effect", "The graph must be ignored"],
+      correct: 0,
+      skill: "科学图表分析",
+      explanation: "High temperature can denature enzymes, changing their shape and reducing activity.",
+      coachHints: ["What do enzymes depend on to work?", "How can high heat affect protein shape?"],
+    },
+  ],
+};
+
 let state = {
   studentId: "older",
   grade: "9",
@@ -810,16 +1125,33 @@ function mergeQuestions(primary = [], secondary = []) {
   });
 }
 
+function rotateQuestionOptions(question, index) {
+  if (!question?.answers?.length) return question;
+  const shift = index % question.answers.length;
+  if (shift === 0) return question;
+
+  const answers = [...question.answers.slice(shift), ...question.answers.slice(0, shift)];
+  const correct = (question.correct - shift + question.answers.length) % question.answers.length;
+  return { ...question, answers, correct };
+}
+
+function prepareQuestionSet(questions) {
+  return questions.map((question, index) => rotateQuestionOptions(question, index));
+}
+
 function activeQuestions() {
   const cloudQuestions = state.cloudQuestions[state.subject] || [];
   const localQuestions = localQuestionBank[state.subject] || [];
-  if (cloudQuestions.length || localQuestions.length) return mergeQuestions(cloudQuestions, localQuestions);
+  const expandedQuestions = expandedQuestionBank[state.subject] || [];
+  if (cloudQuestions.length || localQuestions.length || expandedQuestions.length) {
+    return prepareQuestionSet(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions)));
+  }
 
   const diagnostic = activeDiagnostic();
-  if (diagnostic.questions) return diagnostic.questions;
+  if (diagnostic.questions) return prepareQuestionSet(diagnostic.questions);
   const strongest = diagnostic.skills.reduce((best, skill) => (skill[1] > best[1] ? skill : best), diagnostic.skills[0]);
   const weakest = diagnostic.skills.reduce((low, skill) => (skill[1] < low[1] ? skill : low), diagnostic.skills[0]);
-  return [
+  return prepareQuestionSet([
     {
       prompt: diagnostic.prompt,
       standard: diagnostic.standard,
@@ -851,7 +1183,7 @@ function activeQuestions() {
       correct: 0,
       skill: weakest[0],
     },
-  ];
+  ]);
 }
 
 function normalizeDifficulty(difficulty) {

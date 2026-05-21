@@ -53,12 +53,16 @@ test("login is separated from the learning app", () => {
 
 test("auth state maps signed in users to parent or student views", () => {
   assert.match(js, /createClient/);
+  assert.match(js, /authRequest/);
+  assert.match(js, /authStorageKey/);
   assert.match(js, /initAuth/);
   assert.match(js, /loadAuthProfile/);
   assert.match(js, /applyProfileToLocalState/);
   assert.match(js, /signInWithPassword/);
   assert.match(js, /signUp/);
   assert.match(js, /signOut/);
+  assert.match(js, /token\?grant_type=password/);
+  assert.match(js, /authRequest\("signup"/);
 });
 
 test("parent plan settings can sync to Supabase after login", () => {

@@ -1026,6 +1026,7 @@ let state = {
 
 const $ = (id) => document.getElementById(id);
 const storageKey = "family-learning-coach";
+const authStorageKey = "family-learning-coach-auth";
 const supabaseConfig = {
   url: "https://olyehadsblazpyxhsryn.supabase.co",
   key: "sb_publishable_5-n_a32xrCbk9O4UtLB0eg_-XXr9L6c",
@@ -1089,6 +1090,51 @@ async function supabaseRequest(path, options = {}) {
   }
 
   return response.status === 204 ? null : response.json();
+}
+
+async function authRequest(path, options = {}) {
+  const response = await fetch(`${supabaseConfig.url}/auth/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: supabaseConfig.key,
+      "Content-Type": "application/json",
+      ...(state.authSession?.access_token ? { Authorization: `Bearer ${state.authSession.access_token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    throw new Error(data?.error_description || data?.msg || data?.message || `Auth request failed: ${response.status}`);
+  }
+  return data;
+}
+
+function persistAuthSession(session) {
+  state.authSession = session || null;
+  if (session) {
+    localStorage.setItem(authStorageKey, JSON.stringify(session));
+  } else {
+    localStorage.removeItem(authStorageKey);
+  }
+}
+
+function loadPersistedAuthSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem(authStorageKey));
+    if (session?.access_token && session?.user?.id) return session;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function supabaseRpc(functionName, body = {}) {
+  return supabaseRequest(`rpc/${functionName}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 async function findSupabaseRecord(table, filter) {
@@ -1199,9 +1245,8 @@ function renderAuthGate() {
 }
 
 async function loadFamilyStudentsFromCloud() {
-  if (!supabaseClient || !state.authSession) return;
-  const { data, error } = await supabaseClient.rpc("get_my_family_students");
-  if (error) throw error;
+  if (!state.authSession) return;
+  const data = await supabaseRpc("get_my_family_students");
 
   state.cloudStudents = {};
   (data || []).forEach((student) => {
@@ -1213,33 +1258,35 @@ async function loadFamilyStudentsFromCloud() {
 async function findCloudSubjectId(subjectId) {
   const subject = subjectById(subjectId);
   if (!subject) return null;
-  const { data, error } = await supabaseClient
-    .from("subjects")
-    .select("id,title")
-    .eq("title", subject.label)
-    .limit(1);
-  if (error) throw error;
+  const data = await supabaseRequest(
+    `subjects?${new URLSearchParams({ select: "id,title", title: `eq.${subject.label}`, limit: "1" }).toString()}`,
+    { headers: { Prefer: "" } }
+  );
   return data?.[0]?.id || null;
 }
 
 async function findLocalSubjectByCloudId(cloudSubjectId) {
-  if (!cloudSubjectId || !supabaseClient) return null;
-  const { data, error } = await supabaseClient.from("subjects").select("title").eq("id", cloudSubjectId).limit(1);
-  if (error) throw error;
+  if (!cloudSubjectId) return null;
+  const data = await supabaseRequest(
+    `subjects?${new URLSearchParams({ select: "title", id: `eq.${cloudSubjectId}`, limit: "1" }).toString()}`,
+    { headers: { Prefer: "" } }
+  );
   const title = data?.[0]?.title;
   return Object.values(subjects).flat().find((subject) => subject.label === title) || null;
 }
 
 async function loadPlanSettingsFromCloud() {
-  if (!supabaseClient || !state.authSession) return;
+  if (!state.authSession) return;
   const cloudStudentIds = Object.values(state.cloudStudents).filter(Boolean);
   if (!cloudStudentIds.length) return;
 
-  const { data, error } = await supabaseClient
-    .from("study_plan_settings")
-    .select("student_id,minutes_per_day,focus_subject_id")
-    .in("student_id", cloudStudentIds);
-  if (error) throw error;
+  const data = await supabaseRequest(
+    `study_plan_settings?${new URLSearchParams({
+      select: "student_id,minutes_per_day,focus_subject_id",
+      student_id: `in.(${cloudStudentIds.join(",")})`,
+    }).toString()}`,
+    { headers: { Prefer: "" } }
+  );
 
   for (const plan of data || []) {
     const localStudentId = Object.keys(state.cloudStudents).find((key) => state.cloudStudents[key] === plan.student_id);
@@ -1255,7 +1302,7 @@ async function loadPlanSettingsFromCloud() {
 }
 
 async function savePlanSettingsToCloud(studentId) {
-  if (!supabaseClient || !state.authSession || state.accountRole !== "parent") return;
+  if (!state.authSession || state.accountRole !== "parent") return;
   const cloudStudentId = state.cloudStudents[studentId];
   if (!cloudStudentId) {
     setAuthStatus("已本机保存；云端还没有找到这个孩子的关联。");
@@ -1264,32 +1311,36 @@ async function savePlanSettingsToCloud(studentId) {
 
   const plan = planForStudent(studentId);
   const focusSubjectId = await findCloudSubjectId(plan.focusSubject);
-  const { error } = await supabaseClient.from("study_plan_settings").upsert(
-    {
+  await supabaseRequest("study_plan_settings?on_conflict=student_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify({
       student_id: cloudStudentId,
       parent_user_id: state.authProfile?.id || state.authSession.user.id,
       minutes_per_day: plan.minutes,
       focus_subject_id: focusSubjectId,
       goal: $("goalSelect").value || "summer",
-    },
-    { onConflict: "student_id" }
-  );
-  if (error) throw error;
+    }),
+  });
   setAuthStatus("学习计划已保存到云端。");
 }
 
 async function loadAuthProfile() {
-  if (!supabaseClient || !state.authSession?.user?.id) return;
-  const { data, error } = await supabaseClient
-    .from("user_profiles")
-    .select("id,display_name,role,student_id")
-    .eq("id", state.authSession.user.id)
-    .single();
-  if (error) throw error;
+  if (!state.authSession?.user?.id) return;
+  const profiles = await supabaseRequest(
+    `user_profiles?${new URLSearchParams({
+      select: "id,display_name,role,student_id",
+      id: `eq.${state.authSession.user.id}`,
+      limit: "1",
+    }).toString()}`,
+    { headers: { Prefer: "" } }
+  );
+  const data = profiles?.[0];
+  if (!data) throw new Error("No profile found for current user.");
 
   applyProfileToLocalState(data);
   if (data.role === "parent") {
-    await supabaseClient.rpc("ensure_family_links");
+    await supabaseRpc("ensure_family_links");
   }
   await loadFamilyStudentsFromCloud();
   await loadPlanSettingsFromCloud();
@@ -1301,13 +1352,13 @@ async function loadAuthProfile() {
 }
 
 async function initAuth() {
-  if (!supabaseClient) {
-    setAuthStatus("Supabase 登录组件还没有载入，请刷新页面后再试。");
-    return;
+  if (supabaseClient) {
+    const { data } = await supabaseClient.auth.getSession();
+    persistAuthSession(data.session || null);
+  } else {
+    persistAuthSession(loadPersistedAuthSession());
   }
 
-  const { data } = await supabaseClient.auth.getSession();
-  state.authSession = data.session || null;
   if (state.authSession) {
     try {
       await loadAuthProfile();
@@ -1320,8 +1371,9 @@ async function initAuth() {
     renderAuthGate();
   }
 
+  if (!supabaseClient) return;
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-    state.authSession = session;
+    persistAuthSession(session);
     if (!session) {
       state.authProfile = null;
       state.cloudStudents = {};
@@ -1340,7 +1392,6 @@ async function initAuth() {
 }
 
 async function signInWithPassword() {
-  if (!supabaseClient) return;
   const email = $("authEmail").value.trim();
   const password = $("authPassword").value;
   if (!email || !password) {
@@ -1348,16 +1399,27 @@ async function signInWithPassword() {
     return;
   }
   setAuthStatus("正在登录...");
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) {
+  try {
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      persistAuthSession(data.session || null);
+    } else {
+      const data = await authRequest("token?grant_type=password", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      persistAuthSession(data);
+    }
+    setAuthStatus("登录成功，正在读取学习资料...");
+    await loadAuthProfile();
+  } catch (error) {
+    console.error(error);
     setAuthStatus(`登录失败：${error.message}`);
-    return;
   }
-  setAuthStatus("登录成功，正在读取学习资料...");
 }
 
 async function signUp() {
-  if (!supabaseClient) return;
   const email = $("authEmail").value.trim();
   const password = $("authPassword").value;
   if (!email || !password) {
@@ -1367,31 +1429,65 @@ async function signUp() {
 
   setAuthStatus("正在注册...");
   const profile = inferSignupProfile(email);
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        role: profile.role,
-        display_name: profile.displayName,
-        student_name: profile.studentName,
-      },
-    },
-  });
-  if (error) {
+  try {
+    let data;
+    if (supabaseClient) {
+      const result = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: profile.role,
+            display_name: profile.displayName,
+            student_name: profile.studentName,
+          },
+        },
+      });
+      if (result.error) throw result.error;
+      data = result.data;
+      persistAuthSession(data.session || null);
+    } else {
+      data = await authRequest("signup", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          data: {
+            role: profile.role,
+            display_name: profile.displayName,
+            student_name: profile.studentName,
+          },
+        }),
+      });
+      persistAuthSession(data?.access_token ? data : data?.session || null);
+    }
+    if (!state.authSession) {
+      setAuthStatus("注册已提交。若 Supabase 要求邮件验证，请先打开邮箱确认。");
+      return;
+    }
+    setAuthStatus("注册成功，正在读取学习资料...");
+    await loadAuthProfile();
+  } catch (error) {
+    console.error(error);
     setAuthStatus(`注册失败：${error.message}`);
-    return;
   }
-  if (!data.session) {
-    setAuthStatus("注册已提交。若 Supabase 要求邮件验证，请先打开邮箱确认。");
-    return;
-  }
-  setAuthStatus("注册成功，正在读取学习资料...");
 }
 
 async function signOut() {
-  if (!supabaseClient) return;
-  await supabaseClient.auth.signOut();
+  try {
+    if (supabaseClient) {
+      await supabaseClient.auth.signOut();
+    } else if (state.authSession?.access_token) {
+      await authRequest("logout", { method: "POST" });
+    }
+  } catch (error) {
+    console.warn(error);
+  }
+  persistAuthSession(null);
+  state.authProfile = null;
+  state.cloudStudents = {};
+  setAuthStatus("已退出登录。");
+  renderAll();
 }
 
 function activeStudent() {

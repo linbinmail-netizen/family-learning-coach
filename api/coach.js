@@ -44,6 +44,42 @@ export function extractOpenAIText(data) {
   ).trim();
 }
 
+export function detectNeedsTeaching(studentReply = "") {
+  const reply = String(studentReply).toLowerCase();
+  return [
+    "不懂",
+    "不会",
+    "不知道",
+    "什么意思",
+    "没学过",
+    "看不懂",
+    "不明白",
+    "乱猜",
+    "don't understand",
+    "do not understand",
+    "dont understand",
+    "i don't know",
+    "i dont know",
+    "idk",
+    "confused",
+    "what does",
+    "what is",
+  ].some((signal) => reply.includes(signal));
+}
+
+function buildTeachingNote({ subject, skill, explanation }) {
+  const concept = skill || "这个知识点";
+  const base = explanation || `${concept} 是解这类题时要先弄清楚的核心概念。`;
+  return [
+    `如果学生概念不清，先进入“教练式讲解”模式。`,
+    `用 1 句短讲解说明 ${concept}，语言适合 ${subject || "当前学科"} 学生。`,
+    `再给 1 个小例子或正反对比，但不要用题目中的正确选项当例子。`,
+    `最后再问一个问题，把学生带回当前题目。`,
+    `仍然不要直接说出正确选项、答案字母或最终答案。`,
+    `可参考但不要照抄的教师说明：${base}`,
+  ].join("\n");
+}
+
 export function buildTutorRequest(body = {}) {
   const {
     studentName,
@@ -58,6 +94,7 @@ export function buildTutorRequest(body = {}) {
     history = [],
   } = body;
   const step = getLearningStep(history);
+  const needsTeaching = detectNeedsTeaching(studentReply);
 
   return {
     model: process.env.OPENAI_MODEL || "gpt-5-mini",
@@ -70,8 +107,11 @@ export function buildTutorRequest(body = {}) {
       "Guide with this five-step routine: 理解题意 → 找关键词 → 排除错误选项 → 写一句理由 → 总结方法.",
       "Ask exactly one short question at a time.",
       "If the student is stuck, give one small hint, then ask the student to try.",
+      "If the student is conceptually confused, teach briefly before asking again.",
+      "教练式讲解格式：小讲解：... 例子：... 回到这题：...？",
       "Keep the reply under 110 Chinese characters.",
       `Current step: ${step.label}. ${step.instruction}`,
+      needsTeaching ? buildTeachingNote({ subject, skill, explanation }) : "",
     ].join("\n"),
     input: [
       {
@@ -89,10 +129,11 @@ export function buildTutorRequest(body = {}) {
               teacherExplanationForInternalUseOnly: explanation,
               availableHints: coachHints,
               currentStep: step,
+              needsTeaching,
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward in the currentStep. Do not reveal the correct answer. Do not solve the problem for the student.",
+                "Move the student one step forward. If needsTeaching is true, give a short explanation plus a tiny example before asking one follow-up question. Do not reveal the correct answer.",
             }),
           },
         ],
@@ -104,6 +145,15 @@ export function buildTutorRequest(body = {}) {
 export function buildFallbackReply(body = {}) {
   const step = getLearningStep(body.history || []);
   const hints = body.coachHints || [];
+  const needsTeaching = detectNeedsTeaching(body.studentReply || "");
+
+  if (needsTeaching) {
+    const skill = body.skill || "这个知识点";
+    const shortExplanation =
+      body.explanation ||
+      `${skill} 是这类题里帮助你判断方向的核心概念，不是让你先猜答案。`;
+    return `小讲解：${shortExplanation} 例子：先分清“主想法”和“细节”。回到这题：题目要你找哪一类信息？`;
+  }
 
   if (step.id === "understand" && hints[0]) {
     return `${hints[0]} 先不用选答案，请用自己的话说说题目真正问什么。`;

@@ -1068,11 +1068,16 @@ function appendChat(role, text) {
 }
 
 async function askAiCoach(studentReply) {
+  const question = activeQuestions()[state.currentQuestion];
   const payload = {
     studentName: activeStudent().name,
     grade: state.grade,
     subject: activeSubject().label,
-    question: activeQuestions()[state.currentQuestion]?.prompt,
+    question: question?.prompt,
+    answers: question?.answers || [],
+    skill: question?.skill || activeDiagnostic().skills[0][0],
+    explanation: question?.explanation || "",
+    coachHints: question?.coachHints || [],
     studentReply,
     history: state.chatHistory,
   };
@@ -1095,19 +1100,19 @@ function buildLocalCoachReply(studentReply) {
 
   if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
     return {
-      reply: `${hints[0] || "先把题目中的关键词圈出来。"} 你不用选答案，先告诉我：题目给了哪些已知条件？`,
+      reply: `${hints[0] || "先把题目中的关键词圈出来。"} 先不用选答案，请用自己的话说说题目真正问什么。`,
     };
   }
 
   if (studentTurns <= 1) {
     return {
-      reply: `${hints[0] || "方向不错。"} 下一步，请找出一个关键词，并说明它为什么重要。`,
+      reply: `${hints[0] || "方向不错。"} 下一步找一个关键词，并说明它为什么重要。`,
     };
   }
 
   if (studentTurns === 2) {
     return {
-      reply: `${hints[1] || "很好，继续缩小范围。"} 现在你能排除哪一个选项？说出理由，不要只说字母。`,
+      reply: `${hints[1] || "很好，继续缩小范围。"} 现在先排除一个不合理选项，并说出理由。`,
     };
   }
 

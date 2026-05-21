@@ -1,3 +1,125 @@
+const learningSteps = [
+  {
+    id: "understand",
+    label: "理解题意",
+    instruction: "让学生用自己的话说出题目真正问什么，不要讨论选项对错。",
+    fallback: "我们先从题意开始。你能用自己的话说说：这道题真正问你找什么吗？",
+  },
+  {
+    id: "keywords",
+    label: "找关键词",
+    instruction: "让学生指出题干里的关键词，并解释这个关键词为什么重要。",
+    fallback: "很好，下一步找关键词。题目里哪个词最能提醒你要用这个知识点？为什么？",
+  },
+  {
+    id: "eliminate",
+    label: "排除错误选项",
+    instruction: "让学生排除一个明显不符合题意的选项，并说出理由。不要说正确选项。",
+    fallback: "现在先不选最终答案。你能排除一个不符合题意的选项吗？请说出理由。",
+  },
+  {
+    id: "reason",
+    label: "写一句理由",
+    instruction: "让学生用“因为...所以...”写出选择依据，但不要替学生完成句子。",
+    fallback: "接近了。请用一句话写理由：因为题目问的是____，所以我认为____更合适。",
+  },
+  {
+    id: "reflect",
+    label: "总结方法",
+    instruction: "让学生总结下次遇到同类题时的第一步方法。",
+    fallback: "最后做一个方法总结：下次遇到同类题，你第一步会先做什么？",
+  },
+];
+
+export function getLearningStep(history = []) {
+  const studentTurns = history.filter((message) => message.role === "student").length;
+  return learningSteps[Math.min(studentTurns, learningSteps.length - 1)];
+}
+
+export function extractOpenAIText(data) {
+  return (
+    data.output_text ||
+    data.output?.flatMap((item) => item.content || []).find((item) => item.text)?.text ||
+    ""
+  ).trim();
+}
+
+export function buildTutorRequest(body = {}) {
+  const {
+    studentName,
+    grade,
+    subject,
+    question,
+    answers = [],
+    skill,
+    explanation,
+    coachHints = [],
+    studentReply,
+    history = [],
+  } = body;
+  const step = getLearningStep(history);
+
+  return {
+    model: process.env.OPENAI_MODEL || "gpt-5-mini",
+    instructions: [
+      "You are a Socratic learning coach for a middle/high school student in Texas.",
+      "Reply in simplified Chinese unless the student clearly asks to practice English.",
+      "Use the student's name naturally, but not in every sentence.",
+      "Do not directly say the correct option, answer letter, or final answer.",
+      "不要直接说出正确选项、答案字母或最终答案。",
+      "Guide with this five-step routine: 理解题意 → 找关键词 → 排除错误选项 → 写一句理由 → 总结方法.",
+      "Ask exactly one short question at a time.",
+      "If the student is stuck, give one small hint, then ask the student to try.",
+      "Keep the reply under 110 Chinese characters.",
+      `Current step: ${step.label}. ${step.instruction}`,
+    ].join("\n"),
+    input: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: JSON.stringify({
+              studentName,
+              grade,
+              subject,
+              currentQuestion: question,
+              answerChoices: answers,
+              targetSkill: skill,
+              teacherExplanationForInternalUseOnly: explanation,
+              availableHints: coachHints,
+              currentStep: step,
+              recentHistory: history.slice(-8),
+              studentReply,
+              task:
+                "Move the student one step forward in the currentStep. Do not reveal the correct answer. Do not solve the problem for the student.",
+            }),
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function buildFallbackReply(body = {}) {
+  const step = getLearningStep(body.history || []);
+  const hints = body.coachHints || [];
+
+  if (step.id === "understand" && hints[0]) {
+    return `${hints[0]} 先不用选答案，请用自己的话说说题目真正问什么。`;
+  }
+
+  if (step.id === "keywords" && hints[0]) {
+    return `${hints[0]} 现在找一个关键词，并说说它为什么重要。`;
+  }
+
+  if (step.id === "eliminate" && hints[1]) {
+    return `${hints[1]} 先排除一个不合理选项，并说出理由。`;
+  }
+
+  return step.fallback;
+}
+
 export default async function handler(request, response) {
   if (request.method !== "POST") {
     response.status(405).json({ error: "Method not allowed" });
@@ -14,7 +136,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { studentName, grade, subject, question, studentReply, history = [] } = request.body || {};
+    const tutorRequest = buildTutorRequest(request.body || {});
 
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -22,37 +144,7 @@ export default async function handler(request, response) {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-5-mini",
-        instructions: [
-          "You are a Socratic learning coach for a middle/high school student in Texas.",
-          "Do not directly reveal the final answer unless the student has already reasoned through the key step.",
-          "Use short, warm, age-appropriate prompts.",
-          "Ask one question at a time.",
-          "If the student is stuck, give a small hint and ask them to try again.",
-          "Keep responses under 90 Chinese characters unless a brief explanation is necessary.",
-          "Reply in simplified Chinese unless the student writes in English and asks to practice English.",
-        ].join("\n"),
-        input: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "input_text",
-                text: JSON.stringify({
-                  studentName,
-                  grade,
-                  subject,
-                  currentQuestion: question,
-                  recentHistory: history.slice(-6),
-                  studentReply,
-                  task: "Guide the student one step forward without giving the final answer directly.",
-                }),
-              },
-            ],
-          },
-        ],
-      }),
+      body: JSON.stringify(tutorRequest),
     });
 
     if (!openaiResponse.ok) {
@@ -61,16 +153,12 @@ export default async function handler(request, response) {
     }
 
     const data = await openaiResponse.json();
-    const reply =
-      data.output_text ||
-      data.output?.flatMap((item) => item.content || []).find((item) => item.text)?.text ||
-      "我们先慢一点。你能用自己的话说说题目问的是什么吗？";
+    const reply = extractOpenAIText(data) || buildFallbackReply(request.body || {});
 
     response.status(200).json({ reply });
   } catch (error) {
     response.status(200).json({
-      reply:
-        "AI 暂时没有连上。我先继续引导你：请找出题目里的关键词，并说说它排除了哪个选项。",
+      reply: buildFallbackReply(request.body || {}),
       detail: error.message,
     });
   }

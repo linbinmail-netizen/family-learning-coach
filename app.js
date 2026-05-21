@@ -183,6 +183,323 @@ const diagnostics = {
   },
 };
 
+const localQuestionBank = {
+  math7: [
+    {
+      prompt: "A store sells 3 notebooks for $7.50. What is the unit price per notebook?",
+      standard: "Grade 7 Math: Unit Rate",
+      difficulty: "基础",
+      answers: ["$2.50", "$4.50", "$7.50", "$22.50"],
+      correct: 0,
+      skill: "单位率",
+      explanation: "Unit price means the cost for one item, so divide total cost by the number of items.",
+      coachHints: ["What does 'per notebook' mean?", "Which operation changes 3 notebooks into 1 notebook?"],
+    },
+    {
+      prompt: "A recipe uses 2 cups of flour for 5 servings. How many cups are needed for 15 servings?",
+      standard: "Grade 7 Math: Proportional Reasoning",
+      difficulty: "中等",
+      answers: ["4 cups", "6 cups", "7 cups", "10 cups"],
+      correct: 1,
+      skill: "比例与百分比",
+      explanation: "15 servings is 3 times 5 servings, so the flour amount is also multiplied by 3.",
+      coachHints: ["How many groups of 5 are in 15?", "If servings triple, what should happen to the flour?"],
+    },
+    {
+      prompt: "A bank account changes by -$18, then +$25. What is the net change?",
+      standard: "Grade 7 Math: Rational Number Operations",
+      difficulty: "基础",
+      answers: ["-$43", "-$7", "+$7", "+$43"],
+      correct: 2,
+      skill: "有理数运算",
+      explanation: "Combine the negative and positive changes: -18 + 25 = 7.",
+      coachHints: ["Which change is bigger in size: 18 or 25?", "After paying back 18, how much of 25 is left?"],
+    },
+  ],
+  rla7: [
+    {
+      prompt: "A character says one thing but does the opposite. What should you analyze first?",
+      standard: "Grade 7 RLA: Character Analysis",
+      difficulty: "中等",
+      answers: ["The conflict between words and actions", "The number of paragraphs", "The page number", "The title font"],
+      correct: 0,
+      skill: "人物分析",
+      explanation: "A contradiction between words and actions often reveals motivation or conflict.",
+      coachHints: ["What changed between what the character said and what they did?", "What might that contradiction reveal?"],
+    },
+    {
+      prompt: "Which evidence best supports a theme about perseverance?",
+      standard: "Grade 7 RLA: Theme and Evidence",
+      difficulty: "中等",
+      answers: ["A character keeps practicing after repeated failures", "The setting is described in detail", "A chapter has many short sentences", "The story has three characters"],
+      correct: 0,
+      skill: "文本证据",
+      explanation: "Theme evidence should connect directly to the lesson or message of the text.",
+      coachHints: ["What does perseverance mean?", "Which choice shows someone not giving up?"],
+    },
+  ],
+  science7: [
+    {
+      prompt: "In a food web, what would most likely happen if a major producer disappeared?",
+      standard: "Grade 7 Science: Ecosystems",
+      difficulty: "中等",
+      answers: ["Some consumers would have less energy available", "All animals would immediately increase", "Water would stop evaporating", "Gravity would change"],
+      correct: 0,
+      skill: "食物网与能量",
+      explanation: "Producers bring energy into many food webs, so consumers depend on them directly or indirectly.",
+      coachHints: ["Where does energy usually enter a food web?", "Who depends on producers for food?"],
+    },
+    {
+      prompt: "A student changes the amount of sunlight plants receive. What is the independent variable?",
+      standard: "Grade 7 Science: Investigation",
+      difficulty: "基础",
+      answers: ["Amount of sunlight", "Plant height", "Type of graph", "Conclusion sentence"],
+      correct: 0,
+      skill: "变量识别",
+      explanation: "The independent variable is what the student changes on purpose.",
+      coachHints: ["What did the student intentionally change?", "Which variable is being tested?"],
+    },
+  ],
+  preAlgebra: [
+    {
+      prompt: "Which expression represents 'five less than twice a number'?",
+      standard: "Pre-Algebra: Expressions",
+      difficulty: "基础",
+      answers: ["2x - 5", "5 - 2x", "2(x - 5)", "x/2 - 5"],
+      correct: 0,
+      skill: "文字转符号",
+      explanation: "Twice a number is 2x, and five less than that means subtract 5.",
+      coachHints: ["What does 'twice a number' become?", "From what quantity are you subtracting 5?"],
+    },
+    {
+      prompt: "Solve x/4 = 6. What operation isolates x?",
+      standard: "Pre-Algebra: One-Step Equations",
+      difficulty: "基础",
+      answers: ["Multiply both sides by 4", "Divide both sides by 4", "Subtract 4", "Add 6"],
+      correct: 0,
+      skill: "方程准备",
+      explanation: "The inverse of dividing by 4 is multiplying by 4.",
+      coachHints: ["What is happening to x right now?", "What is the inverse operation?"],
+    },
+  ],
+  math8: [
+    {
+      prompt: "A line passes through (0, 2) and (3, 8). What is its slope?",
+      standard: "Grade 8 Math: Slope",
+      difficulty: "中等",
+      answers: ["2", "3", "6", "8"],
+      correct: 0,
+      skill: "斜率概念",
+      explanation: "Slope is change in y divided by change in x: (8 - 2) / (3 - 0) = 2.",
+      coachHints: ["What is the change in y?", "What is the change in x?"],
+    },
+    {
+      prompt: "Which equation represents a proportional relationship?",
+      standard: "Grade 8 Math: Proportional Relationships",
+      difficulty: "基础",
+      answers: ["y = 4x", "y = 4x + 1", "y = x - 4", "y = 4"],
+      correct: 0,
+      skill: "比例关系",
+      explanation: "A proportional relationship has the form y = kx and passes through the origin.",
+      coachHints: ["What form does a proportional equation usually have?", "Which choice has no added or subtracted constant?"],
+    },
+    {
+      prompt: "A right triangle has legs 6 and 8. What is the hypotenuse?",
+      standard: "Grade 8 Math: Pythagorean Theorem",
+      difficulty: "中等",
+      answers: ["10", "12", "14", "48"],
+      correct: 0,
+      skill: "多步文字题",
+      explanation: "Use a^2 + b^2 = c^2: 36 + 64 = 100, so c = 10.",
+      coachHints: ["Which formula connects the legs and hypotenuse?", "What is 6 squared plus 8 squared?"],
+    },
+  ],
+  rla8: [
+    {
+      prompt: "When comparing two arguments, what should you compare first?",
+      standard: "Grade 8 RLA: Compare Texts",
+      difficulty: "中等",
+      answers: ["Each author's claim and evidence", "The number of commas", "The article length only", "The publication year only"],
+      correct: 0,
+      skill: "证据比较",
+      explanation: "Argument comparison starts with what each author claims and how they support it.",
+      coachHints: ["What is each author trying to prove?", "What evidence does each author use?"],
+    },
+    {
+      prompt: "Which sentence would be strongest in a short constructed response?",
+      standard: "Grade 8 RLA: Written Response",
+      difficulty: "中等",
+      answers: ["The text shows this when the narrator says, 'I kept trying.'", "I just think it is true.", "The story is long.", "The author is probably nice."],
+      correct: 0,
+      skill: "短文写作",
+      explanation: "A strong response uses a claim plus specific text evidence.",
+      coachHints: ["Which choice points to exact text evidence?", "Which choice can be proven from the passage?"],
+    },
+  ],
+  science8: [
+    {
+      prompt: "A graph shows temperature rising while gas particles move faster. What idea does this support?",
+      standard: "Grade 8 Science: Matter and Energy",
+      difficulty: "中等",
+      answers: ["Temperature is related to particle motion", "Particles stop moving when heated", "Mass disappears", "Gravity gets weaker"],
+      correct: 0,
+      skill: "数据解释",
+      explanation: "Higher temperature is connected to faster particle motion.",
+      coachHints: ["What changes on the graph as temperature rises?", "What relationship is the graph showing?"],
+    },
+    {
+      prompt: "Why should a controlled experiment change only one variable at a time?",
+      standard: "Grade 8 Science: Experimental Design",
+      difficulty: "基础",
+      answers: ["So the cause of the result is clearer", "So the graph is colorful", "So the trial is shorter", "So no data is needed"],
+      correct: 0,
+      skill: "变量控制",
+      explanation: "Changing one variable helps connect the result to a specific cause.",
+      coachHints: ["If two things change at once, what becomes hard to know?", "What makes a conclusion reliable?"],
+    },
+  ],
+  algebraReady: [
+    {
+      prompt: "Solve 2x - 7 = 15. What should you do first?",
+      standard: "Algebra Readiness: Two-Step Equations",
+      difficulty: "基础",
+      answers: ["Add 7 to both sides", "Divide by 7", "Subtract 2", "Multiply by 15"],
+      correct: 0,
+      skill: "方程逆运算",
+      explanation: "Undo subtraction before undoing multiplication.",
+      coachHints: ["What operation is furthest from x?", "What inverse operation removes -7?"],
+    },
+    {
+      prompt: "Which table shows a constant rate of change?",
+      standard: "Algebra Readiness: Functions",
+      difficulty: "中等",
+      answers: ["x increases by 1 and y increases by 3 each time", "x increases by 1 and y changes by 2, 5, then 9", "x stays the same", "y has no pattern"],
+      correct: 0,
+      skill: "函数准备",
+      explanation: "A constant rate means y changes by the same amount for equal changes in x.",
+      coachHints: ["What does 'constant' mean?", "Which choice has the same y-change each step?"],
+    },
+  ],
+  english1: [
+    {
+      prompt: "Before choosing evidence for an answer, what should you identify?",
+      standard: "STAAR EOC English I",
+      difficulty: "基础",
+      answers: ["The longest sentence", "The central idea or claim", "The paragraph number", "The author name only"],
+      correct: 1,
+      skill: "识别中心观点",
+      explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+      coachHints: ["What is the question asking you to prove?", "Which idea will the evidence need to support?"],
+    },
+    {
+      prompt: "A question asks how the author creates a serious tone. What evidence is most useful?",
+      standard: "English I: Author's Craft",
+      difficulty: "中等",
+      answers: ["Words with strong or formal connotations", "The page number", "The author's birthday", "The title length"],
+      correct: 0,
+      skill: "分析作者意图",
+      explanation: "Tone is often created through word choice and connotation.",
+      coachHints: ["What does 'tone' describe?", "Which choice focuses on word choice?"],
+    },
+    {
+      prompt: "Which revision best improves clarity?",
+      standard: "English I: Revision",
+      difficulty: "中等",
+      answers: ["Replace a vague pronoun with the specific noun", "Add three unrelated adjectives", "Remove all transitions", "Make every sentence longer"],
+      correct: 0,
+      skill: "写作修订",
+      explanation: "Clear writing helps the reader know exactly who or what a sentence refers to.",
+      coachHints: ["What makes a sentence confusing?", "How can a specific noun help the reader?"],
+    },
+  ],
+  algebra1: [
+    {
+      prompt: "A line has slope 3 and y-intercept -2. Which equation matches?",
+      standard: "Algebra I: Linear Functions",
+      difficulty: "基础",
+      answers: ["y = 3x - 2", "y = -2x + 3", "y = x - 6", "y = 3x + 2"],
+      correct: 0,
+      skill: "线性方程建模",
+      explanation: "Slope-intercept form is y = mx + b, where m is slope and b is y-intercept.",
+      coachHints: ["What does m represent in y = mx + b?", "Where does the y-intercept go?"],
+    },
+    {
+      prompt: "Solve 4x + 6 = 22.",
+      standard: "Algebra I: Equations",
+      difficulty: "基础",
+      answers: ["x = 4", "x = 7", "x = 16", "x = 28"],
+      correct: 0,
+      skill: "解一元一次方程",
+      explanation: "Subtract 6, then divide by 4: 4x = 16, so x = 4.",
+      coachHints: ["What should you undo first?", "After subtracting 6, what equation remains?"],
+    },
+    {
+      prompt: "Two lines have slopes 2 and 2 but different y-intercepts. What is true?",
+      standard: "Algebra I: Systems",
+      difficulty: "中等",
+      answers: ["They are parallel and have no solution", "They intersect once", "They are the same line", "They are vertical"],
+      correct: 0,
+      skill: "函数图像解释",
+      explanation: "Same slope with different intercepts means parallel lines, so there is no intersection.",
+      coachHints: ["What does equal slope mean on a graph?", "If the intercepts differ, are the lines identical?"],
+    },
+  ],
+  geometry: [
+    {
+      prompt: "Two triangles have two pairs of corresponding angles congruent. What can you conclude?",
+      standard: "Geometry: Similarity",
+      difficulty: "中等",
+      answers: ["The triangles are similar", "The triangles must be congruent", "The triangles have equal area", "No conclusion is possible"],
+      correct: 0,
+      skill: "全等判定",
+      explanation: "AA similarity shows triangles have the same shape, but not necessarily the same size.",
+      coachHints: ["What does two equal angle pairs tell you about shape?", "Does similarity always mean same size?"],
+    },
+    {
+      prompt: "If two parallel lines are cut by a transversal, alternate interior angles are...",
+      standard: "Geometry: Angle Relationships",
+      difficulty: "基础",
+      answers: ["Congruent", "Always 90 degrees", "Supplementary only", "Unrelated"],
+      correct: 0,
+      skill: "角关系",
+      explanation: "Alternate interior angles are congruent when lines are parallel.",
+      coachHints: ["What special angle pairs appear with parallel lines?", "Are alternate interior angles equal or supplementary?"],
+    },
+  ],
+  biology: [
+    {
+      prompt: "Which structure controls what enters and leaves a cell?",
+      standard: "Biology: Cell Structure",
+      difficulty: "基础",
+      answers: ["Cell membrane", "Nucleus", "Ribosome", "Mitochondrion"],
+      correct: 0,
+      skill: "细胞结构功能",
+      explanation: "The cell membrane regulates materials moving into and out of the cell.",
+      coachHints: ["Which structure is the cell's boundary?", "What does 'controls enters and leaves' suggest?"],
+    },
+    {
+      prompt: "A trait appears more often after many generations because it helps survival. This is an example of...",
+      standard: "Biology: Evolution",
+      difficulty: "中等",
+      answers: ["Natural selection", "Osmosis", "Cell division", "Photosynthesis"],
+      correct: 0,
+      skill: "遗传基础",
+      explanation: "Natural selection can make helpful traits more common over generations.",
+      coachHints: ["What happens to helpful traits over generations?", "Which choice explains survival advantage?"],
+    },
+    {
+      prompt: "Plants convert light energy into chemical energy mainly through...",
+      standard: "Biology: Energy Flow",
+      difficulty: "基础",
+      answers: ["Photosynthesis", "Respiration only", "Diffusion", "Mitosis"],
+      correct: 0,
+      skill: "能量转化",
+      explanation: "Photosynthesis stores light energy as chemical energy in sugars.",
+      coachHints: ["What process uses light?", "What kind of energy is stored in sugar?"],
+    },
+  ],
+};
+
 let state = {
   studentId: "older",
   grade: "9",
@@ -303,8 +620,21 @@ function activeDiagnostic() {
   return diagnostics[state.subject];
 }
 
+function mergeQuestions(primary = [], secondary = []) {
+  const seen = new Set();
+  return [...primary, ...secondary].filter((question) => {
+    const key = question.prompt.trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function activeQuestions() {
-  if (state.cloudQuestions[state.subject]?.length) return state.cloudQuestions[state.subject];
+  const cloudQuestions = state.cloudQuestions[state.subject] || [];
+  const localQuestions = localQuestionBank[state.subject] || [];
+  if (cloudQuestions.length || localQuestions.length) return mergeQuestions(cloudQuestions, localQuestions);
+
   const diagnostic = activeDiagnostic();
   if (diagnostic.questions) return diagnostic.questions;
   const strongest = diagnostic.skills.reduce((best, skill) => (skill[1] > best[1] ? skill : best), diagnostic.skills[0]);
@@ -315,8 +645,10 @@ function activeQuestions() {
       standard: diagnostic.standard,
       difficulty: diagnostic.difficulty,
       answers: diagnostic.answers,
-      correct: 1,
+      correct: 0,
       skill: diagnostic.skills[0][0],
+      explanation: "先判断题目考查的核心概念，再选择最符合题意的答案。",
+      coachHints: ["题目真正让你找什么？", "哪一个选项直接回答了这个问题？"],
     },
     {
       prompt: `如果要提高“${weakest[0]}”，学生最应该先做哪件事？`,
@@ -445,7 +777,7 @@ function renderDiagnostic() {
   $("difficultyTag").textContent = question.difficulty;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
   $("questionPrompt").textContent = question.prompt;
-  $("dailySuggestion").textContent = `${student.name} 今天建议完成 ${subject.label} 诊断，并用 20 分钟复习最低掌握度的知识点。${state.cloudQuestions[state.subject]?.length ? " 当前使用云端题库。" : " 当前使用本地示例题。"}`;
+  $("dailySuggestion").textContent = `${student.name} 今天建议完成 ${subject.label} 诊断，并用 20 分钟复习最低掌握度的知识点。当前题组 ${questions.length} 题，包含云端题库与本地强化题。`;
 
   $("answerGrid").innerHTML = question.answers
     .map(
@@ -530,14 +862,19 @@ function buildReport() {
 
 function renderCoach() {
   const diagnostic = activeDiagnostic();
+  const question = activeQuestions()[state.currentQuestion];
   state.chatHistory = [
     {
       role: "coach",
-      text: "我们先不急着选答案。请你先说说：这道题真正问的是什么？",
+      text: "我们先不急着选答案。第一步，请你用自己的话说：这道题真正问的是什么？",
     },
     {
       role: "coach",
-      text: activeQuestions()[state.currentQuestion]?.prompt || diagnostic.prompt,
+      text: question?.prompt || diagnostic.prompt,
+    },
+    {
+      role: "coach",
+      text: `这题主要练习：${question?.skill || diagnostic.skills[0][0]}。我会提示你思路，但不会直接报答案。`,
     },
   ];
   $("chatWindow").innerHTML = `
@@ -569,6 +906,41 @@ async function askAiCoach(studentReply) {
 
   if (!response.ok) throw new Error("AI coach request failed");
   return response.json();
+}
+
+function buildLocalCoachReply(studentReply) {
+  const question = activeQuestions()[state.currentQuestion];
+  const reply = studentReply.toLowerCase();
+  const studentTurns = state.chatHistory.filter((message) => message.role === "student").length;
+  const hints = question?.coachHints || [];
+
+  if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
+    return {
+      reply: `${hints[0] || "先把题目中的关键词圈出来。"} 你不用选答案，先告诉我：题目给了哪些已知条件？`,
+    };
+  }
+
+  if (studentTurns <= 1) {
+    return {
+      reply: `${hints[0] || "方向不错。"} 下一步，请找出一个关键词，并说明它为什么重要。`,
+    };
+  }
+
+  if (studentTurns === 2) {
+    return {
+      reply: `${hints[1] || "很好，继续缩小范围。"} 现在你能排除哪一个选项？说出理由，不要只说字母。`,
+    };
+  }
+
+  if (studentTurns === 3) {
+    return {
+      reply: "现在请你写一句完整理由：因为题目问的是____，所以我选择____。先写理由，再最后选答案。",
+    };
+  }
+
+  return {
+    reply: `你的思路已经接近完成。最后检查一次：这个答案是否直接回应了“${question?.skill || "这个知识点"}”？如果是，请用一句话总结方法。`,
+  };
 }
 
 function renderEmail(average = "--", weak = [], plan = []) {
@@ -691,7 +1063,7 @@ function bindEvents() {
       .catch(() => {
         state.chatHistory.pop();
         $("chatWindow").lastElementChild.remove();
-        appendChat("coach", "很好。现在请你找一个关键词或已知条件。它能帮助你排除哪个选项？先说明理由，再考虑答案。");
+        appendChat("coach", buildLocalCoachReply(reply).reply);
       });
   });
 

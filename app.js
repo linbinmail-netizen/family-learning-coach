@@ -1327,6 +1327,7 @@ async function savePlanSettingsToCloud(studentId) {
 
 async function loadAuthProfile() {
   if (!state.authSession?.user?.id) return;
+  await supabaseRpc("ensure_my_profile");
   const profiles = await supabaseRequest(
     `user_profiles?${new URLSearchParams({
       select: "id,display_name,role,student_id",

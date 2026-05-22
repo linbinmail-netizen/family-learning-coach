@@ -1108,8 +1108,8 @@ let state = {
   adaptiveLevels: {},
   adaptiveStats: {},
   planSettings: {
-    older: { minutes: 30, focusSubject: "english1" },
-    younger: { minutes: 30, focusSubject: "math8" },
+    older: { minutes: 30, questionTarget: 8, difficultyMode: "adaptive", focusSubject: "english1" },
+    younger: { minutes: 30, questionTarget: 8, difficultyMode: "adaptive", focusSubject: "math8" },
   },
 };
 
@@ -1611,7 +1611,29 @@ function defaultSubjectForStudent(studentId) {
 
 function planForStudent(studentId) {
   const fallbackSubject = defaultSubjectForStudent(studentId);
-  return state.planSettings[studentId] || { minutes: 30, focusSubject: fallbackSubject };
+  return {
+    minutes: 30,
+    questionTarget: 8,
+    difficultyMode: "adaptive",
+    focusSubject: fallbackSubject,
+    ...(state.planSettings[studentId] || {}),
+  };
+}
+
+function difficultyModeLabel(mode = "adaptive") {
+  if (mode === "steady") return "稳扎稳打";
+  if (mode === "challenge") return "挑战拔高";
+  return "自动调整";
+}
+
+function applyDifficultyMode(studentId, subjectId) {
+  const plan = planForStudent(studentId);
+  if (plan.difficultyMode === "steady") {
+    state.adaptiveLevels[subjectId] = Math.min(adaptiveLevelForSubject(subjectId), 1);
+  }
+  if (plan.difficultyMode === "challenge") {
+    state.adaptiveLevels[subjectId] = Math.max(adaptiveLevelForSubject(subjectId), 2);
+  }
 }
 
 function todayRecordForStudent(studentName) {
@@ -1622,16 +1644,15 @@ function todayRecordForStudent(studentName) {
 function buildDailyTasks(student = activeStudent()) {
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subjects[student.grade][0];
-  const questions = activeQuestions();
   const answeredCount = Object.keys(state.selectedAnswers).length;
-  const targetQuestions = Math.max(4, Math.min(10, Math.round(plan.minutes / 5)));
+  const targetQuestions = plan.questionTarget || Math.max(4, Math.min(10, Math.round(plan.minutes / 5)));
   const done = Math.min(answeredCount, targetQuestions);
   const report = todayRecordForStudent(student.name);
 
   return [
     {
       title: `${focusSubject.label} 诊断练习`,
-      detail: `完成 ${targetQuestions} 道题，先找出今天最需要补的知识点。`,
+      detail: `完成 ${targetQuestions} 道题，难度策略：${difficultyModeLabel(plan.difficultyMode)}。`,
       done,
       total: targetQuestions,
     },
@@ -1724,6 +1745,7 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
 }
 
 function activeQuestions() {
+  applyDifficultyMode(state.studentId, state.subject);
   const cloudQuestions = state.cloudQuestions[state.subject] || [];
   const localQuestions = localQuestionBank[state.subject] || [];
   const expandedQuestions = expandedQuestionBank[state.subject] || [];
@@ -1886,7 +1908,7 @@ function renderTodayPlan() {
 
   $("todayTitle").textContent = `${student.name} 今日学习任务`;
   $("todayMinutes").textContent = `${plan.minutes} 分钟`;
-  $("todayFocus").textContent = `重点：${focusSubject.label}`;
+  $("todayFocus").textContent = `重点：${focusSubject.label} · ${plan.questionTarget || 8} 题 · ${difficultyModeLabel(plan.difficultyMode)}`;
   $("todayProgress").textContent = `${completed} / ${total}`;
   $("todayProgressBar").style.width = `${percent}%`;
   $("todayEncouragement").textContent =
@@ -1926,6 +1948,8 @@ function renderParentPlanControls() {
   const selectedStudent = students.find((student) => student.id === $("planStudent").value) || activeStudent();
   const plan = planForStudent(selectedStudent.id);
   $("planMinutes").value = String(plan.minutes);
+  $("planQuestionTarget").value = String(plan.questionTarget || 8);
+  $("planDifficultyMode").value = plan.difficultyMode || "adaptive";
   $("planFocusSubject").innerHTML = subjects[selectedStudent.grade]
     .map((subject) => `<option value="${subject.id}" ${subject.id === plan.focusSubject ? "selected" : ""}>${subject.label}</option>`)
     .join("");
@@ -1984,11 +2008,14 @@ async function saveParentPlanSettings() {
   const student = students.find((item) => item.id === studentId) || activeStudent();
   state.planSettings[studentId] = {
     minutes: Number($("planMinutes").value),
+    questionTarget: Number($("planQuestionTarget").value),
+    difficultyMode: $("planDifficultyMode").value,
     focusSubject: $("planFocusSubject").value,
   };
 
   if (state.studentId === studentId) {
     state.subject = state.planSettings[studentId].focusSubject;
+    applyDifficultyMode(studentId, state.subject);
   }
 
   saveData();
@@ -2298,6 +2325,7 @@ function bindEvents() {
     state.studentId = event.target.value;
     state.grade = activeStudent().grade;
     state.subject = planForStudent(state.studentId).focusSubject || subjects[state.grade][0].id;
+    applyDifficultyMode(state.studentId, state.subject);
     renderSelectors();
     renderParentPlanControls();
     renderTodayPlan();

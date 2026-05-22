@@ -23,9 +23,20 @@ test("student daily task view exists", () => {
 test("parent can adjust study plan settings", () => {
   assert.match(html, /id="parentPlanForm"/);
   assert.match(html, /id="planMinutes"/);
+  assert.match(html, /id="planQuestionTarget"/);
+  assert.match(html, /id="planDifficultyMode"/);
   assert.match(html, /id="planFocusSubject"/);
   assert.match(js, /saveParentPlanSettings/);
   assert.match(js, /renderParentPlanControls/);
+});
+
+test("parent plan controls shape the student daily task", () => {
+  assert.match(js, /questionTarget/);
+  assert.match(js, /difficultyMode/);
+  assert.match(js, /difficultyModeLabel/);
+  assert.match(js, /applyDifficultyMode/);
+  assert.match(js, /plan\.questionTarget/);
+  assert.match(js, /plan\.difficultyMode/);
 });
 
 test("supabase auth sign in controls exist", () => {

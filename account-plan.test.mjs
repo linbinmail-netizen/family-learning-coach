@@ -48,6 +48,17 @@ test("mistake review can sync with Supabase", () => {
   assert.match(js, /syncMistakeLogToCloud/);
 });
 
+test("parent dashboard shows a weekly learning trend", () => {
+  assert.match(html, /id="weeklyTrend"/);
+  assert.match(html, /id="weeklyStats"/);
+  assert.match(html, /id="weeklyMistakes"/);
+  assert.match(html, /id="weeklyNextPlan"/);
+  assert.match(js, /buildWeeklyTrend/);
+  assert.match(js, /renderWeeklyTrend/);
+  assert.match(js, /本周学习趋势/);
+  assert.match(js, /高频错题知识点/);
+});
+
 test("parent can adjust study plan settings", () => {
   assert.match(html, /id="parentPlanForm"/);
   assert.match(html, /id="planMinutes"/);
@@ -73,6 +84,8 @@ test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="authForm"/);
   assert.match(html, /id="authEmail"/);
   assert.match(html, /id="authPassword"/);
+  assert.match(html, /id="signupRole"/);
+  assert.match(html, /id="signupStudent"/);
   assert.doesNotMatch(html, /id="authRole"/);
   assert.doesNotMatch(html, /id="authStudentName"/);
   assert.match(html, /id="signInButton"/);
@@ -102,6 +115,17 @@ test("auth state maps signed in users to parent or student views", () => {
   assert.match(js, /signOut/);
   assert.match(js, /token\?grant_type=password/);
   assert.match(js, /authRequest\("signup"/);
+});
+
+test("parent and student roles see different app areas", () => {
+  assert.match(js, /roleAllowedViews/);
+  assert.match(js, /applyRoleVisibility/);
+  assert.match(js, /signupRole/);
+  assert.match(js, /signupStudent/);
+  assert.match(js, /parentOnly/);
+  assert.match(js, /studentOnly/);
+  assert.match(js, /switchView\("parent"\)/);
+  assert.match(js, /switchView\("today"\)/);
 });
 
 test("parent plan settings can sync to Supabase after login", () => {

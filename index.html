@@ -25,11 +25,25 @@
             密码
             <input id="authPassword" type="password" autocomplete="current-password" placeholder="输入密码" />
           </label>
+          <label>
+            注册身份
+            <select id="signupRole">
+              <option value="parent">家长账号</option>
+              <option value="student">学生账号</option>
+            </select>
+          </label>
+          <label id="signupStudentWrap">
+            学生
+            <select id="signupStudent">
+              <option value="MIA">MIA</option>
+              <option value="EVA">EVA</option>
+            </select>
+          </label>
           <div class="auth-actions">
             <button class="primary-button" id="signInButton" type="submit">登录</button>
             <button class="secondary-button" id="signUpButton" type="button">注册</button>
           </div>
-          <p class="form-note" id="authStatus">登录后系统会自动进入家长、MIA 或 EVA 的学习界面。</p>
+          <p class="form-note" id="authStatus">登录后系统会自动进入对应的家长端或学生端。</p>
         </form>
       </div>
     </section>
@@ -50,7 +64,7 @@
           <button class="secondary-button full-width-button" id="signOutButton" type="button">退出</button>
         </section>
 
-        <section class="panel">
+        <section class="panel parentOnly">
           <h2>选择学生</h2>
           <div class="student-list" id="studentList"></div>
         </section>
@@ -84,12 +98,12 @@
 
       <section class="workspace">
         <nav class="top-tabs" aria-label="平台模块">
-          <button class="tab active" data-view="today">今日任务</button>
-          <button class="tab" data-view="diagnostic">诊断测试</button>
-          <button class="tab" data-view="report">掌握报告</button>
-          <button class="tab" data-view="coach">AI 引导</button>
-          <button class="tab" data-view="parent">家长日报</button>
-          <button class="tab" data-view="roadmap">建设路线</button>
+          <button class="tab studentOnly active" data-view="today">今日任务</button>
+          <button class="tab studentOnly" data-view="diagnostic">诊断测试</button>
+          <button class="tab studentOnly" data-view="report">掌握报告</button>
+          <button class="tab studentOnly" data-view="coach">AI 引导</button>
+          <button class="tab parentOnly" data-view="parent">家长日报</button>
+          <button class="tab parentOnly" data-view="roadmap">建设路线</button>
         </nav>
 
         <section class="view active" id="todayView">
@@ -259,6 +273,14 @@
             <button class="primary-button" type="submit">保存计划</button>
             <p class="form-note" id="planSaveStatus">家长可以根据报告调整孩子明天的时间和重点学科。</p>
           </form>
+          <section class="report-panel" id="weeklyTrend">
+            <h3>本周学习趋势</h3>
+            <div class="weekly-stats" id="weeklyStats"></div>
+            <h4>高频错题知识点</h4>
+            <ul id="weeklyMistakes"></ul>
+            <h4>下周学习建议</h4>
+            <p id="weeklyNextPlan">完成学习后自动生成。</p>
+          </section>
           <article class="email-preview" id="emailPreview"></article>
           <div class="report-panel activity-panel">
             <h3>本机学习记录</h3>

@@ -1122,6 +1122,10 @@ const supabaseConfig = {
   key: "sb_publishable_5-n_a32xrCbk9O4UtLB0eg_-XXr9L6c",
 };
 const supabaseClient = window.supabase?.createClient(supabaseConfig.url, supabaseConfig.key);
+const roleAllowedViews = {
+  parent: ["parent", "roadmap"],
+  student: ["today", "diagnostic", "report", "coach"],
+};
 
 function loadSavedData() {
   try {
@@ -1302,6 +1306,16 @@ function setAuthStatus(message) {
   if (accountStatus && state.authSession) accountStatus.textContent = currentAuthUserLabel();
 }
 
+function selectedSignupProfile() {
+  const role = $("signupRole")?.value || "parent";
+  const studentName = role === "student" ? $("signupStudent")?.value || "MIA" : "";
+  return {
+    role,
+    displayName: role === "student" ? studentName : "家长",
+    studentName,
+  };
+}
+
 function inferSignupProfile(email) {
   const localPart = String(email || "").split("@")[0].toLowerCase();
   if (localPart.includes("+mia") || localPart.endsWith(".mia")) {
@@ -1311,6 +1325,12 @@ function inferSignupProfile(email) {
     return { role: "student", displayName: "EVA", studentName: "EVA" };
   }
   return { role: "parent", displayName: "家长", studentName: "" };
+}
+
+function signupProfileForCurrentForm(email) {
+  const selected = selectedSignupProfile();
+  if (selected.role === "student") return selected;
+  return inferSignupProfile(email).role === "student" ? inferSignupProfile(email) : selected;
 }
 
 function applyProfileToLocalState(profile) {
@@ -1340,6 +1360,25 @@ function renderAuthGate() {
   const appShell = $("appShell");
   if (loginView) loginView.classList.toggle("hidden", signedIn);
   if (appShell) appShell.classList.toggle("authenticated", signedIn);
+}
+
+function viewAllowedForRole(viewName) {
+  const role = state.accountRole === "parent" ? "parent" : "student";
+  return roleAllowedViews[role].includes(viewName);
+}
+
+function applyRoleVisibility() {
+  const isParent = state.accountRole === "parent";
+  document.querySelectorAll(".parentOnly").forEach((item) => item.classList.toggle("role-hidden", !isParent));
+  document.querySelectorAll(".studentOnly").forEach((item) => item.classList.toggle("role-hidden", isParent));
+  const currentView = document.querySelector(".view.active")?.id?.replace("View", "");
+  if (!currentView || !viewAllowedForRole(currentView)) {
+    if (isParent) {
+      switchView("parent");
+    } else {
+      switchView("today");
+    }
+  }
 }
 
 async function loadFamilyStudentsFromCloud() {
@@ -1621,7 +1660,7 @@ async function signUp() {
   }
 
   setAuthStatus("正在注册...");
-  const profile = inferSignupProfile(email);
+  const profile = signupProfileForCurrentForm(email);
   try {
     let data;
     if (supabaseClient) {
@@ -2054,6 +2093,7 @@ function renderAuth() {
     $("accountStatus").textContent = currentAuthUserLabel();
     setAuthStatus(`已登录：${currentAuthUserLabel()}`);
   }
+  $("signupStudentWrap").style.display = $("signupRole").value === "student" ? "block" : "none";
   renderAuthGate();
 }
 
@@ -2312,6 +2352,7 @@ function buildReport() {
   const record = {
     id: crypto.randomUUID(),
     date: new Date().toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" }),
+    createdAt: new Date().toISOString(),
     student: student.name,
     grade: state.grade,
     subject: subject.label,
@@ -2355,6 +2396,7 @@ function buildReport() {
 
   renderEmail(average, weak, plan, insights, reportMistakes);
   renderActivity();
+  renderWeeklyTrend();
   renderCoach();
   switchView("report");
   saveReportToCloud(record, $("goalSelect").value).catch((error) => {
@@ -2476,6 +2518,80 @@ function renderEmail(average = "--", weak = [], plan = [], insights = null, mist
   `;
 }
 
+function recordTimestamp(record) {
+  if (record.createdAt) return Date.parse(record.createdAt);
+  if (record.date) {
+    const parsed = Date.parse(record.date);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return Date.now();
+}
+
+function isWithinLastWeek(timestamp) {
+  const oneWeek = 7 * 24 * 60 * 60 * 1000;
+  return Date.now() - timestamp <= oneWeek;
+}
+
+function topMistakeSkills(items) {
+  const counts = new Map();
+  items.forEach((item) => counts.set(item.skill, (counts.get(item.skill) || 0) + (item.attempts || 1)));
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+}
+
+function buildWeeklyTrend(studentId = state.studentId) {
+  const student = students.find((item) => item.id === studentId) || activeStudent();
+  const weeklyRecords = state.records.filter((record) => {
+    return record.student === student.name && isWithinLastWeek(recordTimestamp(record));
+  });
+  const weeklyMistakes = state.mistakeLog.filter((item) => {
+    const timestamp = item.lastMissedIso ? Date.parse(item.lastMissedIso) : Date.now();
+    return item.studentId === studentId && isWithinLastWeek(timestamp);
+  });
+  const averageScore = weeklyRecords.length
+    ? Math.round(weeklyRecords.reduce((sum, record) => sum + (record.score || 0), 0) / weeklyRecords.length)
+    : 0;
+  const completedQuestions = weeklyRecords.reduce((sum, record) => sum + (record.answered || 0), 0);
+  const correctQuestions = weeklyRecords.reduce((sum, record) => sum + (record.correct || 0), 0);
+  const accuracy = completedQuestions ? Math.round((correctQuestions / completedQuestions) * 100) : 0;
+  const frequentMistakes = topMistakeSkills(weeklyMistakes);
+  const weakestSkill = frequentMistakes[0]?.[0] || weeklyRecords.find((record) => record.weak?.length)?.weak?.[0] || "";
+
+  let nextPlan = "本周数据还不够，建议先完成 2 次诊断，系统再给出更稳定的下周计划。";
+  if (weeklyRecords.length >= 2 && accuracy >= 80 && frequentMistakes.length <= 1) {
+    nextPlan = "下周可以保持当前题量，并加入挑战题；重点训练解释理由和综合应用。";
+  } else if (weeklyRecords.length && weakestSkill) {
+    nextPlan = `下周优先复习 ${weakestSkill}，题量保持稳定，AI 先讲概念再让孩子复述。`;
+  } else if (weeklyRecords.length) {
+    nextPlan = "下周保持当前学习节奏，每次诊断后做 1 次错题复盘。";
+  }
+
+  return {
+    studentName: student.name,
+    sessions: weeklyRecords.length,
+    averageScore,
+    accuracy,
+    completedQuestions,
+    frequentMistakes,
+    nextPlan,
+  };
+}
+
+function renderWeeklyTrend() {
+  const trend = buildWeeklyTrend(state.studentId);
+  const weeklyTitle = "本周学习趋势";
+  const frequentMistakeTitle = "高频错题知识点";
+  $("weeklyStats").innerHTML = `
+    <div><strong>${trend.sessions}</strong><span>本周学习次数</span></div>
+    <div><strong>${trend.averageScore || "--"}${trend.averageScore ? "%" : ""}</strong><span>平均掌握度</span></div>
+    <div><strong>${trend.accuracy || "--"}${trend.accuracy ? "%" : ""}</strong><span>本周正确率</span></div>
+    <div><strong>${trend.completedQuestions}</strong><span>完成题目</span></div>
+  `;
+  $("weeklyMistakes").innerHTML = trend.frequentMistakes.length
+    ? trend.frequentMistakes.map(([skill, count]) => `<li><strong>${skill}</strong>：本周累计 ${count} 次，需要优先复习。</li>`).join("")
+    : `<li>${weeklyTitle}暂无${frequentMistakeTitle}。</li>`;
+  $("weeklyNextPlan").textContent = trend.nextPlan;
+}
+
 function renderActivity() {
   if (!state.records.length) {
     $("activityList").innerHTML = "<li>还没有学习记录。完成一次诊断后会自动保存。</li>";
@@ -2495,6 +2611,9 @@ function renderActivity() {
 }
 
 function switchView(viewName) {
+  if (!viewAllowedForRole(viewName)) {
+    viewName = state.accountRole === "parent" ? "parent" : "today";
+  }
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewName));
   document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
   $(`${viewName}View`).classList.add("active");
@@ -2508,6 +2627,7 @@ function bindEvents() {
 
   $("signUpButton").addEventListener("click", signUp);
   $("signOutButton").addEventListener("click", signOut);
+  $("signupRole").addEventListener("change", renderAuth);
 
   $("studentList").addEventListener("click", (event) => {
     if (state.accountRole === "student") return;
@@ -2580,7 +2700,10 @@ function bindEvents() {
   $("runDiagnostic").addEventListener("click", buildReport);
 
   document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => switchView(tab.dataset.view));
+    tab.addEventListener("click", () => {
+      if (tab.classList.contains("role-hidden")) return;
+      switchView(tab.dataset.view);
+    });
   });
 
   $("chatForm").addEventListener("submit", (event) => {
@@ -2637,6 +2760,8 @@ function renderAll() {
   renderEmail();
   renderCoach();
   renderParentPlanControls();
+  renderWeeklyTrend();
+  applyRoleVisibility();
   $("reportStatus").textContent = state.reportReady ? "已生成" : "等待诊断";
   $("overallScore").textContent = state.reportReady ? $("overallScore").textContent : "--";
   $("overallNote").textContent = state.reportReady ? $("overallNote").textContent : "完成诊断后生成";

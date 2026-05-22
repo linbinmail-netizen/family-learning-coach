@@ -42,6 +42,10 @@ input {
   display: none;
 }
 
+.role-hidden {
+  display: none !important;
+}
+
 .login-card {
   width: min(460px, 100%);
   background: var(--panel);
@@ -407,6 +411,33 @@ input {
   margin: 12px 0 0;
 }
 
+.weekly-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 18px;
+}
+
+.weekly-stats div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #f9faf8;
+}
+
+.weekly-stats strong {
+  display: block;
+  font-size: 24px;
+  color: var(--green);
+}
+
+.weekly-stats span {
+  display: block;
+  color: var(--soft-ink);
+  font-size: 13px;
+  margin-top: 3px;
+}
+
 .score-card,
 .report-panel,
 .email-preview {
@@ -498,6 +529,7 @@ li {
   .report-layout,
   .today-layout,
   .form-grid,
+  .weekly-stats,
   .roadmap {
     grid-template-columns: 1fr;
   }

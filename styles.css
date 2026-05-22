@@ -26,7 +26,8 @@ body {
 
 button,
 select,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -221,13 +222,19 @@ label {
 }
 
 select,
-input {
+input,
+textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
   background: #fff;
   color: var(--ink);
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.45;
 }
 
 .workspace {
@@ -340,6 +347,19 @@ input {
   margin-top: 16px;
 }
 
+.reason-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.6fr);
+  gap: 12px;
+  margin: 14px 0;
+  align-items: start;
+}
+
+.reason-box .form-note {
+  grid-column: 1 / -1;
+  margin: -2px 0 0;
+}
+
 .answer-option {
   border: 1px solid var(--line);
   background: #fff;
@@ -352,6 +372,50 @@ input {
 .answer-option.selected {
   border-color: var(--blue);
   background: #eef6fb;
+}
+
+.answer-option.locked {
+  border-color: var(--amber);
+  background: #fff7e8;
+}
+
+.inline-coach-panel {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid rgba(196, 132, 43, 0.45);
+  border-radius: 8px;
+  background: #fffaf1;
+}
+
+.inline-coach-panel.hidden,
+.variant-challenge.hidden {
+  display: none;
+}
+
+.inline-coach-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.inline-coach-header h3,
+.variant-challenge h3 {
+  margin-bottom: 0;
+}
+
+.inline-chat-window {
+  min-height: 160px;
+  max-height: 260px;
+  overflow: auto;
+  margin-bottom: 12px;
+}
+
+.variant-challenge {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(196, 132, 43, 0.35);
 }
 
 .skill-card {

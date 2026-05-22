@@ -1096,6 +1096,11 @@ let state = {
   subject: "english1",
   selectedAnswer: null,
   selectedAnswers: {},
+  answerReasons: {},
+  answerConfidence: {},
+  guidanceLock: null,
+  guidedMastery: {},
+  inlineCoachHistory: [],
   currentQuestion: 0,
   cloudQuestions: {},
   cloudLoading: false,
@@ -1136,6 +1141,11 @@ function loadSavedData() {
     if (saved && Array.isArray(saved.mistakeLog)) {
       state.mistakeLog = saved.mistakeLog;
     }
+    if (saved?.answerReasons) state.answerReasons = saved.answerReasons;
+    if (saved?.answerConfidence) state.answerConfidence = saved.answerConfidence;
+    if (saved?.guidanceLock) state.guidanceLock = saved.guidanceLock;
+    if (saved?.guidedMastery) state.guidedMastery = saved.guidedMastery;
+    if (Array.isArray(saved?.inlineCoachHistory)) state.inlineCoachHistory = saved.inlineCoachHistory;
     if (saved?.accountId) state.accountId = saved.accountId;
     if (saved?.accountRole) state.accountRole = saved.accountRole;
     if (saved?.studentId) state.studentId = saved.studentId;
@@ -1160,6 +1170,11 @@ function saveData() {
     JSON.stringify({
       records: state.records,
       mistakeLog: state.mistakeLog,
+      answerReasons: state.answerReasons,
+      answerConfidence: state.answerConfidence,
+      guidanceLock: state.guidanceLock,
+      guidedMastery: state.guidedMastery,
+      inlineCoachHistory: state.inlineCoachHistory,
       accountId: state.accountId,
       accountRole: state.accountRole,
       studentId: state.studentId,
@@ -1841,6 +1856,100 @@ function markMistakeReviewed(question) {
   }
 }
 
+function questionProgressKey(index = state.currentQuestion) {
+  return [state.studentId, state.subject, index].join("::");
+}
+
+function isReasonStrong(reason = "") {
+  const text = String(reason).trim().toLowerCase();
+  if (text.length < 14) return false;
+  if (/猜|随便|不知道|不会|不确定|guess|idk|not sure/.test(text)) return false;
+  return /因为|所以|题目|关键词|证据|先|therefore|because|means|evidence|ask|first|so/.test(text);
+}
+
+function hasActiveGuidanceLock(index = state.currentQuestion) {
+  return Boolean(state.guidanceLock && !state.guidanceLock.complete && state.guidanceLock.questionIndex === index);
+}
+
+function buildVariantQuestion(question) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const method = question?.explanation || question?.coachHints?.[0] || "先找题干关键词，再判断哪个选项直接回答问题。";
+  return {
+    prompt: `变式验证：这类 ${skill} 题，哪一句最像真正的解题方法？`,
+    answers: [
+      method,
+      "选择最长、最熟悉或看起来最像的选项。",
+      "先排除两个选项，然后随便猜一个。",
+      "只看选项，不需要回到题干或证据。",
+    ],
+    correct: 0,
+  };
+}
+
+function guidanceIssue(selectedIndex, question, reason, confidence) {
+  if (selectedIndex !== question.correct) return "answer";
+  if (confidence !== "sure") return "confidence";
+  if (!isReasonStrong(reason)) return "reason";
+  return "";
+}
+
+function guidanceIssueText(issue) {
+  if (issue === "answer") return "答案还不对，先回到题干和关键词。";
+  if (issue === "confidence") return "你选择了不确定或猜测，需要先说明可靠理由。";
+  if (issue === "reason") return "答案可能是对的，但理由还不够清楚，不能算真正掌握。";
+  return "需要先完成引导。";
+}
+
+function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
+  const variant = buildVariantQuestion(question);
+  state.guidanceLock = {
+    questionIndex: state.currentQuestion,
+    questionKey: questionProgressKey(),
+    selectedIndex,
+    reason,
+    confidence,
+    issue,
+    variant,
+    status: "coaching",
+    complete: false,
+  };
+  state.inlineCoachHistory = [
+    {
+      role: "coach",
+      text: `${guidanceIssueText(issue)} 我不会直接告诉你答案。先用自己的话说：题目真正问什么？`,
+    },
+    {
+      role: "coach",
+      text: question.coachHints?.[0] || "先找题干里的关键词，再看哪个选项直接回应它。",
+    },
+  ];
+}
+
+function completeGuidedMastery() {
+  if (!state.guidanceLock) return;
+  const question = activeQuestions()[state.guidanceLock.questionIndex];
+  markMistakeReviewed(question);
+  state.guidedMastery[state.guidanceLock.questionKey] = {
+    completedAt: new Date().toISOString(),
+    issue: state.guidanceLock.issue,
+  };
+  state.guidanceLock.complete = true;
+  state.guidanceLock = null;
+  state.inlineCoachHistory = [];
+}
+
+function resetDiagnosticProgress() {
+  state.selectedAnswer = null;
+  state.selectedAnswers = {};
+  state.answerReasons = {};
+  state.answerConfidence = {};
+  state.guidanceLock = null;
+  state.guidedMastery = {};
+  state.inlineCoachHistory = [];
+  state.currentQuestion = 0;
+  state.reportReady = false;
+}
+
 function buildDailyTasks(student = activeStudent()) {
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subjects[student.grade][0];
@@ -2211,12 +2320,20 @@ function renderDiagnostic() {
   const question = questions[state.currentQuestion] || questions[0];
   const adaptiveLevel = adaptiveLevelForSubject();
   const adaptiveLabel = difficultyLevels[adaptiveLevel];
+  const progressKey = questionProgressKey();
+  const selectedAnswer = state.selectedAnswers[state.currentQuestion];
+  const reason = state.answerReasons[progressKey] || "";
+  const confidence = state.answerConfidence[progressKey] || "sure";
+  const locked = hasActiveGuidanceLock();
+  const guidedComplete = Boolean(state.guidedMastery[progressKey]);
 
   $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 诊断`;
   $("standardTag").textContent = question.standard;
   $("difficultyTag").textContent = `${question.difficulty} · 当前目标：${adaptiveLabel}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
   $("questionPrompt").textContent = question.prompt;
+  $("answerReason").value = reason;
+  $("confidenceSelect").value = confidence;
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subject;
   $("dailySuggestion").textContent = `${student.name} 今天计划学习 ${plan.minutes} 分钟，重点完成 ${focusSubject.label}。当前目标难度：${adaptiveLabel}；系统会根据答题表现自动升降。`;
@@ -2224,7 +2341,7 @@ function renderDiagnostic() {
   $("answerGrid").innerHTML = question.answers
     .map(
       (answer, index) => `
-        <button class="answer-option ${state.selectedAnswers[state.currentQuestion] === index ? "selected" : ""}" data-answer-index="${index}">
+        <button class="answer-option ${selectedAnswer === index ? "selected" : ""} ${locked ? "locked" : ""}" data-answer-index="${index}">
           ${answer}
         </button>
       `
@@ -2232,7 +2349,19 @@ function renderDiagnostic() {
     .join("");
 
   $("prevQuestion").disabled = state.currentQuestion === 0;
-  $("nextQuestion").disabled = state.currentQuestion === questions.length - 1;
+  $("nextQuestion").disabled = state.currentQuestion === questions.length - 1 || hasActiveGuidanceLock();
+  if (locked) {
+    $("answerFeedback").textContent = "这题还在 AI 引导中。完成讲解和变式验证后，下一题会自动解锁。";
+  } else if (selectedAnswer === undefined) {
+    $("answerFeedback").textContent = "写出理由后再选择答案，系统会判断是否真正掌握。";
+  } else if (guidedComplete) {
+    $("answerFeedback").textContent = "这题已经通过 AI 引导和变式验证，可以进入下一题。";
+  } else if (selectedAnswer === question.correct) {
+    $("answerFeedback").textContent = "这题已通过。继续保持：每题都要能说清楚理由。";
+  } else {
+    $("answerFeedback").textContent = "这题需要完成引导后再进入下一题。";
+  }
+  renderInlineCoachPanel();
 
   $("knowledgeGrid").innerHTML = diagnostic.skills
     .map(([skill, score]) => {
@@ -2245,6 +2374,36 @@ function renderDiagnostic() {
         </div>
       `;
     })
+    .join("");
+}
+
+function renderInlineCoachPanel() {
+  const panel = $("inlineCoachPanel");
+  if (!panel) return;
+  const lock = hasActiveGuidanceLock() ? state.guidanceLock : null;
+  panel.classList.toggle("hidden", !lock);
+  if (!lock) return;
+
+  $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
+  $("inlineCoachWindow").innerHTML = state.inlineCoachHistory
+    .map((message) => `<div class="message ${message.role}">${message.text}</div>`)
+    .join("");
+  $("inlineCoachWindow").scrollTop = $("inlineCoachWindow").scrollHeight;
+
+  const variantVisible = lock.status === "variant";
+  $("variantChallenge").classList.toggle("hidden", !variantVisible);
+  $("inlineCoachForm").style.display = variantVisible ? "none" : "grid";
+  if (!variantVisible) return;
+
+  $("variantPrompt").textContent = lock.variant.prompt;
+  $("variantAnswerGrid").innerHTML = lock.variant.answers
+    .map(
+      (answer, index) => `
+        <button class="answer-option" data-variant-index="${index}">
+          ${answer}
+        </button>
+      `
+    )
     .join("");
 }
 
@@ -2444,7 +2603,12 @@ function appendChat(role, text) {
   $("chatWindow").scrollTop = $("chatWindow").scrollHeight;
 }
 
-async function askAiCoach(studentReply) {
+function appendInlineCoach(role, text) {
+  state.inlineCoachHistory.push({ role, text });
+  renderInlineCoachPanel();
+}
+
+async function askAiCoach(studentReply, history = state.chatHistory) {
   const question = activeQuestions()[state.currentQuestion];
   const payload = {
     studentName: activeStudent().name,
@@ -2456,7 +2620,7 @@ async function askAiCoach(studentReply) {
     explanation: question?.explanation || "",
     coachHints: question?.coachHints || [],
     studentReply,
-    history: state.chatHistory,
+    history,
   };
 
   const response = await fetch("/api/coach", {
@@ -2650,10 +2814,7 @@ function bindEvents() {
     state.studentId = button.dataset.student;
     state.grade = activeStudent().grade;
     state.subject = subjects[state.grade][0].id;
-    state.selectedAnswer = null;
-    state.selectedAnswers = {};
-    state.currentQuestion = 0;
-    state.reportReady = false;
+    resetDiagnosticProgress();
     saveData();
     renderAll();
     loadCloudQuestions();
@@ -2662,10 +2823,7 @@ function bindEvents() {
   $("gradeSelect").addEventListener("change", (event) => {
     state.grade = event.target.value;
     state.subject = subjects[state.grade][0].id;
-    state.selectedAnswer = null;
-    state.selectedAnswers = {};
-    state.currentQuestion = 0;
-    state.reportReady = false;
+    resetDiagnosticProgress();
     saveData();
     renderAll();
     loadCloudQuestions();
@@ -2673,13 +2831,20 @@ function bindEvents() {
 
   $("subjectSelect").addEventListener("change", (event) => {
     state.subject = event.target.value;
-    state.selectedAnswer = null;
-    state.selectedAnswers = {};
-    state.currentQuestion = 0;
-    state.reportReady = false;
+    resetDiagnosticProgress();
     saveData();
     renderAll();
     loadCloudQuestions();
+  });
+
+  $("answerReason").addEventListener("input", (event) => {
+    state.answerReasons[questionProgressKey()] = event.target.value;
+    saveData();
+  });
+
+  $("confidenceSelect").addEventListener("change", (event) => {
+    state.answerConfidence[questionProgressKey()] = event.target.value;
+    saveData();
   });
 
   $("answerGrid").addEventListener("click", (event) => {
@@ -2687,11 +2852,27 @@ function bindEvents() {
     if (!button) return;
     const selectedIndex = Number(button.dataset.answerIndex);
     const question = activeQuestions()[state.currentQuestion];
+    const progressKey = questionProgressKey();
+    const reason = ($("answerReason").value || "").trim();
+    const confidence = $("confidenceSelect").value || "sure";
+    state.answerReasons[progressKey] = reason;
+    state.answerConfidence[progressKey] = confidence;
+    if (!reason) {
+      $("answerFeedback").textContent = "先写一句理由，再选择答案。这样可以防止靠猜题通过。";
+      saveData();
+      return;
+    }
+    if (hasActiveGuidanceLock()) {
+      $("answerFeedback").textContent = "这题正在引导中。请先完成 AI 引导和变式验证。";
+      return;
+    }
     state.selectedAnswers[state.currentQuestion] = selectedIndex;
-    if (selectedIndex === question.correct) {
+    const issue = guidanceIssue(selectedIndex, question, reason, confidence);
+    if (!issue) {
       markMistakeReviewed(question);
     } else {
-      recordMistake(question, selectedIndex, "答错");
+      recordMistake(question, selectedIndex, guidanceIssueText(issue));
+      startGuidedMastery(question, selectedIndex, reason, confidence, issue);
     }
     const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
     saveData();
@@ -2707,6 +2888,10 @@ function bindEvents() {
   });
 
   $("nextQuestion").addEventListener("click", () => {
+    if (hasActiveGuidanceLock()) {
+      $("answerFeedback").textContent = "请先完成这题的 AI 引导和变式验证，再进入下一题。";
+      return;
+    }
     state.currentQuestion = Math.min(activeQuestions().length - 1, state.currentQuestion + 1);
     renderDiagnostic();
   });
@@ -2754,6 +2939,62 @@ function bindEvents() {
         $("chatWindow").lastElementChild.remove();
         appendChat("coach", buildLocalCoachReply(reply).reply);
       });
+  });
+
+  $("inlineCoachForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!hasActiveGuidanceLock()) return;
+    const input = $("inlineCoachReply");
+    const reply = input.value.trim();
+    if (!reply) return;
+    appendInlineCoach("student", reply);
+    input.value = "";
+    appendInlineCoach("coach", "我在看你的解释...");
+
+    askAiCoach(reply, state.inlineCoachHistory)
+      .then((data) => {
+        state.inlineCoachHistory.pop();
+        if (isReasonStrong(reply)) {
+          state.inlineCoachHistory.push({
+            role: "coach",
+            text: `${data.reply} 现在做一道变式验证：不靠原题选项，判断哪一句才是真正的方法。`,
+          });
+          state.guidanceLock.status = "variant";
+        } else {
+          state.inlineCoachHistory.push({ role: "coach", text: data.reply });
+        }
+        saveData();
+        renderDiagnostic();
+      })
+      .catch(() => {
+        state.inlineCoachHistory.pop();
+        const localReply = buildLocalCoachReply(reply).reply;
+        state.inlineCoachHistory.push({
+          role: "coach",
+          text: isReasonStrong(reply) ? `${localReply} 现在做一道变式验证，确认你不是靠猜。` : localReply,
+        });
+        if (isReasonStrong(reply)) state.guidanceLock.status = "variant";
+        saveData();
+        renderDiagnostic();
+      });
+  });
+
+  $("variantAnswerGrid").addEventListener("click", (event) => {
+    if (!hasActiveGuidanceLock()) return;
+    const button = event.target.closest("[data-variant-index]");
+    if (!button) return;
+    const selectedIndex = Number(button.dataset.variantIndex);
+    if (selectedIndex === state.guidanceLock.variant.correct) {
+      completeGuidedMastery();
+      $("answerFeedback").textContent = "变式验证通过。现在可以进入下一题。";
+      saveData();
+      renderDiagnostic();
+      return;
+    }
+    state.guidanceLock.status = "coaching";
+    appendInlineCoach("coach", "这个选择还像是在猜方法。请回到题干关键词，用一句完整话说明：这类题第一步应该看什么？");
+    saveData();
+    renderDiagnostic();
   });
 
   $("copyDigest").addEventListener("click", async () => {

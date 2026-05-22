@@ -151,6 +151,22 @@ test("parent and student roles see different app areas", () => {
   assert.match(js, /switchView\("today"\)/);
 });
 
+test("diagnostic requires reasoning and guided mastery before moving on", () => {
+  assert.match(html, /id="answerReason"/);
+  assert.match(html, /id="confidenceSelect"/);
+  assert.match(html, /id="inlineCoachPanel"/);
+  assert.match(html, /id="inlineCoachForm"/);
+  assert.match(html, /id="variantAnswerGrid"/);
+  assert.match(js, /answerReasons/);
+  assert.match(js, /answerConfidence/);
+  assert.match(js, /guidanceLock/);
+  assert.match(js, /isReasonStrong/);
+  assert.match(js, /startGuidedMastery/);
+  assert.match(js, /completeGuidedMastery/);
+  assert.match(js, /buildVariantQuestion/);
+  assert.match(js, /nextQuestion"\)\.disabled = .*hasActiveGuidanceLock/s);
+});
+
 test("parent plan settings can sync to Supabase after login", () => {
   assert.match(js, /cloudStudents/);
   assert.match(js, /loadPlanSettingsFromCloud/);

@@ -2033,6 +2033,52 @@ async function saveParentPlanSettings() {
   }
 }
 
+function buildLearningInsights({ average, answeredCount, correctCount, questions, plan }) {
+  const accuracy = answeredCount ? Math.round((correctCount / answeredCount) * 100) : 0;
+  const targetLevel = adaptiveLevelForSubject();
+  const levelLabel = difficultyLevels[targetLevel] || "中等";
+  const settings = planForStudent(state.studentId);
+  const targetQuestions = settings.questionTarget || 8;
+  const plannedSkills = plan.map(([skill]) => skill).join("、") || "当前知识点";
+
+  let difficultyFit = `难度基本合适：当前处在${levelLabel}，完成更多题后会继续判断。`;
+  if (answeredCount < Math.max(3, Math.round(targetQuestions / 2))) {
+    difficultyFit = `数据还不够：今天只完成 ${answeredCount} 题，建议至少完成 ${Math.max(3, Math.round(targetQuestions / 2))} 题后再判断难度。`;
+  } else if (accuracy >= 85 && targetLevel < difficultyLevels.length - 1) {
+    difficultyFit = `偏简单：正确率 ${accuracy}%，下一轮可以提高到${difficultyLevels[targetLevel + 1]}，加入解释型和变式题。`;
+  } else if (accuracy < 55 && targetLevel > 0) {
+    difficultyFit = `偏难：正确率 ${accuracy}%，建议先回到${difficultyLevels[targetLevel - 1]}，把核心概念讲清楚后再升难度。`;
+  } else if (accuracy >= 75) {
+    difficultyFit = `难度合适偏稳：正确率 ${accuracy}%，可以保持${levelLabel}，每天加 1 道稍难变式题。`;
+  } else if (accuracy < 60) {
+    difficultyFit = `难度略高：正确率 ${accuracy}%，先减少新题压力，把错题背后的概念讲透。`;
+  }
+
+  let issueType = "暂无判断：还没有完成诊断题。";
+  if (answeredCount && accuracy >= 85) {
+    issueType = "可以拔高：基础题完成顺利，需要更多解释理由、综合应用和挑战题。";
+  } else if (answeredCount && accuracy < 55) {
+    issueType = `概念不清：重点先补 ${plannedSkills}，AI 需要先讲概念，再让孩子复述。`;
+  } else if (answeredCount && average < 65) {
+    issueType = "理由薄弱：能做一部分题，但需要练“关键词 -> 证据 -> 结论”的说明过程。";
+  } else if (answeredCount) {
+    issueType = "稳定巩固：继续练变式题，避免只会熟悉题型。";
+  }
+
+  let nextAction = "明天先完成诊断题，再根据正确率自动调整学习计划。";
+  if (issueType.includes("可以拔高")) {
+    nextAction = `明天建议完成 ${targetQuestions + 2} 题，难度设为挑战拔高，并要求每题写一句理由。`;
+  } else if (issueType.includes("概念不清")) {
+    nextAction = `明天建议完成 ${Math.max(4, targetQuestions - 2)} 题，难度设为稳扎稳打，先补 1 个核心知识点。`;
+  } else if (issueType.includes("理由薄弱")) {
+    nextAction = `明天保持 ${targetQuestions} 题，难度自动调整，每题都让孩子写出关键词和理由。`;
+  } else if (answeredCount) {
+    nextAction = `明天保持 ${targetQuestions} 题和当前难度，加入 1 道挑战题检查迁移能力。`;
+  }
+
+  return { accuracy, difficultyFit, issueType, nextAction };
+}
+
 function buildReport() {
   const diagnostic = activeDiagnostic();
   const student = activeStudent();
@@ -2050,6 +2096,14 @@ function buildReport() {
   const average = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
   const weak = adjustedSkills.filter((skill) => skill[1] < 60);
   const plan = weak.length ? weak : adjustedSkills.slice(0, 2);
+  const insights = buildLearningInsights({
+    average,
+    answeredCount: answered.length,
+    correctCount,
+    questions,
+    plan,
+  });
+  const targetQuestions = planForStudent(student.id).questionTarget || 8;
 
   state.reportReady = true;
   const record = {
@@ -2063,21 +2117,28 @@ function buildReport() {
     next: plan.map(([skill]) => skill),
     answered: answered.length,
     correct: correctCount,
+    accuracy: insights.accuracy,
+    difficultyFit: insights.difficultyFit,
+    issueType: insights.issueType,
+    nextAction: insights.nextAction,
   };
   state.records.unshift(record);
   state.records = state.records.slice(0, 20);
   saveData();
   $("reportStatus").textContent = "已生成";
   $("overallScore").textContent = `${average}%`;
-  $("overallNote").textContent = average >= 70 ? "基础不错，可以进入预习和拔高。" : "建议先补关键薄弱点，再进入新内容。";
+  $("overallNote").textContent = `${insights.issueType} ${insights.difficultyFit}`;
   $("weaknessList").innerHTML = weak
     .map(([skill, score]) => `<li><strong>${skill}</strong>：当前 ${score}%，建议用讲解 + 变式题巩固。</li>`)
     .join("");
   $("studyPlan").innerHTML = plan
-    .map(([skill], index) => `<li>第 ${index + 1} 天：学习 ${skill}，完成 8 道练习题，并用自己的话总结方法。</li>`)
+    .map(([skill], index) => `<li>第 ${index + 1} 天：学习 ${skill}，完成 ${targetQuestions} 道练习题，并用自己的话总结方法。</li>`)
     .join("");
+  $("difficultyFit").textContent = insights.difficultyFit;
+  $("issueType").textContent = insights.issueType;
+  $("nextAction").textContent = insights.nextAction;
 
-  renderEmail(average, weak, plan);
+  renderEmail(average, weak, plan, insights);
   renderActivity();
   renderCoach();
   switchView("report");
@@ -2175,17 +2236,23 @@ function buildLocalCoachReply(studentReply) {
   };
 }
 
-function renderEmail(average = "--", weak = [], plan = []) {
+function renderEmail(average = "--", weak = [], plan = [], insights = null) {
   const student = activeStudent();
   const subject = activeSubject();
   const weakText = weak.length ? weak.map(([skill]) => skill).join("、") : "等待诊断生成";
   const planText = plan.length ? plan.map(([skill]) => skill).join("、") : "完成诊断后自动生成";
+  const difficultyText = insights?.difficultyFit || "等待诊断生成";
+  const issueText = insights?.issueType || "等待诊断生成";
+  const nextText = insights?.nextAction || "完成诊断后自动生成";
 
   $("emailPreview").innerHTML = `
     <p><strong>主题：</strong>${student.name} 今日学习报告 - ${subject.label}</p>
     <p>今天完成了 ${subject.label} 的诊断练习，当前综合掌握度为 <strong>${average}</strong>。</p>
     <p><strong>主要薄弱点：</strong>${weakText}</p>
+    <p><strong>难度是否合适：</strong>${difficultyText}</p>
+    <p><strong>主要问题：</strong>${issueText}</p>
     <p><strong>明日建议：</strong>${planText}</p>
+    <p><strong>明日调整：</strong>${nextText}</p>
     <p>辅导方式将继续采用提问引导：先让孩子解释题意，再提示关键概念，最后让孩子自己完成答案和总结。</p>
   `;
 }
@@ -2201,7 +2268,7 @@ function renderActivity() {
       (record) => `
         <li>
           <strong>${record.date} · ${record.student} · ${record.subject}</strong><br />
-          掌握度 ${record.score}%；题目 ${record.correct ?? "--"} / ${record.answered ?? "--"}；薄弱点：${record.weak.length ? record.weak.join("、") : "暂无明显薄弱点"}。
+          掌握度 ${record.score}%；题目 ${record.correct ?? "--"} / ${record.answered ?? "--"}；薄弱点：${record.weak.length ? record.weak.join("、") : "暂无明显薄弱点"}。${record.issueType ? `<br />${record.issueType}` : ""}
         </li>
       `
     )
@@ -2351,6 +2418,9 @@ function renderAll() {
   $("overallNote").textContent = state.reportReady ? $("overallNote").textContent : "完成诊断后生成";
   $("weaknessList").innerHTML = state.reportReady ? $("weaknessList").innerHTML : "<li>完成诊断后显示薄弱点。</li>";
   $("studyPlan").innerHTML = state.reportReady ? $("studyPlan").innerHTML : "<li>完成诊断后生成 7 天学习方案。</li>";
+  $("difficultyFit").textContent = state.reportReady ? $("difficultyFit").textContent : "完成诊断后显示。";
+  $("issueType").textContent = state.reportReady ? $("issueType").textContent : "完成诊断后显示。";
+  $("nextAction").textContent = state.reportReady ? $("nextAction").textContent : "完成诊断后显示。";
   $("cloudStatus").textContent = "云端未同步";
   renderActivity();
 }

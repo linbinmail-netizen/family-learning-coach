@@ -31,6 +31,16 @@ test("parent report explains fit, issue type, and next action", () => {
   assert.match(js, /难度是否合适/);
 });
 
+test("missed questions feed a review loop", () => {
+  assert.match(html, /id="mistakeReviewList"/);
+  assert.match(html, /id="reportMistakes"/);
+  assert.match(js, /mistakeLog/);
+  assert.match(js, /recordMistake/);
+  assert.match(js, /mistakesForStudent/);
+  assert.match(js, /错题复习/);
+  assert.match(js, /renderMistakeReview/);
+});
+
 test("parent can adjust study plan settings", () => {
   assert.match(html, /id="parentPlanForm"/);
   assert.match(html, /id="planMinutes"/);

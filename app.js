@@ -1102,6 +1102,7 @@ let state = {
   chatHistory: [],
   reportReady: false,
   records: [],
+  mistakeLog: [],
   authSession: null,
   authProfile: null,
   cloudStudents: {},
@@ -1128,6 +1129,9 @@ function loadSavedData() {
     if (saved && Array.isArray(saved.records)) {
       state.records = saved.records;
     }
+    if (saved && Array.isArray(saved.mistakeLog)) {
+      state.mistakeLog = saved.mistakeLog;
+    }
     if (saved?.accountId) state.accountId = saved.accountId;
     if (saved?.accountRole) state.accountRole = saved.accountRole;
     if (saved?.studentId) state.studentId = saved.studentId;
@@ -1151,6 +1155,7 @@ function saveData() {
     storageKey,
     JSON.stringify({
       records: state.records,
+      mistakeLog: state.mistakeLog,
       accountId: state.accountId,
       accountRole: state.accountRole,
       studentId: state.studentId,
@@ -1641,6 +1646,62 @@ function todayRecordForStudent(studentName) {
   return state.records.find((record) => record.student === studentName && record.date?.includes(today));
 }
 
+function mistakeKey(studentId, subjectId, question) {
+  return [studentId, subjectId, question?.prompt || ""].join("::");
+}
+
+function mistakesForStudent(studentId = state.studentId) {
+  return state.mistakeLog
+    .filter((item) => item.studentId === studentId && !item.resolved)
+    .sort((a, b) => (b.attempts || 1) - (a.attempts || 1));
+}
+
+function recordMistake(question, selectedIndex, reason = "答错") {
+  if (!question) return;
+  const key = mistakeKey(state.studentId, state.subject, question);
+  const existing = state.mistakeLog.find((item) => item.key === key);
+  const selectedAnswer = Number.isInteger(selectedIndex) ? question.answers[selectedIndex] : "未作答";
+  const now = new Date().toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
+
+  if (existing) {
+    existing.attempts = (existing.attempts || 1) + 1;
+    existing.lastMissedAt = now;
+    existing.selectedAnswer = selectedAnswer;
+    existing.reason = reason;
+    existing.resolved = false;
+    return;
+  }
+
+  state.mistakeLog.unshift({
+    key,
+    studentId: state.studentId,
+    studentName: activeStudent().name,
+    grade: state.grade,
+    subjectId: state.subject,
+    subjectLabel: activeSubject().label,
+    prompt: question.prompt,
+    skill: question.skill || activeDiagnostic().skills[0][0],
+    difficulty: question.difficulty || "中等",
+    selectedAnswer,
+    correctAnswer: question.answers[question.correct],
+    reason,
+    attempts: 1,
+    lastMissedAt: now,
+    resolved: false,
+  });
+  state.mistakeLog = state.mistakeLog.slice(0, 40);
+}
+
+function markMistakeReviewed(question) {
+  if (!question) return;
+  const key = mistakeKey(state.studentId, state.subject, question);
+  const existing = state.mistakeLog.find((item) => item.key === key);
+  if (existing) {
+    existing.resolved = true;
+    existing.reviewedAt = new Date().toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
+  }
+}
+
 function buildDailyTasks(student = activeStudent()) {
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subjects[student.grade][0];
@@ -1648,6 +1709,7 @@ function buildDailyTasks(student = activeStudent()) {
   const targetQuestions = plan.questionTarget || Math.max(4, Math.min(10, Math.round(plan.minutes / 5)));
   const done = Math.min(answeredCount, targetQuestions);
   const report = todayRecordForStudent(student.name);
+  const openMistakes = mistakesForStudent(student.id);
 
   return [
     {
@@ -1660,6 +1722,14 @@ function buildDailyTasks(student = activeStudent()) {
       title: "AI 引导订正",
       detail: "选择 1 道不会的题，写出自己的想法，让 AI 讲解概念并追问。",
       done: state.chatHistory.some((message) => message.role === "student") ? 1 : 0,
+      total: 1,
+    },
+    {
+      title: "错题复习",
+      detail: openMistakes.length
+        ? `复习 ${openMistakes[0].skill} 等 ${openMistakes.length} 个待巩固点。`
+        : "暂无待复习错题；如果今天答错，系统会自动加入这里。",
+      done: openMistakes.length ? 0 : 1,
       total: 1,
     },
     {
@@ -1924,6 +1994,28 @@ function renderTodayPlan() {
       `
     )
     .join("");
+  renderMistakeReview();
+}
+
+function renderMistakeReview() {
+  const openMistakes = mistakesForStudent();
+  if (!openMistakes.length) {
+    $("mistakeReviewList").innerHTML = "<li>暂无待复习错题。答错或未作答的题会自动进入这里。</li>";
+    return;
+  }
+
+  $("mistakeReviewList").innerHTML = openMistakes
+    .slice(0, 5)
+    .map(
+      (item) => `
+        <li>
+          <strong>${item.skill}</strong> · ${item.subjectLabel}<br />
+          ${item.prompt}<br />
+          已错 ${item.attempts || 1} 次；建议先复述概念，再做同类变式题。
+        </li>
+      `
+    )
+    .join("");
 }
 
 function renderSelectors() {
@@ -2086,6 +2178,15 @@ function buildReport() {
   const questions = activeQuestions();
   const answered = questions.filter((_, index) => state.selectedAnswers[index] !== undefined);
   const correctCount = questions.filter((question, index) => state.selectedAnswers[index] === question.correct).length;
+  questions.forEach((question, index) => {
+    const selectedIndex = state.selectedAnswers[index];
+    if (selectedIndex === undefined) {
+      recordMistake(question, selectedIndex, "未作答");
+    } else if (selectedIndex !== question.correct) {
+      recordMistake(question, selectedIndex, "答错");
+    }
+  });
+  const reportMistakes = mistakesForStudent(student.id).filter((item) => item.subjectId === state.subject);
   const completionBoost = Math.round((correctCount / questions.length) * 20);
   const unansweredPenalty = (questions.length - answered.length) * 5;
   const adjustedSkills = diagnostic.skills.map(([skill, score]) => [
@@ -2121,6 +2222,12 @@ function buildReport() {
     difficultyFit: insights.difficultyFit,
     issueType: insights.issueType,
     nextAction: insights.nextAction,
+    mistakes: reportMistakes.map((item) => ({
+      skill: item.skill,
+      prompt: item.prompt,
+      attempts: item.attempts,
+      reason: item.reason,
+    })),
   };
   state.records.unshift(record);
   state.records = state.records.slice(0, 20);
@@ -2137,8 +2244,14 @@ function buildReport() {
   $("difficultyFit").textContent = insights.difficultyFit;
   $("issueType").textContent = insights.issueType;
   $("nextAction").textContent = insights.nextAction;
+  $("reportMistakes").innerHTML = reportMistakes.length
+    ? reportMistakes
+        .slice(0, 5)
+        .map((item) => `<li><strong>${item.skill}</strong>：${item.reason}，累计 ${item.attempts || 1} 次。明天优先复习这类题。</li>`)
+        .join("")
+    : "<li>暂无错题记录。</li>";
 
-  renderEmail(average, weak, plan, insights);
+  renderEmail(average, weak, plan, insights, reportMistakes);
   renderActivity();
   renderCoach();
   switchView("report");
@@ -2236,7 +2349,7 @@ function buildLocalCoachReply(studentReply) {
   };
 }
 
-function renderEmail(average = "--", weak = [], plan = [], insights = null) {
+function renderEmail(average = "--", weak = [], plan = [], insights = null, mistakes = []) {
   const student = activeStudent();
   const subject = activeSubject();
   const weakText = weak.length ? weak.map(([skill]) => skill).join("、") : "等待诊断生成";
@@ -2244,6 +2357,9 @@ function renderEmail(average = "--", weak = [], plan = [], insights = null) {
   const difficultyText = insights?.difficultyFit || "等待诊断生成";
   const issueText = insights?.issueType || "等待诊断生成";
   const nextText = insights?.nextAction || "完成诊断后自动生成";
+  const mistakeText = mistakes.length
+    ? mistakes.slice(0, 3).map((item) => `${item.skill}（${item.attempts || 1} 次）`).join("、")
+    : "暂无待复习错题";
 
   $("emailPreview").innerHTML = `
     <p><strong>主题：</strong>${student.name} 今日学习报告 - ${subject.label}</p>
@@ -2251,6 +2367,7 @@ function renderEmail(average = "--", weak = [], plan = [], insights = null) {
     <p><strong>主要薄弱点：</strong>${weakText}</p>
     <p><strong>难度是否合适：</strong>${difficultyText}</p>
     <p><strong>主要问题：</strong>${issueText}</p>
+    <p><strong>错题复习：</strong>${mistakeText}</p>
     <p><strong>明日建议：</strong>${planText}</p>
     <p><strong>明日调整：</strong>${nextText}</p>
     <p>辅导方式将继续采用提问引导：先让孩子解释题意，再提示关键概念，最后让孩子自己完成答案和总结。</p>
@@ -2335,6 +2452,11 @@ function bindEvents() {
     const selectedIndex = Number(button.dataset.answerIndex);
     const question = activeQuestions()[state.currentQuestion];
     state.selectedAnswers[state.currentQuestion] = selectedIndex;
+    if (selectedIndex === question.correct) {
+      markMistakeReviewed(question);
+    } else {
+      recordMistake(question, selectedIndex, "答错");
+    }
     const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
     saveData();
     renderDiagnostic();
@@ -2421,6 +2543,7 @@ function renderAll() {
   $("difficultyFit").textContent = state.reportReady ? $("difficultyFit").textContent : "完成诊断后显示。";
   $("issueType").textContent = state.reportReady ? $("issueType").textContent : "完成诊断后显示。";
   $("nextAction").textContent = state.reportReady ? $("nextAction").textContent : "完成诊断后显示。";
+  $("reportMistakes").innerHTML = state.reportReady ? $("reportMistakes").innerHTML : "<li>完成诊断后显示错题知识点。</li>";
   $("cloudStatus").textContent = "云端未同步";
   renderActivity();
 }

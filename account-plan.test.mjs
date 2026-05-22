@@ -41,6 +41,13 @@ test("missed questions feed a review loop", () => {
   assert.match(js, /renderMistakeReview/);
 });
 
+test("mistake review can sync with Supabase", () => {
+  assert.match(js, /loadMistakesFromCloud/);
+  assert.match(js, /saveMistakeToCloud/);
+  assert.match(js, /mistake_reviews/);
+  assert.match(js, /syncMistakeLogToCloud/);
+});
+
 test("parent can adjust study plan settings", () => {
   assert.match(html, /id="parentPlanForm"/);
   assert.match(html, /id="planMinutes"/);

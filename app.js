@@ -1423,6 +1423,98 @@ async function savePlanSettingsToCloud(studentId) {
   setAuthStatus("学习计划已保存到云端。");
 }
 
+function cloudMistakePayload(item) {
+  return {
+    student_id: state.cloudStudents[item.studentId],
+    subject_id: item.cloudSubjectId,
+    question_key: item.key,
+    prompt: item.prompt,
+    skill: item.skill,
+    difficulty: item.difficulty || "中等",
+    selected_answer: item.selectedAnswer || null,
+    correct_answer: item.correctAnswer || null,
+    reason: item.reason || "答错",
+    attempts: item.attempts || 1,
+    resolved: Boolean(item.resolved),
+    last_missed_at: item.lastMissedIso || new Date().toISOString(),
+    reviewed_at: item.reviewedIso || null,
+    updated_by: state.authProfile?.id || state.authSession?.user?.id || null,
+  };
+}
+
+async function saveMistakeToCloud(item) {
+  if (!state.authSession || !item) return;
+  const cloudStudentId = state.cloudStudents[item.studentId];
+  if (!cloudStudentId) return;
+  const cloudSubjectId = await findCloudSubjectId(item.subjectId);
+  if (!cloudSubjectId) return;
+
+  await supabaseRequest("mistake_reviews?on_conflict=student_id,subject_id,question_key", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify(cloudMistakePayload({ ...item, cloudSubjectId })),
+  });
+}
+
+async function syncMistakeLogToCloud() {
+  if (!state.authSession) return;
+  const pending = state.mistakeLog.filter((item) => state.cloudStudents[item.studentId]);
+  for (const item of pending) {
+    await saveMistakeToCloud(item);
+  }
+}
+
+async function cloudMistakeToLocal(row) {
+  const localStudentId = Object.keys(state.cloudStudents).find((key) => state.cloudStudents[key] === row.student_id);
+  const localSubject = await findLocalSubjectByCloudId(row.subject_id);
+  if (!localStudentId || !localSubject) return null;
+
+  return {
+    key: row.question_key || [localStudentId, localSubject.id, row.prompt].join("::"),
+    studentId: localStudentId,
+    studentName: students.find((student) => student.id === localStudentId)?.name || "学生",
+    grade: students.find((student) => student.id === localStudentId)?.grade || "9",
+    subjectId: localSubject.id,
+    subjectLabel: localSubject.label,
+    prompt: row.prompt,
+    skill: row.skill,
+    difficulty: row.difficulty || "中等",
+    selectedAnswer: row.selected_answer || "未作答",
+    correctAnswer: row.correct_answer || "",
+    reason: row.reason || "答错",
+    attempts: row.attempts || 1,
+    lastMissedAt: row.last_missed_at ? new Date(row.last_missed_at).toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" }) : "",
+    lastMissedIso: row.last_missed_at || "",
+    reviewedAt: row.reviewed_at ? new Date(row.reviewed_at).toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" }) : "",
+    reviewedIso: row.reviewed_at || "",
+    resolved: Boolean(row.resolved),
+  };
+}
+
+async function loadMistakesFromCloud() {
+  if (!state.authSession) return;
+  const cloudStudentIds = Object.values(state.cloudStudents).filter(Boolean);
+  if (!cloudStudentIds.length) return;
+
+  const data = await supabaseRequest(
+    `mistake_reviews?${new URLSearchParams({
+      select: "student_id,subject_id,question_key,prompt,skill,difficulty,selected_answer,correct_answer,reason,attempts,resolved,last_missed_at,reviewed_at",
+      student_id: `in.(${cloudStudentIds.join(",")})`,
+      order: "last_missed_at.desc",
+    }).toString()}`,
+    { headers: { Prefer: "" } }
+  );
+
+  const merged = new Map(state.mistakeLog.map((item) => [item.key, item]));
+  for (const row of data || []) {
+    const localItem = await cloudMistakeToLocal(row);
+    if (!localItem) continue;
+    merged.set(localItem.key, { ...(merged.get(localItem.key) || {}), ...localItem });
+  }
+  state.mistakeLog = Array.from(merged.values()).slice(0, 80);
+  saveData();
+}
+
 async function loadAuthProfile() {
   if (!state.authSession?.user?.id) return;
   await supabaseRpc("ensure_my_profile");
@@ -1443,6 +1535,8 @@ async function loadAuthProfile() {
   }
   await loadFamilyStudentsFromCloud();
   await loadPlanSettingsFromCloud();
+  await syncMistakeLogToCloud();
+  await loadMistakesFromCloud();
   applyProfileToLocalState(data);
   setAuthStatus(`已登录：${currentAuthUserLabel()}`);
   renderAll();
@@ -1662,17 +1756,20 @@ function recordMistake(question, selectedIndex, reason = "答错") {
   const existing = state.mistakeLog.find((item) => item.key === key);
   const selectedAnswer = Number.isInteger(selectedIndex) ? question.answers[selectedIndex] : "未作答";
   const now = new Date().toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
+  const nowIso = new Date().toISOString();
 
   if (existing) {
     existing.attempts = (existing.attempts || 1) + 1;
     existing.lastMissedAt = now;
+    existing.lastMissedIso = nowIso;
     existing.selectedAnswer = selectedAnswer;
     existing.reason = reason;
     existing.resolved = false;
+    saveMistakeToCloud(existing).catch((error) => console.error(error));
     return;
   }
 
-  state.mistakeLog.unshift({
+  const mistake = {
     key,
     studentId: state.studentId,
     studentName: activeStudent().name,
@@ -1687,9 +1784,12 @@ function recordMistake(question, selectedIndex, reason = "答错") {
     reason,
     attempts: 1,
     lastMissedAt: now,
+    lastMissedIso: nowIso,
     resolved: false,
-  });
+  };
+  state.mistakeLog.unshift(mistake);
   state.mistakeLog = state.mistakeLog.slice(0, 40);
+  saveMistakeToCloud(mistake).catch((error) => console.error(error));
 }
 
 function markMistakeReviewed(question) {
@@ -1699,6 +1799,8 @@ function markMistakeReviewed(question) {
   if (existing) {
     existing.resolved = true;
     existing.reviewedAt = new Date().toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
+    existing.reviewedIso = new Date().toISOString();
+    saveMistakeToCloud(existing).catch((error) => console.error(error));
   }
 }
 

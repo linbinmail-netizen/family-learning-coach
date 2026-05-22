@@ -167,21 +167,23 @@
               <span id="difficultyTag">中等</span>
               <span id="questionProgress">1 / 1</span>
             </div>
+            <section class="mini-lesson-card" id="miniLessonCard">
+              <p class="eyebrow">Learn First</p>
+              <h3 id="lessonConcept"></h3>
+              <p id="workedExample"></p>
+              <p class="method-hint" id="methodHint"></p>
+            </section>
             <h3 id="questionPrompt"></h3>
-            <div class="reason-box">
-              <label>
-                先写一句理由
-                <textarea id="answerReason" rows="3" placeholder="例如：题目问的是...，关键词是...，所以我先判断..."></textarea>
-              </label>
+            <div class="confidence-box">
               <label>
                 你对这个答案有多确定？
                 <select id="confidenceSelect">
-                  <option value="sure">确定，我能说明理由</option>
+                  <option value="sure">确定</option>
                   <option value="unsure">有点不确定</option>
                   <option value="guess">猜的</option>
                 </select>
               </label>
-              <p class="form-note" id="answerFeedback">写出理由后再选择答案，系统会判断是否真正掌握。</p>
+              <p class="form-note" id="answerFeedback">先看上面的短讲解，再选择答案；不确定或答错时，AI 会引导你。</p>
             </div>
             <div class="answer-grid" id="answerGrid"></div>
             <section class="inline-coach-panel hidden" id="inlineCoachPanel">

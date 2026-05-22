@@ -347,17 +347,41 @@ textarea {
   margin-top: 16px;
 }
 
-.reason-box {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.6fr);
-  gap: 12px;
+.mini-lesson-card {
   margin: 14px 0;
-  align-items: start;
+  padding: 16px;
+  border: 1px solid rgba(47, 111, 159, 0.25);
+  border-radius: 8px;
+  background: #f3f8fb;
 }
 
-.reason-box .form-note {
-  grid-column: 1 / -1;
-  margin: -2px 0 0;
+.mini-lesson-card h3 {
+  margin-bottom: 8px;
+}
+
+.mini-lesson-card p {
+  margin-bottom: 8px;
+}
+
+.method-hint {
+  padding: 10px 12px;
+  border-left: 4px solid var(--blue);
+  background: #fff;
+  border-radius: 6px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.confidence-box {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 12px;
+  margin: 14px 0;
+  align-items: end;
+}
+
+.confidence-box .form-note {
+  margin: 0;
 }
 
 .answer-option {

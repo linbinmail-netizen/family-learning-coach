@@ -95,6 +95,9 @@ test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="authForm"/);
   assert.match(html, /id="authEmail"/);
   assert.match(html, /id="authPassword"/);
+  assert.match(html, /id="signupForm"/);
+  assert.match(html, /id="signupEmail"/);
+  assert.match(html, /id="signupPassword"/);
   assert.match(html, /id="signupRole"/);
   assert.match(html, /id="signupStudent"/);
   assert.doesNotMatch(html, /id="authRole"/);
@@ -105,11 +108,20 @@ test("supabase auth sign in controls exist", () => {
   assert.match(html, /@supabase\/supabase-js@2/);
 });
 
+test("login form does not ask for account type", () => {
+  const loginForm = html.match(/<form id="authForm"[\s\S]*?<\/form>/)?.[0] || "";
+  const signupForm = html.match(/<form id="signupForm"[\s\S]*?<\/form>/)?.[0] || "";
+  assert.doesNotMatch(loginForm, /signupRole/);
+  assert.doesNotMatch(loginForm, /signupStudent/);
+  assert.match(signupForm, /signupRole/);
+  assert.match(signupForm, /signupStudent/);
+});
+
 test("login is separated from the learning app", () => {
   assert.match(js, /renderAuthGate/);
   assert.match(js, /loginView/);
   assert.match(js, /appShell/);
-  assert.match(js, /inferSignupProfile/);
+  assert.match(js, /selectedSignupProfile/);
   assert.doesNotMatch(js, /authRole/);
   assert.doesNotMatch(js, /authStudentName/);
 });

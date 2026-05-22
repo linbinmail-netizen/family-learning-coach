@@ -1328,9 +1328,7 @@ function inferSignupProfile(email) {
 }
 
 function signupProfileForCurrentForm(email) {
-  const selected = selectedSignupProfile();
-  if (selected.role === "student") return selected;
-  return inferSignupProfile(email).role === "student" ? inferSignupProfile(email) : selected;
+  return selectedSignupProfile();
 }
 
 function applyProfileToLocalState(profile) {
@@ -1652,10 +1650,10 @@ async function signInWithPassword() {
 }
 
 async function signUp() {
-  const email = $("authEmail").value.trim();
-  const password = $("authPassword").value;
+  const email = $("signupEmail").value.trim();
+  const password = $("signupPassword").value;
   if (!email || !password) {
-    setAuthStatus("请先输入邮箱和密码。");
+    setAuthStatus("请先在注册区输入邮箱和密码。");
     return;
   }
 
@@ -2638,7 +2636,10 @@ function bindEvents() {
     signInWithPassword();
   });
 
-  $("signUpButton").addEventListener("click", signUp);
+  $("signupForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    signUp();
+  });
   $("signOutButton").addEventListener("click", signOut);
   $("signupRole").addEventListener("change", renderAuth);
 

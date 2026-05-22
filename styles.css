@@ -175,6 +175,12 @@ h3 {
   gap: 10px;
 }
 
+.signup-form {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
 .auth-form label {
   margin-bottom: 0;
 }

@@ -25,8 +25,22 @@
             密码
             <input id="authPassword" type="password" autocomplete="current-password" placeholder="输入密码" />
           </label>
+          <button class="primary-button" id="signInButton" type="submit">登录</button>
+          <p class="form-note" id="authStatus">登录后系统会自动识别这是家长账号还是学生账号。</p>
+        </form>
+
+        <form id="signupForm" class="auth-form signup-form">
+          <h2>注册新账号</h2>
           <label>
-            注册身份
+            注册邮箱
+            <input id="signupEmail" type="email" autocomplete="email" placeholder="name@example.com" />
+          </label>
+          <label>
+            注册密码
+            <input id="signupPassword" type="password" autocomplete="new-password" placeholder="至少 6 位密码" />
+          </label>
+          <label>
+            账号类型
             <select id="signupRole">
               <option value="parent">家长账号</option>
               <option value="student">学生账号</option>
@@ -39,11 +53,8 @@
               <option value="EVA">EVA</option>
             </select>
           </label>
-          <div class="auth-actions">
-            <button class="primary-button" id="signInButton" type="submit">登录</button>
-            <button class="secondary-button" id="signUpButton" type="button">注册</button>
-          </div>
-          <p class="form-note" id="authStatus">登录后系统会自动进入对应的家长端或学生端。</p>
+          <button class="secondary-button" id="signUpButton" type="submit">注册账号</button>
+          <p class="form-note">账号类型只在注册时选择；以后登录只输入邮箱和密码。</p>
         </form>
       </div>
     </section>

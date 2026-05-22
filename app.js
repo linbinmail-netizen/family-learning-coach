@@ -21,6 +21,8 @@ const accounts = [
   { id: "eva", role: "student", studentId: "younger", label: "EVA", description: "进入自己的今日任务" },
 ];
 
+const difficultyLevels = ["基础", "中等", "进阶", "挑战"];
+
 const subjects = {
   "7": [
     { id: "math7", label: "7th Grade Math", standard: "TEKS Grade 7 Math" },
@@ -1001,6 +1003,91 @@ const expandedQuestionBank = {
   ],
 };
 
+const challengeQuestionBank = {
+  math8: [
+    {
+      prompt: "A line has slope -3/2 and passes through (4, -1). Which equation represents the line?",
+      standard: "Grade 8 Math: Linear Relationships",
+      difficulty: "挑战",
+      answers: ["y + 1 = -3/2(x - 4)", "y - 4 = -3/2(x + 1)", "y = 4x - 1", "y + 1 = 3/2(x + 4)"],
+      correct: 0,
+      skill: "斜率概念",
+      explanation: "Point-slope form uses y - y1 = m(x - x1), so substitute m = -3/2 and (4, -1).",
+      coachHints: ["Which form uses slope and one point?", "What changes when y1 is -1?"],
+    },
+    {
+      prompt: "A cylinder and cone have the same radius and height. The cylinder volume is 96 cubic units. What is the cone volume?",
+      standard: "Grade 8 Math: Volume",
+      difficulty: "挑战",
+      answers: ["32 cubic units", "48 cubic units", "96 cubic units", "288 cubic units"],
+      correct: 0,
+      skill: "多步文字题",
+      explanation: "A cone with the same radius and height has one-third the cylinder volume.",
+      coachHints: ["How are cone and cylinder volume related?", "What is one-third of 96?"],
+    },
+  ],
+  rla8: [
+    {
+      prompt: "Two articles use the same statistic, but one says it proves a problem is urgent and the other says change is already working. What should a strong comparison explain?",
+      standard: "Grade 8 RLA: Paired Text Analysis",
+      difficulty: "挑战",
+      answers: ["How each author interprets the same evidence differently", "Which article has more paragraphs", "Whether the statistic has commas", "Which title is shorter"],
+      correct: 0,
+      skill: "证据比较",
+      explanation: "Paired-text analysis often asks how authors use or interpret evidence differently.",
+      coachHints: ["Is the evidence different or the interpretation different?", "What does each author want the reader to believe?"],
+    },
+  ],
+  science8: [
+    {
+      prompt: "A student claims fertilizer increases plant growth. Both groups got fertilizer, but one group also got more light. What is the main flaw?",
+      standard: "Grade 8 Science: Experimental Design",
+      difficulty: "挑战",
+      answers: ["More than one variable changed, so the cause is unclear", "The plants were measured", "The conclusion used data", "The experiment had a question"],
+      correct: 0,
+      skill: "变量控制",
+      explanation: "A fair test changes only one independent variable so results can be linked to one cause.",
+      coachHints: ["Which things changed between groups?", "Can you tell whether fertilizer or light caused the result?"],
+    },
+  ],
+  english1: [
+    {
+      prompt: "An author first describes a character's confident claim, then shows the character hesitating before acting. What is the best inference about the author's purpose?",
+      standard: "English I: Author's Craft",
+      difficulty: "挑战",
+      answers: ["To reveal a conflict between appearance and inner uncertainty", "To prove the character has no emotions", "To list unrelated events", "To explain a scientific process"],
+      correct: 0,
+      skill: "分析作者意图",
+      explanation: "Contrasting public confidence with private hesitation can reveal inner conflict.",
+      coachHints: ["What contrast does the author create?", "What does hesitation reveal that the claim did not?"],
+    },
+  ],
+  geometry: [
+    {
+      prompt: "In a proof, AB ≅ DE, BC ≅ EF, and ∠B ≅ ∠E. Which triangle congruence theorem is strongest?",
+      standard: "Geometry: Triangle Congruence Proofs",
+      difficulty: "挑战",
+      answers: ["SAS", "SSA", "AAA", "HL"],
+      correct: 0,
+      skill: "全等判定",
+      explanation: "The congruent angle is included between the two congruent side pairs, so SAS applies.",
+      coachHints: ["Where is the given angle located?", "Is it between the two side pairs?"],
+    },
+  ],
+  biology: [
+    {
+      prompt: "A mutation changes one DNA base but the protein still works normally. Which explanation is most reasonable?",
+      standard: "Biology: Genetics and Protein Synthesis",
+      difficulty: "挑战",
+      answers: ["The mutation may not have changed the amino acid or critical protein shape", "All mutations stop protein production", "DNA never affects proteins", "The cell no longer needs enzymes"],
+      correct: 0,
+      skill: "遗传基础",
+      explanation: "Some mutations are silent or do not affect a critical part of protein structure.",
+      coachHints: ["Do all DNA changes have the same effect?", "What has to change for protein function to change?"],
+    },
+  ],
+};
+
 let state = {
   accountId: "parent",
   accountRole: "parent",
@@ -1018,6 +1105,8 @@ let state = {
   authSession: null,
   authProfile: null,
   cloudStudents: {},
+  adaptiveLevels: {},
+  adaptiveStats: {},
   planSettings: {
     older: { minutes: 30, focusSubject: "english1" },
     younger: { minutes: 30, focusSubject: "math8" },
@@ -1050,6 +1139,8 @@ function loadSavedData() {
         ...saved.planSettings,
       };
     }
+    if (saved?.adaptiveLevels) state.adaptiveLevels = saved.adaptiveLevels;
+    if (saved?.adaptiveStats) state.adaptiveStats = saved.adaptiveStats;
   } catch {
     state.records = [];
   }
@@ -1066,6 +1157,8 @@ function saveData() {
       grade: state.grade,
       subject: state.subject,
       planSettings: state.planSettings,
+      adaptiveLevels: state.adaptiveLevels,
+      adaptiveStats: state.adaptiveStats,
       lastUpdated: new Date().toISOString(),
     })
   );
@@ -1581,19 +1674,69 @@ function prepareQuestionSet(questions) {
   return questions.map((question, index) => rotateQuestionOptions(question, index));
 }
 
+function difficultyScore(difficulty = "中等") {
+  const value = String(difficulty);
+  if (value.includes("挑战")) return 3;
+  if (value.includes("进阶") || value.includes("advanced")) return 2;
+  if (value.includes("基础") || value.includes("foundation")) return 0;
+  return 1;
+}
+
+function adaptiveLevelForSubject(subjectId = state.subject) {
+  return Math.max(0, Math.min(difficultyLevels.length - 1, state.adaptiveLevels[subjectId] ?? 1));
+}
+
+function selectAdaptiveQuestions(questions) {
+  const target = adaptiveLevelForSubject();
+  const sorted = [...questions].sort((a, b) => {
+    const aDistance = Math.abs(difficultyScore(a.difficulty) - target);
+    const bDistance = Math.abs(difficultyScore(b.difficulty) - target);
+    return aDistance - bDistance || difficultyScore(a.difficulty) - difficultyScore(b.difficulty);
+  });
+  const nearTarget = sorted.filter((question) => Math.abs(difficultyScore(question.difficulty) - target) <= 1);
+  return nearTarget.length >= 6 ? nearTarget : sorted;
+}
+
+function updateAdaptiveDifficulty(question, selectedIndex) {
+  const subjectId = state.subject;
+  const isCorrect = selectedIndex === question.correct;
+  const current = state.adaptiveStats[subjectId] || { correctStreak: 0, missedStreak: 0 };
+  const nextStats = {
+    correctStreak: isCorrect ? current.correctStreak + 1 : 0,
+    missedStreak: isCorrect ? 0 : current.missedStreak + 1,
+  };
+  let level = adaptiveLevelForSubject(subjectId);
+  let message = "";
+
+  if (nextStats.correctStreak >= 2 && level < difficultyLevels.length - 1) {
+    level += 1;
+    nextStats.correctStreak = 0;
+    message = "答得很顺，下一题会提高一点难度。";
+  } else if (nextStats.missedStreak >= 2 && level > 0) {
+    level -= 1;
+    nextStats.missedStreak = 0;
+    message = "这组题偏难，下一题会先回到更稳的难度。";
+  }
+
+  state.adaptiveLevels[subjectId] = level;
+  state.adaptiveStats[subjectId] = nextStats;
+  return { isCorrect, level, message };
+}
+
 function activeQuestions() {
   const cloudQuestions = state.cloudQuestions[state.subject] || [];
   const localQuestions = localQuestionBank[state.subject] || [];
   const expandedQuestions = expandedQuestionBank[state.subject] || [];
-  if (cloudQuestions.length || localQuestions.length || expandedQuestions.length) {
-    return prepareQuestionSet(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions)));
+  const challengeQuestions = challengeQuestionBank[state.subject] || [];
+  if (cloudQuestions.length || localQuestions.length || expandedQuestions.length || challengeQuestions.length) {
+    return prepareQuestionSet(selectAdaptiveQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions))));
   }
 
   const diagnostic = activeDiagnostic();
-  if (diagnostic.questions) return prepareQuestionSet(diagnostic.questions);
+  if (diagnostic.questions) return prepareQuestionSet(selectAdaptiveQuestions(diagnostic.questions));
   const strongest = diagnostic.skills.reduce((best, skill) => (skill[1] > best[1] ? skill : best), diagnostic.skills[0]);
   const weakest = diagnostic.skills.reduce((low, skill) => (skill[1] < low[1] ? skill : low), diagnostic.skills[0]);
-  return prepareQuestionSet([
+  return prepareQuestionSet(selectAdaptiveQuestions([
     {
       prompt: diagnostic.prompt,
       standard: diagnostic.standard,
@@ -1625,7 +1768,7 @@ function activeQuestions() {
       correct: 0,
       skill: weakest[0],
     },
-  ]);
+  ]));
 }
 
 function normalizeDifficulty(difficulty) {
@@ -1797,15 +1940,17 @@ function renderDiagnostic() {
   const diagnostic = activeDiagnostic();
   const questions = activeQuestions();
   const question = questions[state.currentQuestion] || questions[0];
+  const adaptiveLevel = adaptiveLevelForSubject();
+  const adaptiveLabel = difficultyLevels[adaptiveLevel];
 
   $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 诊断`;
   $("standardTag").textContent = question.standard;
-  $("difficultyTag").textContent = question.difficulty;
+  $("difficultyTag").textContent = `${question.difficulty} · 当前目标：${adaptiveLabel}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
   $("questionPrompt").textContent = question.prompt;
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subject;
-  $("dailySuggestion").textContent = `${student.name} 今天计划学习 ${plan.minutes} 分钟，重点完成 ${focusSubject.label}。当前题组 ${questions.length} 题，包含云端题库与本地强化题。`;
+  $("dailySuggestion").textContent = `${student.name} 今天计划学习 ${plan.minutes} 分钟，重点完成 ${focusSubject.label}。当前目标难度：${adaptiveLabel}；系统会根据答题表现自动升降。`;
 
   $("answerGrid").innerHTML = question.answers
     .map(
@@ -2093,9 +2238,15 @@ function bindEvents() {
   $("answerGrid").addEventListener("click", (event) => {
     const button = event.target.closest("[data-answer-index]");
     if (!button) return;
-    state.selectedAnswers[state.currentQuestion] = Number(button.dataset.answerIndex);
+    const selectedIndex = Number(button.dataset.answerIndex);
+    const question = activeQuestions()[state.currentQuestion];
+    state.selectedAnswers[state.currentQuestion] = selectedIndex;
+    const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
     saveData();
     renderDiagnostic();
+    if (adaptiveResult.message) {
+      $("dailySuggestion").textContent = `${adaptiveResult.message} 当前目标难度：${difficultyLevels[adaptiveResult.level]}。`;
+    }
   });
 
   $("prevQuestion").addEventListener("click", () => {

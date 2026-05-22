@@ -20,6 +20,17 @@ test("student daily task view exists", () => {
   assert.match(js, /renderTodayPlan/);
 });
 
+test("student home has clear action buttons", () => {
+  assert.match(html, /id="studentActionBar"/);
+  assert.match(html, /id="startDiagnosticButton"/);
+  assert.match(html, /id="reviewMistakesButton"/);
+  assert.match(html, /id="askCoachButton"/);
+  assert.match(js, /renderStudentActionBar/);
+  assert.match(js, /开始今日诊断/);
+  assert.match(js, /复习错题/);
+  assert.match(js, /找 AI 讲解/);
+});
+
 test("parent report explains fit, issue type, and next action", () => {
   assert.match(html, /id="difficultyFit"/);
   assert.match(html, /id="issueType"/);

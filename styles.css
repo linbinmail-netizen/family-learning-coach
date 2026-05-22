@@ -396,6 +396,30 @@ input {
   margin: 12px 0;
 }
 
+.student-action-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.task-step {
+  display: inline-block;
+  color: var(--green);
+  font-weight: 800;
+  margin-right: 8px;
+}
+
+.task-done {
+  color: var(--soft-ink);
+}
+
+.task-done strong::after {
+  content: " 已完成";
+  color: var(--green);
+  font-size: 13px;
+}
+
 .parent-plan-form {
   margin-bottom: 16px;
 }
@@ -530,6 +554,7 @@ li {
   .today-layout,
   .form-grid,
   .weekly-stats,
+  .student-action-bar,
   .roadmap {
     grid-template-columns: 1fr;
   }

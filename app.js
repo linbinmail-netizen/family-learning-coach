@@ -1854,18 +1854,14 @@ function buildDailyTasks(student = activeStudent()) {
 
   return [
     {
+      step: "第一步",
       title: `${focusSubject.label} 诊断练习`,
       detail: `完成 ${targetQuestions} 道题，难度策略：${difficultyModeLabel(plan.difficultyMode)}。`,
       done,
       total: targetQuestions,
     },
     {
-      title: "AI 引导订正",
-      detail: "选择 1 道不会的题，写出自己的想法，让 AI 讲解概念并追问。",
-      done: state.chatHistory.some((message) => message.role === "student") ? 1 : 0,
-      total: 1,
-    },
-    {
+      step: "第二步",
       title: "错题复习",
       detail: openMistakes.length
         ? `复习 ${openMistakes[0].skill} 等 ${openMistakes.length} 个待巩固点。`
@@ -1874,8 +1870,16 @@ function buildDailyTasks(student = activeStudent()) {
       total: 1,
     },
     {
+      step: "第三步",
+      title: "AI 引导订正",
+      detail: "选择 1 道不会的题，写出自己的想法，让 AI 讲解概念并追问。",
+      done: state.chatHistory.some((message) => message.role === "student") ? 1 : 0,
+      total: 1,
+    },
+    {
+      step: "第四步",
       title: "学习总结",
-      detail: "用一句话写下今天学会的方法，家长端会看到报告。",
+      detail: "用一句话写下今天学会的方法，报告会自动保存。",
       done: report ? 1 : 0,
       total: 1,
     },
@@ -2128,7 +2132,8 @@ function renderTodayPlan() {
   $("todayTaskList").innerHTML = tasks
     .map(
       (task) => `
-        <li>
+        <li class="${task.done >= task.total ? "task-done" : "task-pending"}">
+          <span class="task-step">${task.step}</span>
           <strong>${task.title}</strong><br />
           ${task.detail}<br />
           进度：${Math.min(task.done, task.total)} / ${task.total}
@@ -2136,7 +2141,15 @@ function renderTodayPlan() {
       `
     )
     .join("");
+  renderStudentActionBar();
   renderMistakeReview();
+}
+
+function renderStudentActionBar() {
+  $("startDiagnosticButton").textContent = "开始今日诊断";
+  $("reviewMistakesButton").textContent = "复习错题";
+  $("askCoachButton").textContent = "找 AI 讲解";
+  $("reviewMistakesButton").disabled = !mistakesForStudent().length;
 }
 
 function renderMistakeReview() {
@@ -2696,6 +2709,20 @@ function bindEvents() {
     state.currentQuestion = Math.min(activeQuestions().length - 1, state.currentQuestion + 1);
     renderDiagnostic();
   });
+
+  $("startDiagnosticButton").addEventListener("click", () => switchView("diagnostic"));
+  $("reviewMistakesButton").addEventListener("click", () => {
+    const firstMistake = mistakesForStudent()[0];
+    if (firstMistake?.subjectId) {
+      state.subject = firstMistake.subjectId;
+      state.grade = firstMistake.grade || state.grade;
+      state.currentQuestion = 0;
+      renderSelectors();
+      renderDiagnostic();
+    }
+    switchView("diagnostic");
+  });
+  $("askCoachButton").addEventListener("click", () => switchView("coach"));
 
   $("runDiagnostic").addEventListener("click", buildReport);
 

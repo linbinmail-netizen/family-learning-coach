@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `17a932f`
+- Latest deployed version checked: `4b79d95`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -39,7 +39,7 @@ The student side is now the priority. Current behavior:
 - The guidance panel now includes a three-part method restatement scaffold: what the question asks, what to inspect first, and why that step helps. The scaffold prefers Chinese lesson steps over raw English answer hints.
 - While the student types a restatement, the app now gives immediate local quality feedback for three parts: question goal, method step, and reason why. Short keyword-only replies are rejected with a request for more complete explanation.
 - The inline AI guidance submit button stays disabled until the restatement is complete enough; direct submit attempts are also blocked with a clear reminder.
-- After a complete restatement, the coach now gives one guided teaching move before variant verification: concept reminder, small example, and next question.
+- After a complete restatement, the coach now gives one guided teaching move and immediately opens variant verification, so students do not get stuck in repeated AI back-and-forth.
 - The locked question requires a mastery loop: teach, restate, variant explanation.
 - Variant verification is open-ended, not multiple choice, to reduce guessing.
 - Variant verification now includes a structured method checklist: mission, three method steps, and self-check reminder.
@@ -85,7 +85,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 92 tests passed, syntax checks passed, and live Vercel deployment `17a932f` opened correctly. Browser verification confirmed the logged-in app markup includes the family learning photo card outside the login page, and the deployed image asset loads at 1280x960.
+Latest result: 93 tests passed, syntax checks passed, and live Vercel deployment `4b79d95` is READY. Live app.js verification confirmed the wrong-answer guidance flow now moves from complete restatement directly into variant verification.
 
 ## Next Recommended Work
 
@@ -120,7 +120,8 @@ Student-side v4.1 is the current usable baseline:
 - v5.3: variant live feedback now gives the next missing writing step, then confirms when the method explanation is ready to submit.
 - v5.4: signed-out auth landing now follows a standard minimal pattern: login first, registration as a secondary entry, and account type only inside registration.
 - v5.5: logged-in app now includes a family learning memory photo card above the workspace, using a wide crop that keeps the family and school setting visible.
-- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
+- v5.6: complete restatement now opens variant verification in the same coach turn, preventing students from getting stuck after a wrong answer.
+- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

@@ -89,6 +89,17 @@ test("parent plan controls shape the student daily task", () => {
   assert.match(js, /plan\.difficultyMode/);
 });
 
+test("student daily plan supports a two-hour learning structure", () => {
+  assert.match(html, /<option value="120">120 分钟<\/option>/);
+  assert.match(html, /<option value="24">24 题<\/option>/);
+  assert.match(js, /function buildTwoHourLearningBlocks/);
+  assert.match(js, /概念讲解/);
+  assert.match(js, /基础练习/);
+  assert.match(js, /错题复盘/);
+  assert.match(js, /挑战拔高/);
+  assert.match(js, /今日总结/);
+});
+
 test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="loginView"/);
   assert.match(html, /id="appShell"/);

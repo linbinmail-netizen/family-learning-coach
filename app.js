@@ -2336,48 +2336,98 @@ function resetDiagnosticProgress() {
   state.reportReady = false;
 }
 
+function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount, guidedCount, report, openMistakes }) {
+  const targetQuestions = plan.questionTarget || Math.max(4, Math.min(24, Math.round(plan.minutes / 5)));
+  const foundationTarget = Math.max(4, Math.round(targetQuestions * 0.45));
+  const reviewTarget = Math.max(2, Math.round(targetQuestions * 0.2));
+  const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
+  const twoHourMode = plan.minutes >= 90 || targetQuestions >= 18;
+
+  if (!twoHourMode) {
+    const done = Math.min(answeredCount, targetQuestions);
+    return [
+      {
+        step: "第一步",
+        title: `${focusSubject.label} 今日学习课`,
+        detail: `先看短讲解和例题，再完成 ${targetQuestions} 道练习；难度策略：${difficultyModeLabel(plan.difficultyMode)}。`,
+        done,
+        total: targetQuestions,
+      },
+      {
+        step: "第二步",
+        title: "卡住时 AI 引导",
+        detail: openMistakes.length
+          ? `优先处理 ${openMistakes[0].skill}，AI 会先补概念，再追问下一步。`
+          : "如果答错或选择不确定，系统会自动打开 AI 教练卡片。",
+        done: openMistakes.length ? guidedCount : 1,
+        total: 1,
+      },
+      {
+        step: "第三步",
+        title: "变式验证",
+        detail: "答错或猜对的题，必须通过一道同知识点变式题，才算真正会了。",
+        done: guidedCount ? 1 : 0,
+        total: 1,
+      },
+      {
+        step: "第四步",
+        title: "今日总结",
+        detail: "生成学习总结，家长能看到今天学了什么、哪里卡住、明天怎么调。",
+        done: report ? 1 : 0,
+        total: 1,
+      },
+    ];
+  }
+
+  return [
+    {
+      step: "第一步",
+      title: "概念讲解",
+      detail: `${student.name} 先用 15-20 分钟学习 ${focusSubject.label} 的核心概念、例题和易错点。`,
+      done: answeredCount > 0 ? 1 : 0,
+      total: 1,
+    },
+    {
+      step: "第二步",
+      title: "基础练习",
+      detail: `完成约 ${foundationTarget} 道基础和中等题，目标是把方法做稳，而不是追求速度。`,
+      done: Math.min(answeredCount, foundationTarget),
+      total: foundationTarget,
+    },
+    {
+      step: "第三步",
+      title: "错题复盘",
+      detail: openMistakes.length
+        ? `优先复盘 ${openMistakes[0].skill}，用 AI 引导讲清楚错因。`
+        : `完成约 ${reviewTarget} 道滚动复习题，防止旧知识掉线。`,
+      done: Math.min(Math.max(answeredCount - foundationTarget, 0), reviewTarget),
+      total: reviewTarget,
+    },
+    {
+      step: "第四步",
+      title: "挑战拔高",
+      detail: `完成约 ${challengeTarget} 道挑战题或解释题，每题都要能说出理由。`,
+      done: Math.min(Math.max(answeredCount - foundationTarget - reviewTarget, 0), challengeTarget),
+      total: challengeTarget,
+    },
+    {
+      step: "第五步",
+      title: "今日总结",
+      detail: "生成今日总结，记录掌握度、错题知识点和明天计划。",
+      done: report ? 1 : 0,
+      total: 1,
+    },
+  ];
+}
+
 function buildDailyTasks(student = activeStudent()) {
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subjects[student.grade][0];
   const answeredCount = Object.keys(state.selectedAnswers).length;
   const guidedCount = guidedMasteryCount(student.id);
-  const targetQuestions = plan.questionTarget || Math.max(4, Math.min(10, Math.round(plan.minutes / 5)));
-  const done = Math.min(answeredCount, targetQuestions);
   const report = todayRecordForStudent(student.name);
   const openMistakes = mistakesForStudent(student.id);
-
-  return [
-    {
-      step: "第一步",
-      title: `${focusSubject.label} 今日学习课`,
-      detail: `先看短讲解和例题，再完成 ${targetQuestions} 道练习；难度策略：${difficultyModeLabel(plan.difficultyMode)}。`,
-      done,
-      total: targetQuestions,
-    },
-    {
-      step: "第二步",
-      title: "卡住时 AI 引导",
-      detail: openMistakes.length
-        ? `优先处理 ${openMistakes[0].skill}，AI 会先补概念，再追问下一步。`
-        : "如果答错或选择不确定，系统会自动打开 AI 教练卡片。",
-      done: openMistakes.length ? guidedCount : 1,
-      total: 1,
-    },
-    {
-      step: "第三步",
-      title: "变式验证",
-      detail: "答错或猜对的题，必须通过一道同知识点变式题，才算真正会了。",
-      done: guidedCount ? 1 : 0,
-      total: 1,
-    },
-    {
-      step: "第四步",
-      title: "今日总结",
-      detail: "生成学习总结，家长能看到今天学了什么、哪里卡住、明天怎么调。",
-      done: report ? 1 : 0,
-      total: 1,
-    },
-  ];
+  return buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount, guidedCount, report, openMistakes });
 }
 
 function todayCompletionState(tasks = buildDailyTasks()) {
@@ -2639,7 +2689,9 @@ function renderTodayPlan() {
 
   $("todayTitle").textContent = `${student.name} 今日学习课`;
   $("todayMinutes").textContent = `${plan.minutes} 分钟`;
-  $("todayFocus").textContent = `重点：${focusSubject.label} · 先学再练 · ${plan.questionTarget || 8} 题`;
+  $("todayFocus").textContent = plan.minutes >= 90 || (plan.questionTarget || 8) >= 18
+    ? `重点：${focusSubject.label} · 2 小时结构 · ${plan.questionTarget || 24} 题`
+    : `重点：${focusSubject.label} · 先学再练 · ${plan.questionTarget || 8} 题`;
   $("todayProgress").textContent = `${completion.completed} / ${completion.total}`;
   $("todayProgressBar").style.width = `${completion.percent}%`;
   $("todayEncouragement").textContent =

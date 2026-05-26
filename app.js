@@ -2408,14 +2408,18 @@ function renderGuidanceScaffold(lock = state.guidanceLock) {
 
 function evaluateGuidanceReplyQuality(reply = "") {
   const text = reply.trim().toLowerCase();
+  const compactText = text.replace(/\s+/g, "");
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  const enoughDetail = compactText.length >= 18 || wordCount >= 8;
   const hasQuestionGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate/.test(text);
-  const hasMethodStep = /先|第一步|步骤|方法|看|找|用|变化|条件|证据|divide|change|because/.test(text);
+  const hasMethodStep = /先|第一步|步骤|方法|看|找|用|变化|条件|证据|除以|比较|compare|divide|change|rate/.test(text);
   const hasReasonWhy = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that/.test(text);
   return {
+    enoughDetail,
     questionGoal: hasQuestionGoal,
     methodStep: hasMethodStep,
     reasonWhy: hasReasonWhy,
-    ready: hasQuestionGoal && hasMethodStep && hasReasonWhy,
+    ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy,
   };
 }
 
@@ -2431,6 +2435,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     $(id).classList.toggle("met", met);
   });
   const missing = [
+    !quality.enoughDetail && "解释要更完整",
     !quality.questionGoal && "题目目标",
     !quality.methodStep && "方法步骤",
     !quality.reasonWhy && "原因说明",

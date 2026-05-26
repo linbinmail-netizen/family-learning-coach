@@ -198,6 +198,13 @@ test("student guidance reply gives immediate quality feedback while typing", () 
   assert.match(css, /reply-quality-card/);
 });
 
+test("student guidance reply quality rejects short keyword-only replies", () => {
+  assert.match(js, /const enoughDetail = compactText\.length >= 18 \|\| wordCount >= 8/);
+  assert.match(js, /ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy/);
+  assert.doesNotMatch(js, /const hasMethodStep = .*because/);
+  assert.match(js, /解释要更完整/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

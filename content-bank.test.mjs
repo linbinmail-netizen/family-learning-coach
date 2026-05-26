@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("./app.js", import.meta.url), "utf8");
+const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
 const expandedStart = source.indexOf("const expandedQuestionBank = {");
 const expandedEnd = source.indexOf("\nlet state = {", expandedStart);
 const expandedSource = expandedStart === -1 || expandedEnd === -1 ? "" : source.slice(expandedStart, expandedEnd);
@@ -61,4 +62,14 @@ test("priority subjects have balanced quality coverage", () => {
     assert.match(source, new RegExp(`${subject}: \\{[^}]*minimumQuestions: 8`, "s"));
   }
   assert.match(source, /minimumAdvancedQuestions: 1/);
+});
+
+test("parent dashboard can show question bank quality audit", () => {
+  assert.match(html, /id="questionQualityAudit"/);
+  assert.match(html, /id="questionQualityStats"/);
+  assert.match(html, /id="questionQualitySubjects"/);
+  assert.match(source, /function renderQuestionQualityAudit/);
+  assert.match(source, /buildQuestionQualityAudit\(\)/);
+  assert.match(source, /weakSubjects/);
+  assert.match(source, /题库质量/);
 });

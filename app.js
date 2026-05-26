@@ -3132,6 +3132,60 @@ function renderWeeklyTrend() {
   $("weeklyNextPlan").textContent = trend.nextPlan;
 }
 
+function renderQuestionQualityAudit() {
+  const audit = buildQuestionQualityAudit();
+  const totalSubjects = audit.coverage.length;
+  const readySubjects = audit.coverage.filter((subject) => subject.meetsCount && subject.meetsAdvanced && subject.meetsQuality).length;
+  const totalQuestions = audit.coverage.reduce((sum, subject) => sum + subject.questionCount, 0);
+  const averageQuality = totalSubjects
+    ? Math.round(audit.coverage.reduce((sum, subject) => sum + subject.averageQuality, 0) / totalSubjects)
+    : 0;
+  const weakSubjects = audit.weakSubjects;
+
+  $("questionQualityStatus").textContent = audit.ready ? "题库质量达标" : `需要补强 ${weakSubjects.length} 科`;
+  $("questionQualityStats").innerHTML = `
+    <div><strong>${readySubjects}/${totalSubjects}</strong><span>达标科目</span></div>
+    <div><strong>${averageQuality}%</strong><span>平均质量分</span></div>
+    <div><strong>${totalQuestions}</strong><span>重点题目数</span></div>
+    <div><strong>${weakSubjects.length}</strong><span>待补强科目</span></div>
+  `;
+  $("questionQualitySubjects").innerHTML = audit.coverage
+    .map((subject) => {
+      const label = subjectById(subject.subjectId)?.label || subject.subjectId;
+      const gaps = [];
+      if (!subject.meetsCount) gaps.push(`题量 ${subject.questionCount}/${subject.target.minimumQuestions}`);
+      if (!subject.meetsAdvanced) gaps.push(`进阶题 ${subject.advancedCount}/${subject.target.minimumAdvancedQuestions}`);
+      if (!subject.meetsQuality) gaps.push(`质量分 ${subject.averageQuality}/80`);
+      const status = gaps.length ? "需要补强" : "达标";
+      return `
+        <article class="quality-subject ${gaps.length ? "needs-work" : "ready"}">
+          <div>
+            <strong>${label}</strong>
+            <span>${status}</span>
+          </div>
+          <p>题量 ${subject.questionCount}；进阶 ${subject.advancedCount}；质量 ${subject.averageQuality}%</p>
+          <div class="progress"><span style="width:${Math.min(100, subject.averageQuality)}%"></span></div>
+          <small>${gaps.length ? gaps.join("；") : "可继续加入更高阶综合题。"}</small>
+        </article>
+      `;
+    })
+    .join("");
+  $("questionQualityNextSteps").innerHTML = weakSubjects.length
+    ? weakSubjects
+        .slice(0, 4)
+        .map((subject) => {
+          const label = subjectById(subject.subjectId)?.label || subject.subjectId;
+          const action = !subject.meetsCount
+            ? "先补足基础和中等题量"
+            : !subject.meetsAdvanced
+              ? "补 1-2 道挑战题"
+              : "加强讲解、提示和干扰项质量";
+          return `<li><strong>${label}</strong>：${action}。</li>`;
+        })
+        .join("")
+    : "<li>重点科目已达到当前质量门槛，下一步可以增加学校考试同等难度的综合题。</li>";
+}
+
 function renderActivity() {
   if (!state.records.length) {
     $("activityList").innerHTML = "<li>还没有学习记录。完成一次诊断后会自动保存。</li>";
@@ -3402,6 +3456,7 @@ function renderAll() {
   renderCoach();
   renderParentPlanControls();
   renderWeeklyTrend();
+  renderQuestionQualityAudit();
   applyRoleVisibility();
   $("reportStatus").textContent = state.reportReady ? "已生成" : "等待诊断";
   $("overallScore").textContent = state.reportReady ? $("overallScore").textContent : "--";

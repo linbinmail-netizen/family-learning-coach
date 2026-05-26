@@ -1090,6 +1090,102 @@ const challengeQuestionBank = {
   ],
 };
 
+const questionQualityRubric = {
+  alignment: {
+    label: "TEKS/STAAR alignment",
+    points: 20,
+    check: (question) => Boolean(question.standard && /(Grade|English|Algebra|Geometry|Biology|Math|Science|RLA)/i.test(question.standard)),
+  },
+  skillTag: {
+    label: "skillTag",
+    points: 15,
+    check: (question) => Boolean(question.skill),
+  },
+  difficultyLadder: {
+    label: "difficultyLadder",
+    points: 10,
+    check: (question) => Boolean(question.difficulty),
+  },
+  explanationDepth: {
+    label: "explanationDepth",
+    points: 20,
+    check: (question) => (question.explanation || "").trim().length >= 45,
+  },
+  guidedHints: {
+    label: "guidedHints",
+    points: 15,
+    check: (question) => Array.isArray(question.coachHints) && question.coachHints.length >= 2,
+  },
+  distractorQuality: {
+    label: "distractorQuality",
+    points: 20,
+    check: (question) => Array.isArray(question.answers)
+      && question.answers.length === 4
+      && new Set(question.answers).size === 4
+      && Number.isInteger(question.correct)
+      && question.correct >= 0
+      && question.correct < question.answers.length,
+  },
+};
+
+const questionCoverageTargets = {
+  math8: { minimumQuestions: 8, minimumAdvancedQuestions: 1 },
+  rla8: { minimumQuestions: 8, minimumAdvancedQuestions: 1 },
+  science8: { minimumQuestions: 8, minimumAdvancedQuestions: 1 },
+  english1: { minimumQuestions: 8, minimumAdvancedQuestions: 1 },
+  algebra1: { minimumQuestions: 8, minimumAdvancedQuestions: 1 },
+  geometry: { minimumQuestions: 8, minimumAdvancedQuestions: 1 },
+  biology: { minimumQuestions: 8, minimumAdvancedQuestions: 1 },
+};
+
+function allLocalQuestionsForSubject(subjectId) {
+  return mergeQuestions(
+    localQuestionBank[subjectId] || [],
+    (expandedQuestionBank[subjectId] || []).concat(challengeQuestionBank[subjectId] || [])
+  );
+}
+
+function qualityScore(question) {
+  const checks = Object.values(questionQualityRubric).map((rule) => ({
+    label: rule.label,
+    passed: rule.check(question),
+    points: rule.points,
+  }));
+  const score = checks.reduce((sum, item) => sum + (item.passed ? item.points : 0), 0);
+  return { score, checks, passed: score >= 80 };
+}
+
+function coverageBySubject(subjectId) {
+  const questions = allLocalQuestionsForSubject(subjectId);
+  const target = questionCoverageTargets[subjectId] || { minimumQuestions: 5, minimumAdvancedQuestions: 0 };
+  const advancedCount = questions.filter((question) => difficultyScore(question.difficulty) >= 2).length;
+  const averageQuality = questions.length
+    ? Math.round(questions.reduce((sum, question) => sum + qualityScore(question).score, 0) / questions.length)
+    : 0;
+  return {
+    subjectId,
+    questionCount: questions.length,
+    advancedCount,
+    target,
+    averageQuality,
+    meetsCount: questions.length >= target.minimumQuestions,
+    meetsAdvanced: advancedCount >= target.minimumAdvancedQuestions,
+    meetsQuality: averageQuality >= 80,
+  };
+}
+
+function buildQuestionQualityAudit(subjectIds = Object.keys(questionCoverageTargets)) {
+  const coverage = subjectIds.map(coverageBySubject);
+  const weakSubjects = coverage.filter((subject) => !subject.meetsCount || !subject.meetsAdvanced || !subject.meetsQuality);
+  return {
+    generatedAt: new Date().toISOString(),
+    rubric: questionQualityRubric,
+    coverage,
+    weakSubjects,
+    ready: weakSubjects.length === 0,
+  };
+}
+
 let state = {
   accountId: "parent",
   accountRole: "parent",

@@ -45,3 +45,20 @@ test("question selection adapts difficulty as students answer", () => {
   assert.match(source, /adaptiveLevels/);
   assert.match(source, /答得很顺，下一题会提高一点难度/);
 });
+
+test("question bank has a quality rubric and audit system", () => {
+  assert.match(source, /const questionQualityRubric = {/);
+  assert.match(source, /function qualityScore/);
+  assert.match(source, /function buildQuestionQualityAudit/);
+  assert.match(source, /function coverageBySubject/);
+  assert.match(source, /TEKS\/STAAR alignment/);
+  assert.match(source, /explanationDepth/);
+  assert.match(source, /distractorQuality/);
+});
+
+test("priority subjects have balanced quality coverage", () => {
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    assert.match(source, new RegExp(`${subject}: \\{[^}]*minimumQuestions: 8`, "s"));
+  }
+  assert.match(source, /minimumAdvancedQuestions: 1/);
+});

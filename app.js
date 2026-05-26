@@ -2959,6 +2959,13 @@ async function saveParentPlanSettings() {
   }
 }
 
+function applyTwoHourPlanPreset() {
+  $("planMinutes").value = "120";
+  $("planQuestionTarget").value = "24";
+  $("planDifficultyMode").value = "adaptive";
+  $("planSaveStatus").textContent = "已填入 2 小时学习结构：概念讲解、基础练习、错题复盘、挑战拔高、今日总结。确认后点击保存计划。";
+}
+
 function buildLearningInsights({ average, answeredCount, correctCount, questions, plan }) {
   const accuracy = answeredCount ? Math.round((correctCount / answeredCount) * 100) : 0;
   const targetLevel = adaptiveLevelForSubject();
@@ -3667,6 +3674,8 @@ function bindEvents() {
     event.preventDefault();
     saveParentPlanSettings();
   });
+
+  $("applyTwoHourPlanPreset").addEventListener("click", applyTwoHourPlanPreset);
 }
 
 function renderAll() {

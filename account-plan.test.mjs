@@ -100,6 +100,15 @@ test("student daily plan supports a two-hour learning structure", () => {
   assert.match(js, /今日总结/);
 });
 
+test("parent can apply a one-click two-hour plan preset", () => {
+  assert.match(html, /id="applyTwoHourPlanPreset"/);
+  assert.match(html, /一键 2 小时计划/);
+  assert.match(js, /function applyTwoHourPlanPreset/);
+  assert.match(js, /planMinutes"\)\.value = "120"/);
+  assert.match(js, /planQuestionTarget"\)\.value = "24"/);
+  assert.match(js, /planDifficultyMode"\)\.value = "adaptive"/);
+});
+
 test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="loginView"/);
   assert.match(html, /id="appShell"/);

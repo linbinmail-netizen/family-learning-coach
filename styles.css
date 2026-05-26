@@ -628,6 +628,13 @@ textarea {
   margin-bottom: 16px;
 }
 
+.plan-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

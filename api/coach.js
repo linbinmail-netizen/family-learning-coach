@@ -227,6 +227,12 @@ export function extractMasteryEvaluation(data) {
   }
 }
 
+export function mergeMasteryEvaluation(aiEvaluation, fallbackEvaluation) {
+  if (!aiEvaluation) return fallbackEvaluation;
+  if (fallbackEvaluation?.passed && !aiEvaluation.passed) return fallbackEvaluation;
+  return aiEvaluation;
+}
+
 export function buildMasteryEvaluationRequest(body = {}) {
   const {
     studentName,
@@ -331,7 +337,8 @@ export default async function handler(request, response) {
       }
 
       const data = await openaiResponse.json();
-      const evaluation = extractMasteryEvaluation(data) || buildFallbackMasteryEvaluation(request.body || {});
+      const fallbackEvaluation = buildFallbackMasteryEvaluation(request.body || {});
+      const evaluation = mergeMasteryEvaluation(extractMasteryEvaluation(data), fallbackEvaluation);
       response.status(200).json(evaluation);
       return;
     }

@@ -10,6 +10,7 @@ import {
   extractOpenAIText,
   fetchOpenAIWithTimeout,
   getLearningStep,
+  mergeMasteryEvaluation,
 } from "./coach.js";
 
 const baseBody = {
@@ -170,6 +171,16 @@ test("fallback mastery evaluation accepts Chinese math method explanations", () 
   });
 
   assert.equal(result.passed, true);
+});
+
+test("local passing mastery can override an overly strict AI rejection", () => {
+  const merged = mergeMasteryEvaluation(
+    { passed: false, reply: "请再具体一点。", nextPrompt: "补公式。" },
+    { passed: true, reply: "解释通过：你说清楚了第一步和理由。", nextPrompt: "" }
+  );
+
+  assert.equal(merged.passed, true);
+  assert.match(merged.reply, /通过/);
 });
 
 test("fetchOpenAIWithTimeout aborts slow OpenAI requests", async () => {

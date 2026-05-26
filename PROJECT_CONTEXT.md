@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `c0f0435`
+- Latest deployed version checked: `a2c8891`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -18,19 +18,25 @@ Last updated: 2026-05-26
 
 Build a long-term custom web learning platform for the family. Students should receive daily learning tasks, answer grade-level questions, get AI-guided coaching when they are stuck, and generate reports that parents can use to adjust study time and plans.
 
-## Current Version: Student v3.9
+## Current Version: Student QA Baseline
 
 The student side is now the priority. Current behavior:
 
 - Login and registration are separate from the learning app.
 - Account type is chosen during registration, not during login.
 - Parent and student accounts see different content.
+- Learning progress is scoped to the signed-in account to avoid one student/account polluting another account's local learning state.
+- Signing out clears login and registration form fields.
 - Students see daily tasks and today's learning lesson.
+- Today's progress refreshes when a student returns from a lesson.
+- Students first answer independently; hints, worked thinking, and guided teaching appear after a wrong or uncertain answer.
 - Questions adapt difficulty based on performance.
 - If a student answers wrong or marks an answer as guessed/uncertain, the current question is locked.
 - The locked question requires a mastery loop: teach, restate, variant explanation.
 - Variant verification is open-ended, not multiple choice, to reduce guessing.
 - The student must write a clear method explanation before moving to the next question.
+- Chinese, English, and mixed Chinese-English method explanations can pass when the reasoning is mathematically/conceptually equivalent.
+- If OpenAI is too strict but the local mastery check clearly passes, the local passing result can override the AI rejection.
 - Parent reports include guided mastery count and mistake-review data.
 - AI coach now receives recent mistakes from the same skill so hints can reflect repeated patterns.
 - Mistake review cards can open a targeted review lesson for the same skill.
@@ -56,15 +62,21 @@ Run from the local sync folder:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js
 ```
 
-Latest result: all tests passed before v3.2 push.
+Latest fuller local verification command:
+
+```powershell
+node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
+```
+
+Latest result: 72 tests passed, syntax checks passed, and the live `api/coach` endpoint accepted a Chinese Algebra I slope explanation.
 
 ## Next Recommended Work
 
 Continue deepening the student side:
 
 1. Improve the actual lesson content quality for 8th and 9th grade.
-2. Add richer open-ended answer evaluation instead of only simple keyword checks.
-3. Make the AI coach remember the student's last few mistakes in the same skill.
+2. Add richer open-ended answer evaluation with rubrics per skill, beyond simple keyword checks.
+3. Make the AI coach faster and more consistent with streaming or precomputed local prompts.
 4. Improve the student lesson UI so each session feels like a guided class.
 5. Later, improve parent weekly reports and email delivery.
 
@@ -75,6 +87,7 @@ Student-side v3.9 is the current usable baseline:
 - v3.7: AI guidance uses recent same-skill mistakes.
 - v3.8: mistake review opens a targeted review lesson.
 - v3.9: daily plan shows next action and completion status.
+- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 
@@ -83,3 +96,5 @@ Student-side v3.9 is the current usable baseline:
 - Do not put parent controls inside the student view.
 - Do not ask account type during login; role comes from the registered profile.
 - Do not let wrong answers advance without guided mastery.
+- Do not show solution guidance before the student's first attempt.
+- Do not rely only on multiple choice; require open explanation after wrong/uncertain answers.

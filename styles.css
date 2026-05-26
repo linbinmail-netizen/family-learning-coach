@@ -281,6 +281,12 @@ textarea {
   color: var(--green-dark);
 }
 
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .small-button {
   min-height: 30px;
   margin-top: 8px;

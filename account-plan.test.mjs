@@ -205,6 +205,14 @@ test("student guidance reply quality rejects short keyword-only replies", () => 
   assert.match(js, /解释要更完整/);
 });
 
+test("student cannot submit inline guidance until restatement is complete", () => {
+  assert.match(html, /id="inlineCoachSubmit"/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready/);
+  assert.match(js, /const quality = evaluateGuidanceReplyQuality\(reply\)/);
+  assert.match(js, /if \(!quality\.ready\)/);
+  assert.match(js, /先把复述补完整/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

@@ -2443,6 +2443,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   $("replyQualityStatus").textContent = quality.ready
     ? "这句方法比较完整，可以提交给 AI 教练检查。"
     : `还差：${missing.join("、")}。`;
+  $("inlineCoachSubmit").disabled = !quality.ready;
 }
 
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
@@ -3916,6 +3917,13 @@ function bindEvents() {
     const input = $("inlineCoachReply");
     const reply = input.value.trim();
     if (!reply) return;
+    const quality = evaluateGuidanceReplyQuality(reply);
+    if (!quality.ready) {
+      renderReplyQuality(reply);
+      $("replyQualityStatus").textContent = "先把复述补完整，再提交给 AI 教练。";
+      input.focus();
+      return;
+    }
     appendInlineCoach("student", reply);
     input.value = "";
     renderReplyQuality("");

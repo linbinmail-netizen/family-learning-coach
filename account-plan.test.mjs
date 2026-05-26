@@ -413,6 +413,15 @@ test("student cannot submit variant explanation until rubric is complete", () =>
   assert.match(js, /先把三项变式说明补完整/);
 });
 
+test("variant explanation offers non-answer sentence starters", () => {
+  assert.match(html, /id="variantStarterBar"/);
+  assert.match(js, /function variantSentenceStartersFor/);
+  assert.match(js, /function applyVariantStarter/);
+  assert.match(js, /data-starter-text/);
+  assert.match(js, /这样做是因为/);
+  assert.match(css, /variant-starter-bar/);
+});
+
 test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
   assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);

@@ -818,6 +818,28 @@ textarea {
   min-height: 92px;
 }
 
+.variant-starter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.starter-chip {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid rgba(41, 111, 143, 0.28);
+  border-radius: 8px;
+  background: #eef7fa;
+  color: var(--blue-dark);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.starter-chip:hover {
+  border-color: rgba(41, 111, 143, 0.48);
+  background: #e1f0f6;
+}
+
 .variant-rubric-feedback {
   display: flex;
   flex-wrap: wrap;

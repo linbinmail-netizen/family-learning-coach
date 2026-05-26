@@ -2162,6 +2162,24 @@ function variantMethodChecklistFor(variant = state.guidanceLock?.variant, questi
   };
 }
 
+function variantSentenceStartersFor(variant = state.guidanceLock?.variant, question = activeQuestions()[state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  return [
+    { label: "说题型", text: `这题属于 ${skill}，我先要看 ` },
+    { label: "说第一步", text: "第一步我会先 " },
+    { label: "说原因", text: "这样做是因为 " },
+  ];
+}
+
+function applyVariantStarter(text = "") {
+  const input = $("variantReply");
+  if (!input || !text) return;
+  const prefix = input.value.trim() ? "\n" : "";
+  input.value = `${input.value}${prefix}${text}`;
+  renderVariantRubricFeedback(input.value, state.guidanceLock?.variant);
+  input.focus();
+}
+
 const lessonBlueprints = {
   引用文本证据: {
     concept: "证据必须直接支持你的答案，不能只凭感觉。",
@@ -3340,6 +3358,12 @@ function renderVariantVerification(lock = state.guidanceLock) {
   $("variantMission").textContent = checklist.mission;
   $("variantMethodChecklist").innerHTML = checklist.steps.map((step) => `<li>${step}</li>`).join("");
   $("variantSelfCheck").textContent = checklist.selfCheck;
+  $("variantStarterBar").innerHTML = variantSentenceStartersFor(lock.variant, question)
+    .map(
+      (starter) =>
+        `<button class="starter-chip" type="button" data-starter-text="${starter.text}">${starter.label}</button>`
+    )
+    .join("");
   $("variantFeedback").textContent = `请写出完整方法。参考方向：${lock.variant.expectedMethod}`;
   $("variantReply").value = "";
   renderVariantRubricFeedback("", lock.variant);
@@ -4058,6 +4082,11 @@ function bindEvents() {
 
   $("inlineCoachReply").addEventListener("input", () => renderReplyQuality());
   $("variantReply").addEventListener("input", () => renderVariantRubricFeedback());
+  $("variantStarterBar").addEventListener("click", (event) => {
+    const starter = event.target.closest("[data-starter-text]");
+    if (!starter) return;
+    applyVariantStarter(starter.dataset.starterText);
+  });
 
   $("variantForm").addEventListener("submit", (event) => {
     event.preventDefault();

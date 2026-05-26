@@ -2148,6 +2148,20 @@ function buildVariantQuestion(question) {
   };
 }
 
+function variantMethodChecklistFor(variant = state.guidanceLock?.variant, question = activeQuestions()[state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const expected = variant?.expectedMethod || question?.explanation || "先看题目要求，再写方法。";
+  return {
+    mission: `验证目标：判断题目类型是 ${skill}，用自己的话写出方法，不写答案字母。`,
+    steps: [
+      "判断题目类型：这题在考哪一个知识点？",
+      `写出第一步：${expected}`,
+      "说明为什么：这一步怎样帮助你排除猜测或找到方法？",
+    ],
+    selfCheck: "自查：我的解释是否包含“先做什么”和“为什么这样做”？如果只写答案，需要补方法。",
+  };
+}
+
 const lessonBlueprints = {
   引用文本证据: {
     concept: "证据必须直接支持你的答案，不能只凭感觉。",
@@ -3278,7 +3292,16 @@ function renderInlineCoachPanel() {
   if (!variantVisible) return;
 
   $("variantPrompt").textContent = lock.variant.prompt;
-  $("variantReply").value = "";
+  renderVariantVerification(lock);
+}
+
+function renderVariantVerification(lock = state.guidanceLock) {
+  if (!lock?.variant) return;
+  const question = activeQuestions()[lock.questionIndex] || activeQuestions()[state.currentQuestion];
+  const checklist = variantMethodChecklistFor(lock.variant, question);
+  $("variantMission").textContent = checklist.mission;
+  $("variantMethodChecklist").innerHTML = checklist.steps.map((step) => `<li>${step}</li>`).join("");
+  $("variantSelfCheck").textContent = checklist.selfCheck;
   $("variantFeedback").textContent = `请写出完整方法。参考方向：${lock.variant.expectedMethod}`;
 }
 

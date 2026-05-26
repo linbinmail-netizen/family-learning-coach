@@ -374,6 +374,18 @@ test("student mastery loop requires open explanation before moving on", () => {
   assert.doesNotMatch(html, /data-variant-index/);
 });
 
+test("variant verification gives a structured method checklist", () => {
+  assert.match(html, /id="variantMission"/);
+  assert.match(html, /id="variantMethodChecklist"/);
+  assert.match(html, /id="variantSelfCheck"/);
+  assert.match(js, /function variantMethodChecklistFor/);
+  assert.match(js, /判断题目类型/);
+  assert.match(js, /写出第一步/);
+  assert.match(js, /说明为什么/);
+  assert.match(js, /renderVariantVerification/);
+  assert.match(css, /variant-method-card/);
+});
+
 test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
   assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);

@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `a2c8891`
+- Latest deployed version checked: `275159a`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -32,6 +32,7 @@ The student side is now the priority. Current behavior:
 - Students first answer independently; hints, worked thinking, and guided teaching appear after a wrong or uncertain answer.
 - Questions adapt difficulty based on performance.
 - If a student answers wrong or marks an answer as guessed/uncertain, the current question is locked.
+- After a wrong or uncertain answer, the guidance panel starts with a structured mistake insight card: issue type, skill gap, and next repair action.
 - The locked question requires a mastery loop: teach, restate, variant explanation.
 - Variant verification is open-ended, not multiple choice, to reduce guessing.
 - The student must write a clear method explanation before moving to the next question.
@@ -87,7 +88,7 @@ Student-side v3.9 is the current usable baseline:
 - v3.7: AI guidance uses recent same-skill mistakes.
 - v3.8: mistake review opens a targeted review lesson.
 - v3.9: daily plan shows next action and completion status.
-- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, and less-strict Chinese/mixed-language mastery checks.
+- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

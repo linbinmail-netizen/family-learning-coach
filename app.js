@@ -1224,11 +1224,25 @@ const questionCoverageTargets = {
   biology: { minimumQuestions: 8, minimumAdvancedQuestions: 1 },
 };
 
+const twoHourLearningTargets = {
+  dailyMinutes: 120,
+  targetQuestionsPerSession: 24,
+  minimumBankQuestionsPerSubject: 80,
+  minimumChallengeQuestions: 12,
+  minimumOpenResponseTasks: 10,
+  spiralReviewRatio: 25,
+  sourcePolicy: "Use TEKS and STAAR released item style as references; write original questions instead of copying protected test banks.",
+};
+
 function allLocalQuestionsForSubject(subjectId) {
   return mergeQuestions(
     localQuestionBank[subjectId] || [],
     (expandedQuestionBank[subjectId] || []).concat(challengeQuestionBank[subjectId] || [])
   );
+}
+
+function openResponseTaskCount(subjectId) {
+  return allLocalQuestionsForSubject(subjectId).filter((question) => question.openResponse || question.multiStepReasoning).length;
 }
 
 function qualityScore(question) {
@@ -1239,6 +1253,24 @@ function qualityScore(question) {
   }));
   const score = checks.reduce((sum, item) => sum + (item.passed ? item.points : 0), 0);
   return { score, checks, passed: score >= 80 };
+}
+
+function bankScaleGap(subjectId) {
+  const questions = allLocalQuestionsForSubject(subjectId);
+  const challengeCount = questions.filter((question) => difficultyScore(question.difficulty) >= 3 || question.schoolExamDepth).length;
+  const openResponseCount = openResponseTaskCount(subjectId);
+  return {
+    subjectId,
+    questionGap: Math.max(0, twoHourLearningTargets.minimumBankQuestionsPerSubject - questions.length),
+    challengeGap: Math.max(0, twoHourLearningTargets.minimumChallengeQuestions - challengeCount),
+    openResponseGap: Math.max(0, twoHourLearningTargets.minimumOpenResponseTasks - openResponseCount),
+    currentQuestions: questions.length,
+    challengeCount,
+    openResponseCount,
+    readyForTwoHours: questions.length >= twoHourLearningTargets.minimumBankQuestionsPerSubject
+      && challengeCount >= twoHourLearningTargets.minimumChallengeQuestions
+      && openResponseCount >= twoHourLearningTargets.minimumOpenResponseTasks,
+  };
 }
 
 function coverageBySubject(subjectId) {
@@ -1263,11 +1295,16 @@ function coverageBySubject(subjectId) {
 function buildQuestionQualityAudit(subjectIds = Object.keys(questionCoverageTargets)) {
   const coverage = subjectIds.map(coverageBySubject);
   const weakSubjects = coverage.filter((subject) => !subject.meetsCount || !subject.meetsAdvanced || !subject.meetsQuality);
+  const scaleGaps = subjectIds.map(bankScaleGap);
+  const twoHourReadiness = scaleGaps.filter((subject) => subject.readyForTwoHours).length;
   return {
     generatedAt: new Date().toISOString(),
     rubric: questionQualityRubric,
+    expansionTarget: twoHourLearningTargets,
     coverage,
+    scaleGaps,
     weakSubjects,
+    twoHourReadiness,
     ready: weakSubjects.length === 0,
   };
 }
@@ -3229,6 +3266,12 @@ function renderQuestionQualityAudit() {
   const weakSubjects = audit.weakSubjects;
 
   $("questionQualityStatus").textContent = audit.ready ? "题库质量达标" : `需要补强 ${weakSubjects.length} 科`;
+  $("twoHourBankTarget").innerHTML = `
+    <strong>2 小时学习目标</strong>
+    每天约 ${audit.expansionTarget.dailyMinutes} 分钟，需要每科至少 ${audit.expansionTarget.minimumBankQuestionsPerSubject} 道高质量题，
+    其中挑战题不少于 ${audit.expansionTarget.minimumChallengeQuestions} 道，开放解释/多步推理不少于 ${audit.expansionTarget.minimumOpenResponseTasks} 道。
+    当前达到 2 小时题库规模的科目：${audit.twoHourReadiness}/${totalSubjects}。
+  `;
   $("questionQualityStats").innerHTML = `
     <div><strong>${readySubjects}/${totalSubjects}</strong><span>达标科目</span></div>
     <div><strong>${averageQuality}%</strong><span>平均质量分</span></div>
@@ -3238,10 +3281,14 @@ function renderQuestionQualityAudit() {
   $("questionQualitySubjects").innerHTML = audit.coverage
     .map((subject) => {
       const label = subjectById(subject.subjectId)?.label || subject.subjectId;
+      const scaleGap = audit.scaleGaps.find((item) => item.subjectId === subject.subjectId) || bankScaleGap(subject.subjectId);
       const gaps = [];
       if (!subject.meetsCount) gaps.push(`题量 ${subject.questionCount}/${subject.target.minimumQuestions}`);
       if (!subject.meetsAdvanced) gaps.push(`进阶题 ${subject.advancedCount}/${subject.target.minimumAdvancedQuestions}`);
       if (!subject.meetsQuality) gaps.push(`质量分 ${subject.averageQuality}/80`);
+      if (!scaleGap.readyForTwoHours) {
+        gaps.push(`2小时规模缺 ${scaleGap.questionGap} 题、${scaleGap.challengeGap} 挑战题、${scaleGap.openResponseGap} 解释题`);
+      }
       const status = gaps.length ? "需要补强" : "达标";
       return `
         <article class="quality-subject ${gaps.length ? "needs-work" : "ready"}">

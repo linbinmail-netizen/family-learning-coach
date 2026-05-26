@@ -680,6 +680,21 @@ textarea {
   margin: 12px 0 18px;
 }
 
+.two-hour-target {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  background: #eef6fb;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.two-hour-target strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
 .quality-subject {
   border: 1px solid var(--line);
   border-radius: 8px;

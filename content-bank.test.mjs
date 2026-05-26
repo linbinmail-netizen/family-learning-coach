@@ -93,3 +93,14 @@ test("priority subjects have at least two school-level challenge questions", () 
   assert.match(source, /schoolExamDepth/);
   assert.match(source, /multiStepReasoning/);
 });
+
+test("question bank has a two-hour daily learning expansion target", () => {
+  assert.match(source, /const twoHourLearningTargets = {/);
+  assert.match(source, /dailyMinutes: 120/);
+  assert.match(source, /minimumBankQuestionsPerSubject: 80/);
+  assert.match(source, /minimumChallengeQuestions: 12/);
+  assert.match(source, /minimumOpenResponseTasks: 10/);
+  assert.match(source, /function bankScaleGap/);
+  assert.match(source, /twoHourReadiness/);
+  assert.match(html, /id="twoHourBankTarget"/);
+});

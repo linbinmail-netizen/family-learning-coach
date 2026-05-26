@@ -110,7 +110,7 @@
       <section class="workspace">
         <nav class="top-tabs" aria-label="平台模块">
           <button class="tab studentOnly active" data-view="today">今日任务</button>
-          <button class="tab studentOnly" data-view="diagnostic">诊断测试</button>
+          <button class="tab studentOnly" data-view="diagnostic">今日学习</button>
           <button class="tab studentOnly" data-view="report">掌握报告</button>
           <button class="tab studentOnly" data-view="coach">AI 引导</button>
           <button class="tab parentOnly" data-view="parent">家长日报</button>
@@ -134,7 +134,7 @@
             <div class="report-panel">
               <h3>今天要完成</h3>
               <div class="student-action-bar" id="studentActionBar">
-                <button class="primary-button" id="startDiagnosticButton" type="button">开始今日诊断</button>
+                <button class="primary-button" id="startDiagnosticButton" type="button">开始今日学习</button>
                 <button class="secondary-button" id="reviewMistakesButton" type="button">复习错题</button>
                 <button class="secondary-button" id="askCoachButton" type="button">找 AI 讲解</button>
               </div>
@@ -155,10 +155,10 @@
         <section class="view" id="diagnosticView">
           <div class="view-header">
             <div>
-              <p class="eyebrow">Diagnostic</p>
-              <h2 id="diagnosticTitle">诊断测试</h2>
+              <p class="eyebrow">Today Lesson</p>
+              <h2 id="diagnosticTitle">今日学习课</h2>
             </div>
-            <button id="runDiagnostic" class="primary-button">生成诊断报告</button>
+            <button id="runDiagnostic" class="primary-button">生成学习总结</button>
           </div>
 
           <div class="question-card">
@@ -211,7 +211,15 @@
             </div>
           </div>
 
-          <div class="knowledge-grid" id="knowledgeGrid"></div>
+          <section class="lesson-status-panel" id="lessonStatusPanel">
+            <div class="view-header compact-header">
+              <div>
+                <p class="eyebrow">Mastery Steps</p>
+                <h3>知识点进度</h3>
+              </div>
+            </div>
+            <div class="knowledge-grid" id="knowledgeGrid"></div>
+          </section>
         </section>
 
         <section class="view" id="reportView">

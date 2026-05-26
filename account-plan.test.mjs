@@ -26,9 +26,9 @@ test("student home has clear action buttons", () => {
   assert.match(html, /id="reviewMistakesButton"/);
   assert.match(html, /id="askCoachButton"/);
   assert.match(js, /renderStudentActionBar/);
-  assert.match(js, /开始今日诊断/);
+  assert.match(js, /开始今日学习/);
   assert.match(js, /复习错题/);
-  assert.match(js, /找 AI 讲解/);
+  assert.match(js, /AI 教练/);
 });
 
 test("parent report explains fit, issue type, and next action", () => {
@@ -152,6 +152,8 @@ test("parent and student roles see different app areas", () => {
 });
 
 test("diagnostic teaches first and only triggers guided mastery when needed", () => {
+  assert.match(html, /今日学习课/);
+  assert.match(html, /id="lessonStatusPanel"/);
   assert.match(html, /id="miniLessonCard"/);
   assert.match(html, /id="lessonConcept"/);
   assert.match(html, /id="workedExample"/);
@@ -163,11 +165,16 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(js, /answerConfidence/);
   assert.match(js, /guidanceLock/);
   assert.match(js, /conceptMiniLesson/);
+  assert.match(js, /lessonMasteryStatus/);
+  assert.match(js, /mastery-status/);
+  assert.match(js, /今日学习课/);
+  assert.match(js, /变式验证/);
   assert.match(js, /shouldStartGuidance/);
   assert.match(js, /startGuidedMastery/);
   assert.match(js, /completeGuidedMastery/);
   assert.match(js, /buildVariantQuestion/);
   assert.match(js, /nextQuestion"\)\.disabled = .*hasActiveGuidanceLock/s);
+  assert.doesNotMatch(html, />诊断测试</);
   assert.doesNotMatch(html, /先写一句理由/);
 });
 

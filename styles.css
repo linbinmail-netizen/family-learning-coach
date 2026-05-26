@@ -314,6 +314,14 @@ textarea {
   margin-bottom: 18px;
 }
 
+.lesson-status-panel {
+  margin-top: 18px;
+}
+
+.compact-header {
+  margin-bottom: 12px;
+}
+
 .question-meta {
   display: flex;
   gap: 8px;
@@ -464,6 +472,19 @@ textarea {
 .skill-card strong {
   display: block;
   margin-bottom: 8px;
+}
+
+.mastery-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 9px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .progress {

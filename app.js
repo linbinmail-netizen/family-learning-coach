@@ -1895,6 +1895,17 @@ function conceptMiniLesson(question) {
   };
 }
 
+function lessonMasteryStatus(skill, score) {
+  const hasMistake = mistakesForStudent().some((item) => item.skill === skill);
+  const guidedCount = Object.keys(state.guidedMastery).length;
+  const answeredCount = Object.keys(state.selectedAnswers).length;
+  if (hasMistake) return "需要复习";
+  if (guidedCount > 0 && score >= 55) return "变式通过";
+  if (answeredCount >= 3 && score >= 60) return "基础通过";
+  if (score >= 70) return "已掌握";
+  return "学习中";
+}
+
 function shouldStartGuidance(selectedIndex, question, confidence) {
   if (selectedIndex !== question.correct) return "answer";
   if (confidence !== "sure") return "confidence";
@@ -1960,6 +1971,7 @@ function buildDailyTasks(student = activeStudent()) {
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subjects[student.grade][0];
   const answeredCount = Object.keys(state.selectedAnswers).length;
+  const guidedCount = Object.keys(state.guidedMastery).length;
   const targetQuestions = plan.questionTarget || Math.max(4, Math.min(10, Math.round(plan.minutes / 5)));
   const done = Math.min(answeredCount, targetQuestions);
   const report = todayRecordForStudent(student.name);
@@ -1968,31 +1980,31 @@ function buildDailyTasks(student = activeStudent()) {
   return [
     {
       step: "第一步",
-      title: `${focusSubject.label} 诊断练习`,
-      detail: `完成 ${targetQuestions} 道题，难度策略：${difficultyModeLabel(plan.difficultyMode)}。`,
+      title: `${focusSubject.label} 今日学习课`,
+      detail: `先看短讲解和例题，再完成 ${targetQuestions} 道练习；难度策略：${difficultyModeLabel(plan.difficultyMode)}。`,
       done,
       total: targetQuestions,
     },
     {
       step: "第二步",
-      title: "错题复习",
+      title: "卡住时 AI 引导",
       detail: openMistakes.length
-        ? `复习 ${openMistakes[0].skill} 等 ${openMistakes.length} 个待巩固点。`
-        : "暂无待复习错题；如果今天答错，系统会自动加入这里。",
-      done: openMistakes.length ? 0 : 1,
+        ? `优先处理 ${openMistakes[0].skill}，AI 会先补概念，再追问下一步。`
+        : "如果答错或选择不确定，系统会自动打开 AI 教练卡片。",
+      done: openMistakes.length ? guidedCount : 1,
       total: 1,
     },
     {
       step: "第三步",
-      title: "AI 引导订正",
-      detail: "选择 1 道不会的题，写出自己的想法，让 AI 讲解概念并追问。",
-      done: state.chatHistory.some((message) => message.role === "student") ? 1 : 0,
+      title: "变式验证",
+      detail: "答错或猜对的题，必须通过一道同知识点变式题，才算真正会了。",
+      done: guidedCount ? 1 : 0,
       total: 1,
     },
     {
       step: "第四步",
-      title: "学习总结",
-      detail: "用一句话写下今天学会的方法，报告会自动保存。",
+      title: "今日总结",
+      detail: "生成学习总结，家长能看到今天学了什么、哪里卡住、明天怎么调。",
       done: report ? 1 : 0,
       total: 1,
     },
@@ -2235,13 +2247,13 @@ function renderTodayPlan() {
   const total = tasks.reduce((sum, task) => sum + task.total, 0);
   const percent = total ? Math.round((completed / total) * 100) : 0;
 
-  $("todayTitle").textContent = `${student.name} 今日学习任务`;
+  $("todayTitle").textContent = `${student.name} 今日学习课`;
   $("todayMinutes").textContent = `${plan.minutes} 分钟`;
-  $("todayFocus").textContent = `重点：${focusSubject.label} · ${plan.questionTarget || 8} 题 · ${difficultyModeLabel(plan.difficultyMode)}`;
+  $("todayFocus").textContent = `重点：${focusSubject.label} · 先学再练 · ${plan.questionTarget || 8} 题`;
   $("todayProgress").textContent = `${completed} / ${total}`;
   $("todayProgressBar").style.width = `${percent}%`;
   $("todayEncouragement").textContent =
-    percent >= 100 ? "今天的任务已完成，可以做错题复盘。" : `已完成 ${percent}%，先完成诊断，再进入 AI 讲解。`;
+    percent >= 100 ? "今天的学习课已完成，可以做错题复盘。" : `已完成 ${percent}%，先学一点，再练几题，卡住时再找 AI。`;
   $("todayTaskList").innerHTML = tasks
     .map(
       (task) => `
@@ -2259,9 +2271,9 @@ function renderTodayPlan() {
 }
 
 function renderStudentActionBar() {
-  $("startDiagnosticButton").textContent = "开始今日诊断";
+  $("startDiagnosticButton").textContent = "开始今日学习";
   $("reviewMistakesButton").textContent = "复习错题";
-  $("askCoachButton").textContent = "找 AI 讲解";
+  $("askCoachButton").textContent = "AI 教练";
   $("reviewMistakesButton").disabled = !mistakesForStudent().length;
 }
 
@@ -2333,7 +2345,7 @@ function renderDiagnostic() {
   const guidedComplete = Boolean(state.guidedMastery[progressKey]);
   const lesson = conceptMiniLesson(question);
 
-  $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 诊断`;
+  $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 今日学习课`;
   $("standardTag").textContent = question.standard;
   $("difficultyTag").textContent = `${question.difficulty} · 当前目标：${adaptiveLabel}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
@@ -2374,9 +2386,11 @@ function renderDiagnostic() {
   $("knowledgeGrid").innerHTML = diagnostic.skills
     .map(([skill, score]) => {
       const level = score >= 70 ? "high" : score >= 55 ? "mid" : "low";
+      const status = lessonMasteryStatus(skill, score);
       return `
         <div class="skill-card ${level}">
           <strong>${skill}</strong>
+          <span class="mastery-status">${status}</span>
           <p>${score}% 掌握</p>
           <div class="progress"><span style="width:${score}%"></span></div>
         </div>

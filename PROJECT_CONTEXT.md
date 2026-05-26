@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `4b79d95`
+- Latest deployed version checked: `c1f1cd5`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -27,7 +27,7 @@ The student side is now the priority. Current behavior:
 - Registration details appear only after clicking Register, where the user chooses parent/student account type and, for students, MIA or EVA.
 - Account type is chosen during registration, not during login.
 - Parent and student accounts see different content.
-- Logged-in student and parent pages show a family learning photo card above the workspace views; the photo is visually cropped with CSS and never appears on the login page.
+- Logged-in student and parent pages show a small family learning illustration as a left-side background card inside the workspace; it never appears on the login page.
 - Learning progress is scoped to the signed-in account to avoid one student/account polluting another account's local learning state.
 - Signing out clears login and registration form fields.
 - Students see daily tasks and today's learning lesson.
@@ -85,7 +85,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 93 tests passed, syntax checks passed, and live Vercel deployment `4b79d95` is READY. Live app.js verification confirmed the wrong-answer guidance flow now moves from complete restatement directly into variant verification.
+Latest result: 94 tests passed, syntax checks passed, and live Vercel deployment `c1f1cd5` is READY. Browser QA confirmed the login page does not show the family image, register opens normally, and the logged-in preview shows the new left-side image card without overlapping student action buttons.
 
 ## Next Recommended Work
 
@@ -121,7 +121,8 @@ Student-side v4.1 is the current usable baseline:
 - v5.4: signed-out auth landing now follows a standard minimal pattern: login first, registration as a secondary entry, and account type only inside registration.
 - v5.5: logged-in app now includes a family learning memory photo card above the workspace, using a wide crop that keeps the family and school setting visible.
 - v5.6: complete restatement now opens variant verification in the same coach turn, preventing students from getting stuck after a wrong answer.
-- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
+- v5.7: the family image has been replaced with the new illustration, compressed for the web, and moved into a smaller left-side background card so it supports the workspace without covering learning controls.
+- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, left-side family illustration card, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

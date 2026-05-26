@@ -1623,12 +1623,35 @@ function renderAuthGate() {
   if (appShell) appShell.classList.toggle("authenticated", signedIn);
 }
 
+function setAuthMode(mode = "login") {
+  const signupMode = mode === "signup";
+  $("authForm")?.classList.toggle("auth-mode-hidden", signupMode);
+  $("signupForm")?.classList.toggle("auth-mode-hidden", !signupMode);
+}
+
+function showSignupMode() {
+  const loginEmail = $("authEmail")?.value.trim();
+  if (loginEmail && !$("signupEmail")?.value) $("signupEmail").value = loginEmail;
+  setAuthStatus("");
+  setAuthMode("signup");
+  $("signupEmail")?.focus();
+}
+
+function showLoginMode() {
+  const signupEmail = $("signupEmail")?.value.trim();
+  if (signupEmail && !$("authEmail")?.value) $("authEmail").value = signupEmail;
+  setAuthStatus("");
+  setAuthMode("login");
+  $("authEmail")?.focus();
+}
+
 function clearAuthForms() {
   ["authEmail", "authPassword", "signupEmail", "signupPassword"].forEach((id) => {
     const input = $(id);
     if (input) input.value = "";
   });
   if ($("signupRole")) $("signupRole").value = "parent";
+  setAuthMode("login");
   renderAuth();
 }
 
@@ -1872,7 +1895,7 @@ async function initAuth() {
       setAuthStatus("已登录，但读取账号资料失败。");
     }
   } else {
-    setAuthStatus("登录后系统会自动进入家长、MIA 或 EVA 的学习界面。");
+    setAuthStatus("");
     renderAuthGate();
   }
 
@@ -1882,7 +1905,7 @@ async function initAuth() {
     if (!session) {
       state.authProfile = null;
       state.cloudStudents = {};
-      setAuthStatus("已退出登录。");
+      if (_event === "SIGNED_OUT") setAuthStatus("已退出登录。");
       clearAuthForms();
       renderAll();
       renderAuthGate();
@@ -3969,6 +3992,8 @@ function bindEvents() {
     event.preventDefault();
     signUp();
   });
+  $("showSignupButton").addEventListener("click", showSignupMode);
+  $("showLoginButton").addEventListener("click", showLoginMode);
   $("signOutButton").addEventListener("click", signOut);
   $("signupRole").addEventListener("change", renderAuth);
 

@@ -43,6 +43,10 @@ textarea {
   display: none;
 }
 
+.auth-mode-hidden {
+  display: none !important;
+}
+
 .role-hidden {
   display: none !important;
 }
@@ -192,9 +196,40 @@ h3 {
   gap: 8px;
 }
 
+.auth-actions-two {
+  grid-template-columns: 1fr 1fr;
+}
+
 .auth-actions .primary-button,
 .auth-actions .secondary-button {
   padding-inline: 8px;
+}
+
+.auth-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--soft-ink);
+  font-size: 14px;
+}
+
+.link-button {
+  border: 0;
+  background: transparent;
+  color: var(--green-dark);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 4px 2px;
+}
+
+.link-button:hover,
+.link-button:focus-visible {
+  text-decoration: underline;
+}
+
+.auth-status:empty {
+  display: none;
 }
 
 .full-width-button {

@@ -18,18 +18,21 @@
         </div>
         <form id="authForm" class="auth-form">
           <label>
-            邮箱
-            <input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" />
+            用户名 / 邮箱
+            <input id="authEmail" type="email" autocomplete="username" placeholder="name@example.com" />
           </label>
           <label>
             密码
             <input id="authPassword" type="password" autocomplete="current-password" placeholder="输入密码" />
           </label>
           <button class="primary-button" id="signInButton" type="submit">登录</button>
-          <p class="form-note" id="authStatus">登录后系统会自动识别这是家长账号还是学生账号。</p>
+          <div class="auth-switch">
+            <span>还没有账号？</span>
+            <button class="link-button" id="showSignupButton" type="button">注册</button>
+          </div>
         </form>
 
-        <form id="signupForm" class="auth-form signup-form">
+        <form id="signupForm" class="auth-form signup-form auth-mode-hidden">
           <h2>注册新账号</h2>
           <label>
             注册邮箱
@@ -53,9 +56,13 @@
               <option value="EVA">EVA</option>
             </select>
           </label>
-          <button class="secondary-button" id="signUpButton" type="submit">注册账号</button>
+          <div class="auth-actions auth-actions-two">
+            <button class="primary-button" id="signUpButton" type="submit">注册账号</button>
+            <button class="secondary-button" id="showLoginButton" type="button">返回登录</button>
+          </div>
           <p class="form-note">账号类型只在注册时选择；以后登录只输入邮箱和密码。</p>
         </form>
+        <p class="form-note auth-status" id="authStatus" aria-live="polite"></p>
       </div>
     </section>
 

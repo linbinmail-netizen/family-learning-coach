@@ -237,17 +237,31 @@ test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="authForm"/);
   assert.match(html, /id="authEmail"/);
   assert.match(html, /id="authPassword"/);
+  assert.match(html, /id="showSignupButton"/);
   assert.match(html, /id="signupForm"/);
   assert.match(html, /id="signupEmail"/);
   assert.match(html, /id="signupPassword"/);
   assert.match(html, /id="signupRole"/);
   assert.match(html, /id="signupStudent"/);
+  assert.match(html, /id="showLoginButton"/);
   assert.doesNotMatch(html, /id="authRole"/);
   assert.doesNotMatch(html, /id="authStudentName"/);
   assert.match(html, /id="signInButton"/);
   assert.match(html, /id="signUpButton"/);
   assert.match(html, /id="signOutButton"/);
   assert.match(html, /@supabase\/supabase-js@2/);
+});
+
+test("login home shows only credential fields and registration entry by default", () => {
+  const loginForm = html.match(/<form id="authForm"[\s\S]*?<\/form>/)?.[0] || "";
+  const signupFormOpening = html.match(/<form id="signupForm"[^>]*>/)?.[0] || "";
+  assert.match(loginForm, /用户名 \/ 邮箱/);
+  assert.match(loginForm, /authPassword/);
+  assert.match(loginForm, /signInButton/);
+  assert.match(loginForm, /showSignupButton/);
+  assert.doesNotMatch(loginForm, /signupRole/);
+  assert.doesNotMatch(loginForm, /signupStudent/);
+  assert.match(signupFormOpening, /auth-mode-hidden/);
 });
 
 test("login form does not ask for account type", () => {
@@ -257,6 +271,19 @@ test("login form does not ask for account type", () => {
   assert.doesNotMatch(loginForm, /signupStudent/);
   assert.match(signupForm, /signupRole/);
   assert.match(signupForm, /signupStudent/);
+});
+
+test("registration content is opened from the register entry and can return to login", () => {
+  assert.match(js, /function showSignupMode/);
+  assert.match(js, /function showLoginMode/);
+  assert.match(js, /auth-mode-hidden/);
+  assert.match(js, /showSignupButton"\)\.addEventListener\("click", showSignupMode\)/);
+  assert.match(js, /showLoginButton"\)\.addEventListener\("click", showLoginMode\)/);
+});
+
+test("signed-out message is not shown on the initial auth check", () => {
+  assert.match(js, /onAuthStateChange\(async \(_event, session\)/);
+  assert.match(js, /if \(_event === "SIGNED_OUT"\) setAuthStatus\("已退出登录。"\)/);
 });
 
 test("sign out clears login and signup form fields", () => {

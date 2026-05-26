@@ -62,7 +62,7 @@ test("expanded question bank is present", () => {
 test("questions rotate answer order so correct choices are not always first", () => {
   assert.match(source, /function rotateQuestionOptions/);
   assert.match(source, /const correct = \(question\.correct - shift \+ question\.answers\.length\) % question\.answers\.length/);
-  assert.match(source, /prepareQuestionSet\(selectAdaptiveQuestions\(mergeQuestions/);
+  assert.match(source, /prepareQuestionSet\(selectTwoHourStructuredQuestions\(mergeQuestions/);
 });
 
 test("priority grade 8 and grade 9 subjects have deeper coverage", () => {
@@ -80,6 +80,15 @@ test("question selection adapts difficulty as students answer", () => {
   assert.match(source, /adaptiveStats/);
   assert.match(source, /adaptiveLevels/);
   assert.match(source, /答得很顺，下一题会提高一点难度/);
+});
+
+test("two-hour sessions use block-aware question sequencing", () => {
+  assert.match(source, /function isTwoHourPlan/);
+  assert.match(source, /function learningBlockForQuestionIndex/);
+  assert.match(source, /function selectTwoHourStructuredQuestions/);
+  assert.match(source, /spiralReview/);
+  assert.match(source, /constructedResponse/);
+  assert.match(source, /当前环节/);
 });
 
 test("question bank has a quality rubric and audit system", () => {

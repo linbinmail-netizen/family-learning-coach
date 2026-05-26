@@ -2488,6 +2488,21 @@ function adaptiveLevelForSubject(subjectId = state.subject) {
   return Math.max(0, Math.min(difficultyLevels.length - 1, state.adaptiveLevels[subjectId] ?? 1));
 }
 
+function isTwoHourPlan(plan = planForStudent(state.studentId)) {
+  return plan.minutes >= 90 || (plan.questionTarget || 8) >= 18;
+}
+
+function learningBlockForQuestionIndex(index = state.currentQuestion, plan = planForStudent(state.studentId)) {
+  const targetQuestions = plan.questionTarget || 8;
+  if (!isTwoHourPlan(plan)) return { id: "practice", label: "今日学习", rangeEnd: targetQuestions };
+
+  const foundationEnd = Math.max(4, Math.round(targetQuestions * 0.45));
+  const reviewEnd = foundationEnd + Math.max(2, Math.round(targetQuestions * 0.2));
+  if (index < foundationEnd) return { id: "foundation", label: "基础练习", rangeEnd: foundationEnd };
+  if (index < reviewEnd) return { id: "review", label: "错题复盘", rangeEnd: reviewEnd };
+  return { id: "challenge", label: "挑战拔高", rangeEnd: targetQuestions };
+}
+
 function selectAdaptiveQuestions(questions) {
   const target = adaptiveLevelForSubject();
   const sorted = [...questions].sort((a, b) => {
@@ -2497,6 +2512,25 @@ function selectAdaptiveQuestions(questions) {
   });
   const nearTarget = sorted.filter((question) => Math.abs(difficultyScore(question.difficulty) - target) <= 1);
   return nearTarget.length >= 6 ? nearTarget : sorted;
+}
+
+function selectTwoHourStructuredQuestions(questions, plan = planForStudent(state.studentId)) {
+  const adaptiveQuestions = selectAdaptiveQuestions(questions);
+  if (!isTwoHourPlan(plan)) return adaptiveQuestions;
+
+  const targetQuestions = plan.questionTarget || 24;
+  const foundationTarget = Math.max(4, Math.round(targetQuestions * 0.45));
+  const reviewTarget = Math.max(2, Math.round(targetQuestions * 0.2));
+  const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
+  const foundationQuestions = adaptiveQuestions.filter((question) => difficultyScore(question.difficulty) <= 1);
+  const reviewQuestions = adaptiveQuestions.filter((question) => question.spiralReview || question.errorAnalysis);
+  const challengeQuestions = adaptiveQuestions.filter((question) => difficultyScore(question.difficulty) >= 2 || question.constructedResponse || question.openResponse);
+
+  return mergeQuestions(
+    foundationQuestions.slice(0, foundationTarget)
+      .concat(reviewQuestions.slice(0, reviewTarget), challengeQuestions.slice(0, challengeTarget)),
+    adaptiveQuestions
+  );
 }
 
 function updateAdaptiveDifficulty(question, selectedIndex) {
@@ -2533,7 +2567,7 @@ function activeQuestions() {
   const challengeQuestions = challengeQuestionBank[state.subject] || [];
   const twoHourQuestions = twoHourExpansionQuestionBank[state.subject] || [];
   if (cloudQuestions.length || localQuestions.length || expandedQuestions.length || challengeQuestions.length || twoHourQuestions.length) {
-    return prepareQuestionSet(selectAdaptiveQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions))));
+    return prepareQuestionSet(selectTwoHourStructuredQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions))));
   }
 
   const diagnostic = activeDiagnostic();
@@ -2803,6 +2837,7 @@ function renderDiagnostic() {
   const question = questions[state.currentQuestion] || questions[0];
   const adaptiveLevel = adaptiveLevelForSubject();
   const adaptiveLabel = difficultyLevels[adaptiveLevel];
+  const learningBlock = learningBlockForQuestionIndex(state.currentQuestion);
   const progressKey = questionProgressKey();
   const selectedAnswer = state.selectedAnswers[state.currentQuestion];
   const confidence = state.answerConfidence[progressKey] || "sure";
@@ -2812,7 +2847,7 @@ function renderDiagnostic() {
 
   $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 今日学习课`;
   $("standardTag").textContent = question.standard;
-  $("difficultyTag").textContent = `${question.difficulty} · 当前目标：${adaptiveLabel}`;
+  $("difficultyTag").textContent = `${question.difficulty} · 当前目标：${adaptiveLabel} · 当前环节：${learningBlock.label}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
   $("lessonConcept").textContent = lesson.concept;
   $("workedExample").textContent = lesson.example;

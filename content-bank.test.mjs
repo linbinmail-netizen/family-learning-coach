@@ -126,3 +126,11 @@ test("first two-hour expansion batch is included in student question selection",
     assert.ok(countTwoHourExpansionQuestions(subject) >= 3, `${subject} should have at least three two-hour expansion questions`);
   }
 });
+
+test("second two-hour expansion batch deepens priority subjects", () => {
+  assert.match(source, /STAAR-style original batch 2/);
+  assert.match(source, /errorAnalysis: true/);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    assert.ok(countTwoHourExpansionQuestions(subject) >= 6, `${subject} should have at least six two-hour expansion questions`);
+  }
+});

@@ -2385,7 +2385,7 @@ function renderGuidanceInsight(lock = state.guidanceLock) {
 
 function guidanceScaffoldForLock(lock = state.guidanceLock, question = activeQuestions()[state.currentQuestion]) {
   const lesson = conceptMiniLesson(question);
-  const firstHint = question?.coachHints?.[0] || lesson.steps?.[0] || "找关键词或已知条件。";
+  const firstHint = lesson.steps?.[0] || question?.coachHints?.[0] || "找关键词或已知条件。";
   const reasonFocus =
     lock?.issue === "confidence"
       ? "因为我要证明自己不是猜的，而是知道这个方法为什么能用。"

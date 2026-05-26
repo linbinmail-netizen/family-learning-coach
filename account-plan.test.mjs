@@ -182,6 +182,10 @@ test("student guidance includes a three-part method restatement scaffold", () =>
   assert.match(css, /guidance-scaffold-card/);
 });
 
+test("student guidance scaffold prefers lesson steps over raw answer hints", () => {
+  assert.match(js, /const firstHint = lesson\.steps\?\.\[0\] \|\| question\?\.coachHints\?\.\[0\]/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

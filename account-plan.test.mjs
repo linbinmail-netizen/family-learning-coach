@@ -32,6 +32,16 @@ test("student home has clear action buttons", () => {
   assert.match(js, /AI 教练/);
 });
 
+test("logged-in app shows a family learning photo outside the login page", () => {
+  assert.match(html, /id="familyMemoryCard"/);
+  assert.match(html, /assets\/family-learning-memory\.jpg/);
+  assert.match(html, /alt="MIA 和 EVA 的家庭学习照片"/);
+  assert.match(css, /family-memory-card/);
+  assert.match(css, /object-fit: cover/);
+  assert.match(css, /object-position: 54% 48%/);
+  assert.doesNotMatch(html.match(/<section class="login-view[\s\S]*?<\/section>/)?.[0] || "", /familyMemoryCard/);
+});
+
 test("parent report explains fit, issue type, and next action", () => {
   assert.match(html, /id="difficultyFit"/);
   assert.match(html, /id="issueType"/);

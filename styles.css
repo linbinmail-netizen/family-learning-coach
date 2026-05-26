@@ -284,6 +284,48 @@ textarea {
   margin-bottom: 22px;
 }
 
+.family-memory-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: minmax(220px, 38%) minmax(0, 1fr);
+  margin-bottom: 22px;
+  min-height: 170px;
+  overflow: hidden;
+  position: relative;
+  background: #ffffff;
+}
+
+.family-memory-card img {
+  width: 100%;
+  height: 100%;
+  min-height: 170px;
+  object-fit: cover;
+  object-position: 54% 48%;
+}
+
+.family-memory-copy {
+  align-content: center;
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+}
+
+.family-memory-copy p {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 0;
+  text-transform: uppercase;
+}
+
+.family-memory-copy strong {
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1.25;
+  max-width: 520px;
+}
+
 .tab,
 .primary-button,
 .secondary-button {
@@ -1267,6 +1309,7 @@ li {
   .quality-subject-grid,
   .student-action-bar,
   .wrapup-stats,
+  .family-memory-card,
   .roadmap {
     grid-template-columns: 1fr;
   }
@@ -1295,5 +1338,13 @@ li {
   .auth-actions {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .family-memory-copy {
+    padding: 18px;
+  }
+
+  .family-memory-copy strong {
+    font-size: 20px;
   }
 }

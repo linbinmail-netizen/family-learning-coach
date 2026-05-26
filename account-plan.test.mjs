@@ -308,6 +308,16 @@ test("student daily plan shows next action and completion state", () => {
   assert.match(js, /生成今日总结/);
 });
 
+test("student daily plan includes a wrap-up summary action", () => {
+  assert.match(html, /id="studentWrapupPanel"/);
+  assert.match(html, /id="wrapupAnswered"/);
+  assert.match(html, /id="wrapupGuided"/);
+  assert.match(html, /id="wrapupMistakes"/);
+  assert.match(html, /id="finishTodayButton"/);
+  assert.match(js, /function renderStudentWrapup/);
+  assert.match(js, /家长端可以看到今天表现/);
+});
+
 test("parent plan settings can sync to Supabase after login", () => {
   assert.match(js, /cloudStudents/);
   assert.match(js, /loadPlanSettingsFromCloud/);

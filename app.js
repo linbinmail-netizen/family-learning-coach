@@ -2784,8 +2784,26 @@ function renderTodayPlan() {
       `
     )
     .join("");
+  renderStudentWrapup(completion);
   renderStudentActionBar();
   renderMistakeReview();
+}
+
+function renderStudentWrapup(completion = todayCompletionState()) {
+  const answered = Object.keys(state.selectedAnswers).length;
+  const guided = guidedMasteryCount(state.studentId);
+  const mistakes = mistakesForStudent(state.studentId).length;
+  const target = dailyQuestionLimit(planForStudent(state.studentId));
+  const ready = completion.complete || answered >= target;
+
+  $("wrapupAnswered").textContent = answered;
+  $("wrapupGuided").textContent = guided;
+  $("wrapupMistakes").textContent = mistakes;
+  $("finishTodayButton").disabled = answered === 0;
+  $("finishTodayButton").textContent = ready ? "生成今日总结" : "先生成阶段总结";
+  $("wrapupMessage").textContent = ready
+    ? "今日目标已达到。生成总结后，家长端可以看到今天表现和明天建议。"
+    : `今天目标是 ${target} 题，目前已答 ${answered} 题。可以先继续学习，也可以生成阶段总结。`;
 }
 
 function renderStudentActionBar() {
@@ -3680,6 +3698,7 @@ function bindEvents() {
   $("askCoachButton").addEventListener("click", () => switchView("coach"));
 
   $("runDiagnostic").addEventListener("click", buildReport);
+  $("finishTodayButton").addEventListener("click", buildReport);
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {

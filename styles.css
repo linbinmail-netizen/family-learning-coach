@@ -733,6 +733,39 @@ textarea {
   margin-bottom: 16px;
 }
 
+.student-wrapup-panel {
+  border-color: rgba(40, 121, 92, 0.3);
+  background: #f8faf8;
+}
+
+.wrapup-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.wrapup-stats span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--soft-ink);
+  display: block;
+  font-size: 13px;
+  padding: 10px;
+}
+
+.wrapup-stats strong {
+  color: var(--green-dark);
+  display: block;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.student-wrapup-panel button {
+  width: 100%;
+}
+
 .task-step {
   display: inline-block;
   color: var(--green);
@@ -977,6 +1010,7 @@ li {
   .weekly-stats,
   .quality-subject-grid,
   .student-action-bar,
+  .wrapup-stats,
   .roadmap {
     grid-template-columns: 1fr;
   }

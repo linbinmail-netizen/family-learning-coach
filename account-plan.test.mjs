@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
 const js = readFileSync(new URL("./app.js", import.meta.url), "utf8");
+const css = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 
 test("account roles are applied by login state, not manual role buttons", () => {
   assert.doesNotMatch(html, /id="accountList"/);
@@ -137,9 +138,17 @@ test("student lesson view gives a clear next-step instruction", () => {
   assert.match(html, /id="studentNextStepBody"/);
   assert.match(js, /function studentNextStepState/);
   assert.match(js, /function renderStudentNextStep/);
-  assert.match(js, /先看讲解，再独立作答/);
+  assert.match(js, /先独立作答/);
+  assert.match(js, /讲解和方法步骤会在答错或不确定后出现/);
   assert.match(js, /完成 AI 引导/);
   assert.match(js, /可以进入下一题/);
+});
+
+test("student does not see lesson hints before the first answer", () => {
+  assert.match(js, /showLessonAfterAttempt/);
+  assert.match(js, /miniLessonCard"\)\.classList\.toggle\("hidden", !showLessonAfterAttempt\)/);
+  assert.match(css, /mini-lesson-card\.hidden/);
+  assert.match(js, /先独立作答。不会、不确定或猜的，提交后系统再讲解和引导。/);
 });
 
 test("student is moved to guidance after a wrong or uncertain answer", () => {

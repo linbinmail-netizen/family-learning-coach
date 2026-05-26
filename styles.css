@@ -496,6 +496,10 @@ textarea {
   background: #f3f8fb;
 }
 
+.mini-lesson-card.hidden {
+  display: none;
+}
+
 .mini-lesson-card h3 {
   margin-bottom: 8px;
 }

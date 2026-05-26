@@ -2902,6 +2902,7 @@ function renderDiagnostic() {
   const confidence = state.answerConfidence[progressKey] || "sure";
   const locked = hasActiveGuidanceLock();
   const guidedComplete = Boolean(state.guidedMastery[progressKey]);
+  const showLessonAfterAttempt = locked || guidedComplete;
   const lesson = conceptMiniLesson(question);
 
   $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 今日学习课`;
@@ -2914,6 +2915,7 @@ function renderDiagnostic() {
   $("lessonSteps").innerHTML = lesson.steps.map((step) => `<li>${step}</li>`).join("");
   $("commonTrap").textContent = lesson.trap;
   $("quickCheck").textContent = lesson.quickCheck;
+  $("miniLessonCard").classList.toggle("hidden", !showLessonAfterAttempt);
   $("questionPrompt").textContent = question.prompt;
   $("confidenceSelect").value = confidence;
   const plan = planForStudent(student.id);
@@ -2935,7 +2937,7 @@ function renderDiagnostic() {
   if (locked) {
     $("answerFeedback").textContent = "这题还在 AI 引导中。完成讲解和变式验证后，下一题会自动解锁。";
   } else if (selectedAnswer === undefined) {
-    $("answerFeedback").textContent = "先看短讲解，再选答案；不确定或猜的会进入变式验证。";
+    $("answerFeedback").textContent = "先独立作答。不会、不确定或猜的，提交后系统再讲解和引导。";
   } else if (guidedComplete) {
     $("answerFeedback").textContent = "这题已经通过 AI 引导和变式验证，可以进入下一题。";
   } else if (selectedAnswer === question.correct) {
@@ -2977,8 +2979,8 @@ function studentNextStepState({ selectedAnswer, question, locked, guidedComplete
     return {
       tone: "learning",
       badge: "当前任务",
-      title: "先看讲解，再独立作答",
-      body: `重点看“${question.skill}”的方法步骤。选答案前先想一句理由，避免靠排除法猜。`,
+      title: "先独立作答",
+      body: `先读题、圈关键词，再选择答案。讲解和方法步骤会在答错或不确定后出现。`,
     };
   }
   if (guidedComplete) {

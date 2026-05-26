@@ -2555,6 +2555,10 @@ function selectTwoHourStructuredQuestions(questions, plan = planForStudent(state
   );
 }
 
+function dailyQuestionLimit(plan = planForStudent(state.studentId)) {
+  return Math.max(1, Number(plan.questionTarget || (isTwoHourPlan(plan) ? 24 : 8)));
+}
+
 function updateAdaptiveDifficulty(question, selectedIndex) {
   const subjectId = state.subject;
   const isCorrect = selectedIndex === question.correct;
@@ -2589,11 +2593,11 @@ function activeQuestions() {
   const challengeQuestions = challengeQuestionBank[state.subject] || [];
   const twoHourQuestions = twoHourExpansionQuestionBank[state.subject] || [];
   if (cloudQuestions.length || localQuestions.length || expandedQuestions.length || challengeQuestions.length || twoHourQuestions.length) {
-    return prepareQuestionSet(selectTwoHourStructuredQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions))));
+    return prepareQuestionSet(selectTwoHourStructuredQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions))).slice(0, dailyQuestionLimit()));
   }
 
   const diagnostic = activeDiagnostic();
-  if (diagnostic.questions) return prepareQuestionSet(selectAdaptiveQuestions(diagnostic.questions));
+  if (diagnostic.questions) return prepareQuestionSet(selectAdaptiveQuestions(diagnostic.questions).slice(0, dailyQuestionLimit()));
   const strongest = diagnostic.skills.reduce((best, skill) => (skill[1] > best[1] ? skill : best), diagnostic.skills[0]);
   const weakest = diagnostic.skills.reduce((low, skill) => (skill[1] < low[1] ? skill : low), diagnostic.skills[0]);
   return prepareQuestionSet(selectAdaptiveQuestions([
@@ -2628,7 +2632,7 @@ function activeQuestions() {
       correct: 0,
       skill: weakest[0],
     },
-  ]));
+  ]).slice(0, dailyQuestionLimit()));
 }
 
 function normalizeDifficulty(difficulty) {

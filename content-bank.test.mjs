@@ -91,6 +91,13 @@ test("two-hour sessions use block-aware question sequencing", () => {
   assert.match(source, /当前环节/);
 });
 
+test("daily lesson question count is limited to the parent plan target", () => {
+  assert.match(source, /function dailyQuestionLimit/);
+  assert.match(source, /plan\.questionTarget/);
+  assert.match(source, /\.slice\(0, dailyQuestionLimit\(\)\)/);
+  assert.match(source, /questionProgress/);
+});
+
 test("question bank has a quality rubric and audit system", () => {
   assert.match(source, /const questionQualityRubric = {/);
   assert.match(source, /function qualityScore/);

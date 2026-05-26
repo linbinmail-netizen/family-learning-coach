@@ -413,6 +413,13 @@ test("variant rubric feedback updates live as the student types", () => {
   assert.match(css, /rubric-missing/);
 });
 
+test("variant live feedback tells the student the next missing step", () => {
+  assert.match(js, /function variantNextActionText/);
+  assert.match(js, /下一步：\$\{missing\.next\}/);
+  assert.match(js, /说明已经完整，可以提交给 AI 教练检查/);
+  assert.match(js, /variantFeedback"\)\.textContent = variantNextActionText/);
+});
+
 test("student cannot submit variant explanation until rubric is complete", () => {
   assert.match(html, /id="variantSubmit"/);
   assert.match(js, /function isVariantRubricReady/);

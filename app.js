@@ -2469,6 +2469,13 @@ function isVariantRubricReady(reply = "", variant = state.guidanceLock?.variant)
   return variantRubricItems(reply, variant).every((item) => item.ready);
 }
 
+function variantNextActionText(reply = "", variant = state.guidanceLock?.variant) {
+  if (!String(reply).trim()) return "先按清单写自己的方法；系统会检查表达是否完整，但不会先给参考答案。";
+  const missing = variantRubricItems(reply, variant).find((item) => !item.ready);
+  if (!missing) return "说明已经完整，可以提交给 AI 教练检查。";
+  return `下一步：${missing.next}。`;
+}
+
 function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", variant = state.guidanceLock?.variant) {
   const target = $("variantRubricFeedback");
   if (!target) return "";
@@ -2480,6 +2487,7 @@ function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", var
         `<span class="rubric-${item.ready ? "met" : "missing"}"><strong>${item.ready ? "已做到" : "还要补"}</strong>${item.label}</span>`
     )
     .join("");
+  $("variantFeedback").textContent = variantNextActionText(reply, variant);
   $("variantSubmit").disabled = !ready;
   return feedback;
 }

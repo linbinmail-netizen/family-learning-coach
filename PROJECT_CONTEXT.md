@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `c1c3ca8`
+- Latest deployed version checked: `c0f0435`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -18,7 +18,7 @@ Last updated: 2026-05-26
 
 Build a long-term custom web learning platform for the family. Students should receive daily learning tasks, answer grade-level questions, get AI-guided coaching when they are stuck, and generate reports that parents can use to adjust study time and plans.
 
-## Current Version: Student v3.2
+## Current Version: Student v3.9
 
 The student side is now the priority. Current behavior:
 
@@ -32,6 +32,10 @@ The student side is now the priority. Current behavior:
 - Variant verification is open-ended, not multiple choice, to reduce guessing.
 - The student must write a clear method explanation before moving to the next question.
 - Parent reports include guided mastery count and mistake-review data.
+- AI coach now receives recent mistakes from the same skill so hints can reflect repeated patterns.
+- Mistake review cards can open a targeted review lesson for the same skill.
+- The daily plan shows the next action and a clear completion state.
+- Student-side fast fallback prevents slow AI responses from blocking learning.
 
 ## Important Files
 
@@ -64,13 +68,13 @@ Continue deepening the student side:
 4. Improve the student lesson UI so each session feels like a guided class.
 5. Later, improve parent weekly reports and email delivery.
 
-## Current Performance Fix In Progress
+## Student Finalization Completed
 
-v3.4 targets response latency:
+Student-side v3.9 is the current usable baseline:
 
-- Frontend AI coach requests should not wait indefinitely.
-- If AI is slow, the student should immediately continue with local coaching guidance.
-- Backend OpenAI calls should have a timeout and return fallback guidance instead of hanging.
+- v3.7: AI guidance uses recent same-skill mistakes.
+- v3.8: mistake review opens a targeted review lesson.
+- v3.9: daily plan shows next action and completion status.
 
 ## Operating Notes
 

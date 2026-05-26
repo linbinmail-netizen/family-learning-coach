@@ -2925,6 +2925,7 @@ function renderDiagnostic() {
   } else {
     $("answerFeedback").textContent = "这题需要完成引导后再进入下一题。";
   }
+  renderStudentNextStep({ selectedAnswer, question, locked, guidedComplete, confidence });
   renderInlineCoachPanel();
   renderLearningRouteMap();
 
@@ -2942,6 +2943,65 @@ function renderDiagnostic() {
       `;
     })
     .join("");
+}
+
+function studentNextStepState({ selectedAnswer, question, locked, guidedComplete, confidence }) {
+  if (locked) {
+    const status = state.guidanceLock?.status === "variant" ? "完成变式验证" : "回答 AI 的问题";
+    return {
+      tone: "warning",
+      badge: "AI 引导中",
+      title: status,
+      body: "先用自己的话说出方法。通过变式验证后，系统会解锁下一题。",
+    };
+  }
+  if (selectedAnswer === undefined) {
+    return {
+      tone: "learning",
+      badge: "当前任务",
+      title: "先看讲解，再独立作答",
+      body: `重点看“${question.skill}”的方法步骤。选答案前先想一句理由，避免靠排除法猜。`,
+    };
+  }
+  if (guidedComplete) {
+    return {
+      tone: "success",
+      badge: "已弄懂",
+      title: "可以进入下一题",
+      body: "这题已经完成 AI 引导和变式验证。继续保持写理由的习惯。",
+    };
+  }
+  if (selectedAnswer === question.correct && confidence === "sure") {
+    return {
+      tone: "success",
+      badge: "答对了",
+      title: "继续下一题",
+      body: "这题通过。下一题会继续根据表现调整难度。",
+    };
+  }
+  if (selectedAnswer === question.correct) {
+    return {
+      tone: "warning",
+      badge: "需要确认",
+      title: "答对了，但要证明不是猜的",
+      body: "请进入 AI 引导，用自己的话说清楚为什么这样做，再做一道变式题。",
+    };
+  }
+  return {
+    tone: "warning",
+    badge: "需要补会",
+    title: "先别跳过，完成 AI 引导",
+    body: "这题暴露了一个知识点缺口。系统会先讲清概念，再让你复述和做变式。",
+  };
+}
+
+function renderStudentNextStep(context) {
+  const stateInfo = studentNextStepState(context);
+  const card = $("studentNextStepCard");
+  card.className = `student-next-step-card ${stateInfo.tone}`;
+  $("studentNextStepBadge").textContent = stateInfo.badge;
+  $("studentNextStepTitle").textContent = stateInfo.title;
+  $("studentNextStepBody").textContent = stateInfo.body;
 }
 
 function renderLearningRouteMap() {

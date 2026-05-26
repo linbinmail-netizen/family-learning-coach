@@ -321,6 +321,55 @@ textarea {
   margin-bottom: 18px;
 }
 
+.student-next-step-card {
+  align-items: flex-start;
+  border: 1px solid rgba(47, 111, 159, 0.25);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 112px minmax(0, 1fr);
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.student-next-step-card.learning {
+  background: #f3f8fb;
+}
+
+.student-next-step-card.warning {
+  background: #fff8eb;
+  border-color: rgba(196, 132, 43, 0.45);
+}
+
+.student-next-step-card.success {
+  background: #edf5ef;
+  border-color: rgba(40, 121, 92, 0.35);
+}
+
+.student-next-step-card span {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--green-dark);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.student-next-step-card strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.student-next-step-card p {
+  color: var(--soft-ink);
+  margin: 0;
+}
+
 .learning-route-map {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -948,6 +997,7 @@ li {
   .answer-grid,
   .knowledge-grid,
   .route-steps,
+  .student-next-step-card,
   .chat-form,
   .auth-actions {
     grid-template-columns: 1fr;

@@ -130,6 +130,18 @@ test("student lesson view shows the current learning route", () => {
   assert.match(js, /学习路线/);
 });
 
+test("student lesson view gives a clear next-step instruction", () => {
+  assert.match(html, /id="studentNextStepCard"/);
+  assert.match(html, /id="studentNextStepBadge"/);
+  assert.match(html, /id="studentNextStepTitle"/);
+  assert.match(html, /id="studentNextStepBody"/);
+  assert.match(js, /function studentNextStepState/);
+  assert.match(js, /function renderStudentNextStep/);
+  assert.match(js, /先看讲解，再独立作答/);
+  assert.match(js, /完成 AI 引导/);
+  assert.match(js, /可以进入下一题/);
+});
+
 test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="loginView"/);
   assert.match(html, /id="appShell"/);

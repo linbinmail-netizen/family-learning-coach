@@ -2359,6 +2359,30 @@ function guidanceIssueText(issue) {
   return "需要先完成引导。";
 }
 
+function guidanceInsightForLock(lock = state.guidanceLock, question = activeQuestions()[state.currentQuestion]) {
+  const lesson = conceptMiniLesson(question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const issueType = lock?.issue === "confidence" ? "可能是猜对，还没证明掌握" : "答案不对，方法需要修正";
+  const repairAction =
+    lock?.issue === "confidence"
+      ? "不显示正确答案，先说清楚为什么这样做，再完成变式验证。"
+      : "不显示正确答案，先说题目真正问什么，再找关键词或已知条件。";
+  return {
+    issueType,
+    skillGap: `${skill}：${lesson.concept.replace(/^今天先练：/, "")}`,
+    repairAction,
+  };
+}
+
+function renderGuidanceInsight(lock = state.guidanceLock) {
+  if (!lock) return;
+  const question = activeQuestions()[lock.questionIndex] || activeQuestions()[state.currentQuestion];
+  const insight = guidanceInsightForLock(lock, question);
+  $("guidanceIssueType").textContent = insight.issueType;
+  $("guidanceSkillGap").textContent = insight.skillGap;
+  $("guidanceRepairAction").textContent = insight.repairAction;
+}
+
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
   const variant = buildVariantQuestion(question);
   state.guidanceLock = {
@@ -3145,6 +3169,7 @@ function renderInlineCoachPanel() {
   if (!lock) return;
 
   $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
+  renderGuidanceInsight(lock);
   const activeStep = lock.status === "variant" ? 2 : state.inlineCoachHistory.some((message) => message.role === "student") ? 1 : 0;
   $("masteryStepList").innerHTML = ["讲解", "复述", "变式"]
     .map((label, index) => `<li class="${index < activeStep ? "done" : index === activeStep ? "active" : ""}">${label}</li>`)

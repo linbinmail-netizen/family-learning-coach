@@ -647,6 +647,36 @@ textarea {
   color: var(--green-dark);
 }
 
+.guidance-insight-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.guidance-insight-card div {
+  min-height: 78px;
+  padding: 12px;
+  border: 1px solid rgba(196, 132, 43, 0.32);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.guidance-insight-card span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.guidance-insight-card strong {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .variant-challenge {
   margin-top: 14px;
   padding-top: 14px;
@@ -1040,6 +1070,7 @@ li {
   .knowledge-grid,
   .route-steps,
   .student-next-step-card,
+  .guidance-insight-card,
   .chat-form,
   .auth-actions {
     grid-template-columns: 1fr;

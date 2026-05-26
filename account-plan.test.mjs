@@ -158,6 +158,17 @@ test("student is moved to guidance after a wrong or uncertain answer", () => {
   assert.match(js, /if \(issue\) focusGuidancePanel/);
 });
 
+test("student guidance starts with a structured mistake insight card", () => {
+  assert.match(html, /id="guidanceInsightCard"/);
+  assert.match(html, /id="guidanceIssueType"/);
+  assert.match(html, /id="guidanceSkillGap"/);
+  assert.match(html, /id="guidanceRepairAction"/);
+  assert.match(js, /function guidanceInsightForLock/);
+  assert.match(js, /renderGuidanceInsight/);
+  assert.match(js, /不显示正确答案/);
+  assert.match(css, /guidance-insight-card/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

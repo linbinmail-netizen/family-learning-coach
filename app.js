@@ -22,6 +22,8 @@ const accounts = [
 ];
 
 const difficultyLevels = ["基础", "中等", "进阶", "挑战"];
+const COACH_RESPONSE_TIMEOUT_MS = 4500;
+const MASTERY_RESPONSE_TIMEOUT_MS = 5500;
 
 const subjects = {
   "7": [
@@ -2669,14 +2671,29 @@ async function askAiCoach(studentReply, history = state.chatHistory) {
     history,
   };
 
-  const response = await fetch("/api/coach", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  return postCoachPayload(payload, COACH_RESPONSE_TIMEOUT_MS);
+}
 
-  if (!response.ok) throw new Error("AI coach request failed");
-  return response.json();
+async function postCoachPayload(payload, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch("/api/coach", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error("AI coach request failed");
+    return response.json();
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("AI 较慢，先使用本地引导。");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function askMasteryEvaluation(variantReply) {
@@ -2694,14 +2711,7 @@ async function askMasteryEvaluation(variantReply) {
     history: state.inlineCoachHistory,
   };
 
-  const response = await fetch("/api/coach", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) throw new Error("AI mastery evaluation failed");
-  return response.json();
+  return postCoachPayload(payload, MASTERY_RESPONSE_TIMEOUT_MS);
 }
 
 function buildLocalCoachReply(studentReply) {
@@ -2996,6 +3006,7 @@ function bindEvents() {
       .catch(() => {
         state.chatHistory.pop();
         $("chatWindow").lastElementChild.remove();
+        appendChat("coach", "AI 较慢，我先用本地引导帮你继续。");
         appendChat("coach", buildLocalCoachReply(reply).reply);
       });
   });
@@ -3030,7 +3041,9 @@ function bindEvents() {
         const localReply = buildLocalCoachReply(reply).reply;
         state.inlineCoachHistory.push({
           role: "coach",
-          text: isReasonStrong(reply) ? `${localReply} 现在做一道变式验证，确认你不是靠猜。` : localReply,
+          text: isReasonStrong(reply)
+            ? `AI 较慢，我先用本地引导。${localReply} 现在做一道变式验证，确认你不是靠猜。`
+            : `AI 较慢，我先用本地引导。${localReply}`,
         });
         if (isReasonStrong(reply)) state.guidanceLock.status = "variant";
         saveData();
@@ -3062,7 +3075,7 @@ function bindEvents() {
       .catch(() => {
         if (isVariantExplanationStrong(reply, state.guidanceLock.variant)) {
           completeGuidedMastery(reply);
-          $("answerFeedback").textContent = "变式解释通过。现在可以进入下一题。";
+          $("answerFeedback").textContent = "AI 较慢，本地判断变式解释通过。现在可以进入下一题。";
           saveData();
           renderDiagnostic();
           return;

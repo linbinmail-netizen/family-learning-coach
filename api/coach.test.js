@@ -8,6 +8,7 @@ import {
   buildTutorRequest,
   detectNeedsTeaching,
   extractOpenAIText,
+  fetchOpenAIWithTimeout,
   getLearningStep,
 } from "./coach.js";
 
@@ -131,4 +132,22 @@ test("fallback mastery evaluation distinguishes method explanation from guessing
   assert.match(strong.reply, /通过|清楚/);
   assert.equal(weak.passed, false);
   assert.match(weak.reply, /第一步|为什么|方法/);
+});
+
+test("fetchOpenAIWithTimeout aborts slow OpenAI requests", async () => {
+  const startedAt = Date.now();
+  await assert.rejects(
+    fetchOpenAIWithTimeout(
+      { model: "test", input: [] },
+      "fake-key",
+      async (_url, options) => {
+        await new Promise((resolve, reject) => {
+          options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+        });
+      },
+      20
+    ),
+    /aborted|AbortError/
+  );
+  assert.ok(Date.now() - startedAt < 500);
 });

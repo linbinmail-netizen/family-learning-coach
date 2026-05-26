@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `8939f9c`
+- Latest deployed version checked: `c1c3ca8`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -63,6 +63,14 @@ Continue deepening the student side:
 3. Make the AI coach remember the student's last few mistakes in the same skill.
 4. Improve the student lesson UI so each session feels like a guided class.
 5. Later, improve parent weekly reports and email delivery.
+
+## Current Performance Fix In Progress
+
+v3.4 targets response latency:
+
+- Frontend AI coach requests should not wait indefinitely.
+- If AI is slow, the student should immediately continue with local coaching guidance.
+- Backend OpenAI calls should have a timeout and return fallback guidance instead of hanging.
 
 ## Operating Notes
 

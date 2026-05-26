@@ -270,6 +270,24 @@ export function buildMasteryEvaluationRequest(body = {}) {
   };
 }
 
+export async function fetchOpenAIWithTimeout(payload, apiKey, fetcher = fetch, timeoutMs = 16000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetcher("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export default async function handler(request, response) {
   if (request.method !== "POST") {
     response.status(405).json({ error: "Method not allowed" });
@@ -292,14 +310,7 @@ export default async function handler(request, response) {
   try {
     if (request.body?.mode === "mastery_evaluation") {
       const evaluationRequest = buildMasteryEvaluationRequest(request.body || {});
-      const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(evaluationRequest),
-      });
+      const openaiResponse = await fetchOpenAIWithTimeout(evaluationRequest, apiKey);
 
       if (!openaiResponse.ok) {
         const message = await openaiResponse.text();
@@ -314,14 +325,7 @@ export default async function handler(request, response) {
 
     const tutorRequest = buildTutorRequest(request.body || {});
 
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(tutorRequest),
-    });
+    const openaiResponse = await fetchOpenAIWithTimeout(tutorRequest, apiKey);
 
     if (!openaiResponse.ok) {
       const message = await openaiResponse.text();

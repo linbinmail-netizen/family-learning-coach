@@ -195,6 +195,15 @@ test("student mastery loop requires open explanation before moving on", () => {
   assert.doesNotMatch(html, /data-variant-index/);
 });
 
+test("student AI requests have fast timeout fallback", () => {
+  assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
+  assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);
+  assert.match(js, /postCoachPayload/);
+  assert.match(js, /AbortController/);
+  assert.match(js, /本地引导/);
+  assert.match(js, /AI 较慢/);
+});
+
 test("parent plan settings can sync to Supabase after login", () => {
   assert.match(js, /cloudStudents/);
   assert.match(js, /loadPlanSettingsFromCloud/);

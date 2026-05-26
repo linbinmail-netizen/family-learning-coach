@@ -198,6 +198,21 @@ test("student lesson includes concept, example, steps, trap, and quick check", (
   assert.match(js, /引用文本证据|斜率与变化率|方程逆运算|变量控制/);
 });
 
+test("grade 8 and 9 priority skills have specific mini lesson blueprints", () => {
+  [
+    /比例关系不是只看数字变大/,
+    /多步文字题先把故事拆成数量关系/,
+    /比较两篇文章时/,
+    /实验设计先分清改变什么/,
+    /线性方程建模要把情境翻译成 y = mx \+ b/,
+    /函数图像解释要同时看形状、截距和变化趋势/,
+    /全等判定要证明两个三角形完全一样/,
+    /证明书写像搭桥/,
+    /细胞结构功能要把结构和工作配对/,
+    /能量转化关注能量从哪里来、到哪里去/,
+  ].forEach((pattern) => assert.match(js, pattern));
+});
+
 test("student mastery loop requires open explanation before moving on", () => {
   assert.match(html, /讲解/);
   assert.match(html, /复述/);

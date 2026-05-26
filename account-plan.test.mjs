@@ -161,7 +161,10 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(html, /id="confidenceSelect"/);
   assert.match(html, /id="inlineCoachPanel"/);
   assert.match(html, /id="inlineCoachForm"/);
-  assert.match(html, /id="variantAnswerGrid"/);
+  assert.match(html, /id="masteryStepList"/);
+  assert.match(html, /id="variantForm"/);
+  assert.match(html, /id="variantReply"/);
+  assert.match(html, /id="variantFeedback"/);
   assert.match(js, /answerConfidence/);
   assert.match(js, /guidanceLock/);
   assert.match(js, /conceptMiniLesson/);
@@ -173,9 +176,21 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(js, /startGuidedMastery/);
   assert.match(js, /completeGuidedMastery/);
   assert.match(js, /buildVariantQuestion/);
+  assert.match(js, /isVariantExplanationStrong/);
   assert.match(js, /nextQuestion"\)\.disabled = .*hasActiveGuidanceLock/s);
   assert.doesNotMatch(html, />诊断测试</);
   assert.doesNotMatch(html, /先写一句理由/);
+});
+
+test("student mastery loop requires open explanation before moving on", () => {
+  assert.match(html, /讲解/);
+  assert.match(html, /复述/);
+  assert.match(html, /变式/);
+  assert.match(js, /masteryOutcome/);
+  assert.match(js, /guidedMasteryCount/);
+  assert.match(js, /变式解释通过/);
+  assert.match(js, /请写出完整方法/);
+  assert.doesNotMatch(html, /data-variant-index/);
 });
 
 test("parent plan settings can sync to Supabase after login", () => {

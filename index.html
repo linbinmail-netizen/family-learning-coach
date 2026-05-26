@@ -194,6 +194,11 @@
                 </div>
                 <span class="status-pill" id="guidanceStatus">需要引导</span>
               </div>
+              <ol class="mastery-step-list" id="masteryStepList">
+                <li>讲解</li>
+                <li>复述</li>
+                <li>变式</li>
+              </ol>
               <div class="chat-window inline-chat-window" id="inlineCoachWindow"></div>
               <form class="chat-form" id="inlineCoachForm">
                 <input id="inlineCoachReply" placeholder="用自己的话写：这题真正问什么？下一步该怎么做？" />
@@ -202,7 +207,11 @@
               <div class="variant-challenge" id="variantChallenge">
                 <h3>变式验证</h3>
                 <p id="variantPrompt"></p>
-                <div class="answer-grid" id="variantAnswerGrid"></div>
+                <form class="variant-form" id="variantForm">
+                  <textarea id="variantReply" rows="3" placeholder="请写出完整方法：这类题第一步看什么？为什么这样做？"></textarea>
+                  <button class="primary-button" type="submit">提交变式解释</button>
+                </form>
+                <p class="form-note" id="variantFeedback">不要只写答案，要写出方法。</p>
               </div>
             </section>
             <div class="question-actions">

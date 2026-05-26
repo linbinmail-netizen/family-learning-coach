@@ -1871,15 +1871,15 @@ function hasActiveGuidanceLock(index = state.currentQuestion) {
 function buildVariantQuestion(question) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const method = question?.explanation || question?.coachHints?.[0] || "先找题干关键词，再判断哪个选项直接回答问题。";
+  const hints = question?.coachHints || [];
   return {
-    prompt: `变式验证：这类 ${skill} 题，哪一句最像真正的解题方法？`,
-    answers: [
-      method,
-      "选择最长、最熟悉或看起来最像的选项。",
-      "先排除两个选项，然后随便猜一个。",
-      "只看选项，不需要回到题干或证据。",
-    ],
-    correct: 0,
+    prompt: `变式验证：请不用选项，用自己的话写出这类 ${skill} 题的解题方法。`,
+    expectedMethod: method,
+    keywords: [skill, method, ...hints]
+      .join(" ")
+      .split(/[\s，。,.、：:；;]+/)
+      .filter((word) => word.length >= 2)
+      .slice(0, 8),
   };
 }
 
@@ -1910,6 +1910,32 @@ function shouldStartGuidance(selectedIndex, question, confidence) {
   if (selectedIndex !== question.correct) return "answer";
   if (confidence !== "sure") return "confidence";
   return "";
+}
+
+function guidedMasteryCount(studentId = state.studentId) {
+  return Object.values(state.guidedMastery).filter((item) => !studentId || item.studentId === studentId).length;
+}
+
+function masteryOutcome(lock, variantReply = "") {
+  const issue = lock?.issue === "confidence" ? "猜对后验证掌握" : "答错后引导掌握";
+  return {
+    studentId: state.studentId,
+    subjectId: state.subject,
+    skill: activeQuestions()[lock?.questionIndex || 0]?.skill || activeDiagnostic().skills[0][0],
+    issue,
+    variantReply,
+    completedAt: new Date().toISOString(),
+  };
+}
+
+function isVariantExplanationStrong(reply = "", variant = state.guidanceLock?.variant) {
+  const text = String(reply).trim().toLowerCase();
+  if (text.length < 18) return false;
+  if (/猜|随便|不知道|不会|不确定|答案是|选[a-d]|choose|guess|idk/.test(text)) return false;
+  const methodWords = ["先", "因为", "所以", "题目", "关键词", "证据", "方法", "第一步", "看", "判断", "条件", "关系", "because", "first", "evidence", "method"];
+  const hasMethodLanguage = methodWords.some((word) => text.includes(word.toLowerCase()));
+  const keywordHits = (variant?.keywords || []).filter((word) => text.includes(String(word).toLowerCase())).length;
+  return hasMethodLanguage && keywordHits >= 1;
 }
 
 function guidanceIssueText(issue) {
@@ -1943,13 +1969,13 @@ function startGuidedMastery(question, selectedIndex, reason, confidence, issue) 
   ];
 }
 
-function completeGuidedMastery() {
+function completeGuidedMastery(variantReply = "") {
   if (!state.guidanceLock) return;
   const question = activeQuestions()[state.guidanceLock.questionIndex];
+  const outcome = masteryOutcome(state.guidanceLock, variantReply);
   markMistakeReviewed(question);
   state.guidedMastery[state.guidanceLock.questionKey] = {
-    completedAt: new Date().toISOString(),
-    issue: state.guidanceLock.issue,
+    ...outcome,
   };
   state.guidanceLock.complete = true;
   state.guidanceLock = null;
@@ -1971,7 +1997,7 @@ function buildDailyTasks(student = activeStudent()) {
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subjects[student.grade][0];
   const answeredCount = Object.keys(state.selectedAnswers).length;
-  const guidedCount = Object.keys(state.guidedMastery).length;
+  const guidedCount = guidedMasteryCount(student.id);
   const targetQuestions = plan.questionTarget || Math.max(4, Math.min(10, Math.round(plan.minutes / 5)));
   const done = Math.min(answeredCount, targetQuestions);
   const report = todayRecordForStudent(student.name);
@@ -2407,6 +2433,10 @@ function renderInlineCoachPanel() {
   if (!lock) return;
 
   $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
+  const activeStep = lock.status === "variant" ? 2 : state.inlineCoachHistory.some((message) => message.role === "student") ? 1 : 0;
+  $("masteryStepList").innerHTML = ["讲解", "复述", "变式"]
+    .map((label, index) => `<li class="${index < activeStep ? "done" : index === activeStep ? "active" : ""}">${label}</li>`)
+    .join("");
   $("inlineCoachWindow").innerHTML = state.inlineCoachHistory
     .map((message) => `<div class="message ${message.role}">${message.text}</div>`)
     .join("");
@@ -2418,15 +2448,8 @@ function renderInlineCoachPanel() {
   if (!variantVisible) return;
 
   $("variantPrompt").textContent = lock.variant.prompt;
-  $("variantAnswerGrid").innerHTML = lock.variant.answers
-    .map(
-      (answer, index) => `
-        <button class="answer-option" data-variant-index="${index}">
-          ${answer}
-        </button>
-      `
-    )
-    .join("");
+  $("variantReply").value = "";
+  $("variantFeedback").textContent = `请写出完整方法。参考方向：${lock.variant.expectedMethod}`;
 }
 
 async function saveParentPlanSettings() {
@@ -2557,6 +2580,7 @@ function buildReport() {
     difficultyFit: insights.difficultyFit,
     issueType: insights.issueType,
     nextAction: insights.nextAction,
+    guidedMasteryCount: guidedMasteryCount(student.id),
     mistakes: reportMistakes.map((item) => ({
       skill: item.skill,
       prompt: item.prompt,
@@ -2989,20 +3013,19 @@ function bindEvents() {
       });
   });
 
-  $("variantAnswerGrid").addEventListener("click", (event) => {
+  $("variantForm").addEventListener("submit", (event) => {
+    event.preventDefault();
     if (!hasActiveGuidanceLock()) return;
-    const button = event.target.closest("[data-variant-index]");
-    if (!button) return;
-    const selectedIndex = Number(button.dataset.variantIndex);
-    if (selectedIndex === state.guidanceLock.variant.correct) {
-      completeGuidedMastery();
-      $("answerFeedback").textContent = "变式验证通过。现在可以进入下一题。";
+    const reply = $("variantReply").value.trim();
+    if (isVariantExplanationStrong(reply, state.guidanceLock.variant)) {
+      completeGuidedMastery(reply);
+      $("answerFeedback").textContent = "变式解释通过。现在可以进入下一题。";
       saveData();
       renderDiagnostic();
       return;
     }
     state.guidanceLock.status = "coaching";
-    appendInlineCoach("coach", "这个选择还像是在猜方法。请回到题干关键词，用一句完整话说明：这类题第一步应该看什么？");
+    appendInlineCoach("coach", "请写出完整方法：这类题第一步看什么？为什么这一步能帮你排除猜测？");
     saveData();
     renderDiagnostic();
   });

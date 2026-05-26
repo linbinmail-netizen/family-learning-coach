@@ -677,6 +677,60 @@ textarea {
   line-height: 1.45;
 }
 
+.guidance-scaffold-card {
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid rgba(47, 111, 159, 0.22);
+  border-radius: 8px;
+  background: #f4f8fb;
+}
+
+.guidance-scaffold-card h4 {
+  margin: 0 0 10px;
+}
+
+.guidance-scaffold-card ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guidance-scaffold-card li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.guidance-scaffold-card li span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: #dcecf7;
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.guidance-scaffold-card li strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.guidance-scaffold-card .form-note {
+  margin: 10px 0 0;
+}
+
 .variant-challenge {
   margin-top: 14px;
   padding-top: 14px;
@@ -1071,6 +1125,7 @@ li {
   .route-steps,
   .student-next-step-card,
   .guidance-insight-card,
+  .guidance-scaffold-card ol,
   .chat-form,
   .auth-actions {
     grid-template-columns: 1fr;

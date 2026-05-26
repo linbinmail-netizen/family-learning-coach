@@ -2383,6 +2383,29 @@ function renderGuidanceInsight(lock = state.guidanceLock) {
   $("guidanceRepairAction").textContent = insight.repairAction;
 }
 
+function guidanceScaffoldForLock(lock = state.guidanceLock, question = activeQuestions()[state.currentQuestion]) {
+  const lesson = conceptMiniLesson(question);
+  const firstHint = question?.coachHints?.[0] || lesson.steps?.[0] || "找关键词或已知条件。";
+  const reasonFocus =
+    lock?.issue === "confidence"
+      ? "因为我要证明自己不是猜的，而是知道这个方法为什么能用。"
+      : "因为这一步能帮我把题目要求和解题方法连起来。";
+  return {
+    questionFocus: "题目问什么：先用一句话说出题目要找什么。",
+    firstStep: `第一步看什么：${firstHint}`,
+    reasonStarter: `为什么这样做：${reasonFocus}`,
+  };
+}
+
+function renderGuidanceScaffold(lock = state.guidanceLock) {
+  if (!lock) return;
+  const question = activeQuestions()[lock.questionIndex] || activeQuestions()[state.currentQuestion];
+  const scaffold = guidanceScaffoldForLock(lock, question);
+  $("scaffoldQuestionFocus").textContent = scaffold.questionFocus;
+  $("scaffoldFirstStep").textContent = scaffold.firstStep;
+  $("scaffoldReasonStarter").textContent = scaffold.reasonStarter;
+}
+
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
   const variant = buildVariantQuestion(question);
   state.guidanceLock = {
@@ -3170,6 +3193,7 @@ function renderInlineCoachPanel() {
 
   $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
   renderGuidanceInsight(lock);
+  renderGuidanceScaffold(lock);
   const activeStep = lock.status === "variant" ? 2 : state.inlineCoachHistory.some((message) => message.role === "student") ? 1 : 0;
   $("masteryStepList").innerHTML = ["讲解", "复述", "变式"]
     .map((label, index) => `<li class="${index < activeStep ? "done" : index === activeStep ? "active" : ""}">${label}</li>`)

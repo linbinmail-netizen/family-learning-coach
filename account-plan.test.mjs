@@ -169,6 +169,19 @@ test("student guidance starts with a structured mistake insight card", () => {
   assert.match(css, /guidance-insight-card/);
 });
 
+test("student guidance includes a three-part method restatement scaffold", () => {
+  assert.match(html, /id="guidanceScaffoldCard"/);
+  assert.match(html, /id="scaffoldQuestionFocus"/);
+  assert.match(html, /id="scaffoldFirstStep"/);
+  assert.match(html, /id="scaffoldReasonStarter"/);
+  assert.match(js, /function guidanceScaffoldForLock/);
+  assert.match(js, /renderGuidanceScaffold/);
+  assert.match(js, /题目问什么/);
+  assert.match(js, /第一步看什么/);
+  assert.match(js, /为什么这样做/);
+  assert.match(css, /guidance-scaffold-card/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

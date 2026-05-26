@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `275159a`
+- Latest deployed version checked: `415f82c`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -33,6 +33,7 @@ The student side is now the priority. Current behavior:
 - Questions adapt difficulty based on performance.
 - If a student answers wrong or marks an answer as guessed/uncertain, the current question is locked.
 - After a wrong or uncertain answer, the guidance panel starts with a structured mistake insight card: issue type, skill gap, and next repair action.
+- The guidance panel now includes a three-part method restatement scaffold: what the question asks, what to inspect first, and why that step helps. The scaffold prefers Chinese lesson steps over raw English answer hints.
 - The locked question requires a mastery loop: teach, restate, variant explanation.
 - Variant verification is open-ended, not multiple choice, to reduce guessing.
 - The student must write a clear method explanation before moving to the next question.
@@ -69,7 +70,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 72 tests passed, syntax checks passed, and the live `api/coach` endpoint accepted a Chinese Algebra I slope explanation.
+Latest result: 75 tests passed, syntax checks passed, and live Vercel deployment `415f82c` rendered the student guidance scaffold without console errors.
 
 ## Next Recommended Work
 
@@ -83,12 +84,13 @@ Continue deepening the student side:
 
 ## Student Finalization Completed
 
-Student-side v3.9 is the current usable baseline:
+Student-side v4.0 is the current usable baseline:
 
 - v3.7: AI guidance uses recent same-skill mistakes.
 - v3.8: mistake review opens a targeted review lesson.
 - v3.9: daily plan shows next action and completion status.
-- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, and less-strict Chinese/mixed-language mastery checks.
+- v4.0: wrong/uncertain answers show a three-part restatement scaffold before the student continues.
+- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

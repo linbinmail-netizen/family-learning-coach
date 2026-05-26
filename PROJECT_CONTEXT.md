@@ -27,7 +27,7 @@ The student side is now the priority. Current behavior:
 - Registration details appear only after clicking Register, where the user chooses parent/student account type and, for students, MIA or EVA.
 - Account type is chosen during registration, not during login.
 - Parent and student accounts see different content.
-- Logged-in student and parent pages show a small family learning illustration as a left-side background card inside the workspace; it never appears on the login page.
+- The family learning illustration now appears as a subtle title-area background on the login card and app sidebar; it no longer takes a separate workspace slot or changes the original page layout.
 - Learning progress is scoped to the signed-in account to avoid one student/account polluting another account's local learning state.
 - Signing out clears login and registration form fields.
 - Students see daily tasks and today's learning lesson.
@@ -85,7 +85,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 98 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question.
+Latest result: 98 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was also browser-checked as a background under the platform title without adding a separate card.
 
 ## Next Recommended Work
 
@@ -124,7 +124,8 @@ Student-side v4.1 is the current usable baseline:
 - v5.7: the family image has been replaced with the new illustration, compressed for the web, and moved into a smaller left-side background card so it supports the workspace without covering learning controls.
 - v5.8: if a student writes “不知道/不会/写什么” in the wrong-answer restatement box, the app now shows a concrete rescue sentence starter and a one-click fill button; placeholder text inside brackets cannot pass the quality gate.
 - v5.9: correct, confident answers and completed guided mastery now move the student to the next question automatically instead of leaving them on the same card.
-- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, stuck-reply rescue starter, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, left-side family illustration card, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
+- v6.0: family illustration moved from a standalone workspace card to a subtle title-area background on the login card and app sidebar, preserving the original learning page layout.
+- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, stuck-reply rescue starter, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

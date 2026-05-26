@@ -38,17 +38,14 @@ test("student home action buttons do not collapse into narrow vertical labels", 
   assert.match(css, /\.student-action-bar button\s*{[\s\S]*white-space: normal/);
 });
 
-test("logged-in app shows a family learning photo outside the login page", () => {
-  assert.match(html, /id="familyMemoryCard"/);
-  assert.match(html, /assets\/family-learning-memory\.png/);
-  assert.match(html, /alt="MIA 和 EVA 的家庭学习照片"/);
-  assert.match(css, /family-memory-card/);
-  assert.match(css, /grid-template-columns: minmax\(170px, 220px\) minmax\(0, 1fr\)/);
-  assert.match(css, /grid-row: 1 \/ span 2/);
-  assert.match(css, /object-fit: cover/);
-  assert.match(css, /position: absolute/);
-  assert.match(css, /height: clamp\(132px, 18vh, 168px\)/);
-  assert.doesNotMatch(html.match(/<section class="login-view[\s\S]*?<\/section>/)?.[0] || "", /familyMemoryCard/);
+test("family illustration sits under the platform title as a background without changing workspace layout", () => {
+  assert.doesNotMatch(html, /id="familyMemoryCard"/);
+  assert.doesNotMatch(css, /family-memory-card/);
+  assert.match(css, /\.login-card::before\s*{[\s\S]*assets\/family-learning-memory\.png/);
+  assert.match(css, /\.sidebar::before\s*{[\s\S]*assets\/family-learning-memory\.png/);
+  assert.match(css, /\.login-card > \*,\s*\.sidebar > \*\s*{[\s\S]*z-index: 1/);
+  assert.match(css, /\.workspace\s*{[\s\S]*display: block/);
+  assert.doesNotMatch(css, /grid-template-columns: minmax\(170px, 220px\) minmax\(0, 1fr\)/);
 });
 
 test("parent report explains fit, issue type, and next action", () => {

@@ -1324,6 +1324,7 @@ let state = {
   guidedMastery: {},
   inlineCoachHistory: [],
   currentQuestion: 0,
+  lastAdvanceNotice: "",
   cloudQuestions: {},
   cloudLoading: false,
   chatHistory: [],
@@ -2156,6 +2157,25 @@ function hasActiveGuidanceLock(index = state.currentQuestion) {
   return Boolean(state.guidanceLock && !state.guidanceLock.complete && state.guidanceLock.questionIndex === index);
 }
 
+function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuestion, mode = "correct") {
+  const questions = activeQuestions();
+  if (!questions.length) return false;
+  if (answeredIndex >= questions.length - 1) {
+    state.currentQuestion = questions.length - 1;
+    state.lastAdvanceNotice =
+      mode === "guided"
+        ? "引导完成，这是本轮最后一题，可以生成学习总结。"
+        : "这题答对了，这是本轮最后一题，可以生成学习总结。";
+    return false;
+  }
+  state.currentQuestion = Math.min(questions.length - 1, answeredIndex + 1);
+  state.lastAdvanceNotice =
+    mode === "guided"
+      ? `引导完成，已进入第 ${state.currentQuestion + 1} 题。`
+      : `上一题答对了，已进入第 ${state.currentQuestion + 1} 题。`;
+  return true;
+}
+
 function buildVariantQuestion(question) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const method = question?.explanation || question?.coachHints?.[0] || "先找题干关键词，再判断哪个选项直接回答问题。";
@@ -2709,6 +2729,7 @@ function completeGuidedMastery(variantReply = "") {
     ...outcome,
   };
   state.guidanceLock.complete = true;
+  advanceToNextQuestionAfterCompletion(state.guidanceLock.questionIndex, "guided");
   state.guidanceLock = null;
   state.inlineCoachHistory = [];
 }
@@ -2721,6 +2742,7 @@ function resetDiagnosticProgress() {
   state.guidedMastery = {};
   state.inlineCoachHistory = [];
   state.currentQuestion = 0;
+  state.lastAdvanceNotice = "";
   state.reportReady = false;
 }
 
@@ -3325,11 +3347,12 @@ function renderDiagnostic() {
   if (locked) {
     $("answerFeedback").textContent = "这题还在 AI 引导中。完成讲解和变式验证后，下一题会自动解锁。";
   } else if (selectedAnswer === undefined) {
-    $("answerFeedback").textContent = "先独立作答。不会、不确定或猜的，提交后系统再讲解和引导。";
+    $("answerFeedback").textContent =
+      state.lastAdvanceNotice || "先独立作答。不会、不确定或猜的，提交后系统再讲解和引导。";
   } else if (guidedComplete) {
-    $("answerFeedback").textContent = "这题已经通过 AI 引导和变式验证，可以进入下一题。";
+    $("answerFeedback").textContent = state.lastAdvanceNotice || "这题已经通过 AI 引导和变式验证，可以进入下一题。";
   } else if (selectedAnswer === question.correct) {
-    $("answerFeedback").textContent = "这题通过了，可以继续下一题。";
+    $("answerFeedback").textContent = state.lastAdvanceNotice || "这题通过了，可以继续下一题。";
   } else {
     $("answerFeedback").textContent = "这题需要完成引导后再进入下一题。";
   }
@@ -4083,10 +4106,12 @@ function bindEvents() {
       $("answerFeedback").textContent = "这题正在引导中。请先完成 AI 引导和变式验证。";
       return;
     }
+    state.lastAdvanceNotice = "";
     state.selectedAnswers[state.currentQuestion] = selectedIndex;
     const issue = shouldStartGuidance(selectedIndex, question, confidence);
     if (!issue) {
       markMistakeReviewed(question);
+      advanceToNextQuestionAfterCompletion(state.currentQuestion, "correct");
     } else {
       recordMistake(question, selectedIndex, guidanceIssueText(issue));
       startGuidedMastery(question, selectedIndex, "", confidence, issue);
@@ -4101,6 +4126,7 @@ function bindEvents() {
   });
 
   $("prevQuestion").addEventListener("click", () => {
+    state.lastAdvanceNotice = "";
     state.currentQuestion = Math.max(0, state.currentQuestion - 1);
     renderDiagnostic();
   });
@@ -4110,6 +4136,7 @@ function bindEvents() {
       $("answerFeedback").textContent = "请先完成这题的 AI 引导和变式验证，再进入下一题。";
       return;
     }
+    state.lastAdvanceNotice = "";
     state.currentQuestion = Math.min(activeQuestions().length - 1, state.currentQuestion + 1);
     renderDiagnostic();
   });

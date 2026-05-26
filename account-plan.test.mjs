@@ -177,6 +177,18 @@ test("student is moved to guidance after a wrong or uncertain answer", () => {
   assert.match(js, /if \(issue\) focusGuidancePanel/);
 });
 
+test("student advances automatically after a correct confident answer", () => {
+  assert.match(js, /function advanceToNextQuestionAfterCompletion/);
+  assert.match(js, /advanceToNextQuestionAfterCompletion\(state\.currentQuestion, "correct"\)/);
+  assert.match(js, /上一题答对了，已进入第/);
+  assert.match(js, /state\.currentQuestion = Math\.min\(questions\.length - 1, answeredIndex \+ 1\)/);
+});
+
+test("student advances automatically after guided mastery is completed", () => {
+  assert.match(js, /advanceToNextQuestionAfterCompletion\(state\.guidanceLock\.questionIndex, "guided"\)/);
+  assert.match(js, /引导完成，已进入第/);
+});
+
 test("student guidance starts with a structured mistake insight card", () => {
   assert.match(html, /id="guidanceInsightCard"/);
   assert.match(html, /id="guidanceIssueType"/);

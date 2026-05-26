@@ -332,7 +332,34 @@ textarea {
 .route-title {
   color: var(--green-dark);
   font-weight: 800;
+}
+
+.route-heading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
   margin-bottom: 10px;
+}
+
+.route-progress-label {
+  color: var(--soft-ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.learning-progress {
+  background: #e8eee8;
+  border-radius: 999px;
+  height: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.learning-progress span {
+  background: var(--green);
+  display: block;
+  height: 100%;
 }
 
 .route-steps {

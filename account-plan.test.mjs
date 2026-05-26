@@ -125,6 +125,8 @@ test("student lesson view shows the current learning route", () => {
   assert.match(js, /function renderLearningRouteMap/);
   assert.match(js, /route-step active/);
   assert.match(js, /route-step done/);
+  assert.match(js, /learning-progress/);
+  assert.match(js, /今日进度/);
   assert.match(js, /学习路线/);
 });
 

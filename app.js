@@ -2947,8 +2947,17 @@ function renderDiagnostic() {
 function renderLearningRouteMap() {
   const plan = planForStudent(state.studentId);
   const blocks = learningRouteBlocks(plan);
+  const targetQuestions = dailyQuestionLimit(plan);
+  const completed = Math.min(Object.keys(state.selectedAnswers).length, targetQuestions);
+  const progressPercent = Math.min(100, Math.round((completed / targetQuestions) * 100));
   $("learningRouteMap").innerHTML = `
-    <div class="route-title">学习路线</div>
+    <div class="route-heading">
+      <div class="route-title">学习路线</div>
+      <div class="route-progress-label">今日进度 ${completed}/${targetQuestions}</div>
+    </div>
+    <div class="learning-progress" aria-label="今日进度">
+      <span style="width: ${progressPercent}%"></span>
+    </div>
     <div class="route-steps">
       ${blocks
         .map((block) => {

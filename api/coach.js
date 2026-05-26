@@ -92,9 +92,13 @@ export function buildTutorRequest(body = {}) {
     coachHints = [],
     studentReply,
     history = [],
+    recentSkillMistakes = [],
   } = body;
   const step = getLearningStep(history);
   const needsTeaching = detectNeedsTeaching(studentReply);
+  const mistakeNote = recentSkillMistakes.length
+    ? "Use recent same-skill mistakes to personalize the next hint, but do not mention private report details or reveal answers."
+    : "";
 
   return {
     model: process.env.OPENAI_MODEL || "gpt-5-mini",
@@ -110,6 +114,7 @@ export function buildTutorRequest(body = {}) {
       "If the student is conceptually confused, teach briefly before asking again.",
       "教练式讲解格式：小讲解：... 例子：... 回到这题：...？",
       "Keep the reply under 110 Chinese characters.",
+      mistakeNote,
       `Current step: ${step.label}. ${step.instruction}`,
       needsTeaching ? buildTeachingNote({ subject, skill, explanation }) : "",
     ].join("\n"),
@@ -128,6 +133,7 @@ export function buildTutorRequest(body = {}) {
               targetSkill: skill,
               teacherExplanationForInternalUseOnly: explanation,
               availableHints: coachHints,
+              recentSkillMistakes: recentSkillMistakes.slice(0, 3),
               currentStep: step,
               needsTeaching,
               recentHistory: history.slice(-8),
@@ -146,28 +152,31 @@ export function buildFallbackReply(body = {}) {
   const step = getLearningStep(body.history || []);
   const hints = body.coachHints || [];
   const needsTeaching = detectNeedsTeaching(body.studentReply || "");
+  const mistakePrefix = body.recentSkillMistakes?.length
+    ? `你之前在同类题上卡过 ${body.recentSkillMistakes[0].attempts || 1} 次，`
+    : "";
 
   if (needsTeaching) {
     const skill = body.skill || "这个知识点";
     const shortExplanation =
       body.explanation ||
       `${skill} 是这类题里帮助你判断方向的核心概念，不是让你先猜答案。`;
-    return `小讲解：${shortExplanation} 例子：先分清“主想法”和“细节”。回到这题：题目要你找哪一类信息？`;
+    return `${mistakePrefix}小讲解：${shortExplanation} 例子：先分清“主想法”和“细节”。回到这题：题目要你找哪一类信息？`;
   }
 
   if (step.id === "understand" && hints[0]) {
-    return `${hints[0]} 先不用选答案，请用自己的话说说题目真正问什么。`;
+    return `${mistakePrefix}${hints[0]} 先不用选答案，请用自己的话说说题目真正问什么。`;
   }
 
   if (step.id === "keywords" && hints[0]) {
-    return `${hints[0]} 现在找一个关键词，并说说它为什么重要。`;
+    return `${mistakePrefix}${hints[0]} 现在找一个关键词，并说说它为什么重要。`;
   }
 
   if (step.id === "eliminate" && hints[1]) {
-    return `${hints[1]} 先排除一个不合理选项，并说出理由。`;
+    return `${mistakePrefix}${hints[1]} 先排除一个不合理选项，并说出理由。`;
   }
 
-  return step.fallback;
+  return `${mistakePrefix}${step.fallback}`;
 }
 
 function localMasterySignal(reply = "", expectedMethod = "", skill = "") {

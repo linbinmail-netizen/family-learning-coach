@@ -2159,6 +2159,28 @@ function buildDailyTasks(student = activeStudent()) {
   ];
 }
 
+function todayCompletionState(tasks = buildDailyTasks()) {
+  const completed = tasks.reduce((sum, task) => sum + Math.min(task.done, task.total), 0);
+  const total = tasks.reduce((sum, task) => sum + task.total, 0);
+  return {
+    completed,
+    total,
+    percent: total ? Math.round((completed / total) * 100) : 0,
+    complete: total > 0 && completed >= total,
+    nextTask: tasks.find((task) => task.done < task.total),
+  };
+}
+
+function nextStudentAction(tasks = buildDailyTasks()) {
+  const current = todayCompletionState(tasks);
+  if (current.complete) return "今日学习已完成。可以休息，或做 1 道挑战题保持手感。";
+  if (!current.nextTask) return "下一步：开始今日学习。";
+  if (current.nextTask.title.includes("总结")) return "下一步：生成今日总结。";
+  if (current.nextTask.title.includes("变式")) return "下一步：完成变式验证。";
+  if (current.nextTask.title.includes("AI")) return "下一步：完成 AI 引导。";
+  return `下一步：${current.nextTask.title}。`;
+}
+
 function mergeQuestions(primary = [], secondary = []) {
   const seen = new Set();
   return [...primary, ...secondary].filter((question) => {
@@ -2391,17 +2413,16 @@ function renderTodayPlan() {
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || activeSubject();
   const tasks = buildDailyTasks(student);
-  const completed = tasks.reduce((sum, task) => sum + Math.min(task.done, task.total), 0);
-  const total = tasks.reduce((sum, task) => sum + task.total, 0);
-  const percent = total ? Math.round((completed / total) * 100) : 0;
+  const completion = todayCompletionState(tasks);
 
   $("todayTitle").textContent = `${student.name} 今日学习课`;
   $("todayMinutes").textContent = `${plan.minutes} 分钟`;
   $("todayFocus").textContent = `重点：${focusSubject.label} · 先学再练 · ${plan.questionTarget || 8} 题`;
-  $("todayProgress").textContent = `${completed} / ${total}`;
-  $("todayProgressBar").style.width = `${percent}%`;
+  $("todayProgress").textContent = `${completion.completed} / ${completion.total}`;
+  $("todayProgressBar").style.width = `${completion.percent}%`;
   $("todayEncouragement").textContent =
-    percent >= 100 ? "今天的学习课已完成，可以做错题复盘。" : `已完成 ${percent}%，先学一点，再练几题，卡住时再找 AI。`;
+    completion.complete ? "今日学习已完成，可以做错题复盘。" : `已完成 ${completion.percent}%，先学一点，再练几题，卡住时再找 AI。`;
+  $("todayNextAction").textContent = nextStudentAction(tasks);
   $("todayTaskList").innerHTML = tasks
     .map(
       (task) => `
@@ -2440,10 +2461,32 @@ function renderMistakeReview() {
           <strong>${item.skill}</strong> · ${item.subjectLabel}<br />
           ${item.prompt}<br />
           已错 ${item.attempts || 1} 次；建议先复述概念，再做同类变式题。
+          <br /><button class="secondary-button small-button" type="button" data-review-mistake="${item.key}">复习这题</button>
         </li>
       `
     )
     .join("");
+}
+
+function openMistakeReviewLesson(mistakeKeyValue) {
+  const mistake = state.mistakeLog.find((item) => item.key === mistakeKeyValue) || mistakesForStudent()[0];
+  if (!mistake) return;
+  state.subject = mistake.subjectId || state.subject;
+  state.grade = mistake.grade || state.grade;
+  const questions = activeQuestions();
+  const matchingIndex = questions.findIndex((question) => question.prompt === mistake.prompt || question.skill === mistake.skill);
+  state.currentQuestion = Math.max(0, matchingIndex);
+  state.guidanceLock = null;
+  state.inlineCoachHistory = [
+    {
+      role: "coach",
+      text: `错题复习课：这次只复习 ${mistake.skill}。先不要急着选答案，请先说这类题第一步要看什么。`,
+    },
+  ];
+  renderSelectors();
+  renderDiagnostic();
+  switchView("diagnostic");
+  $("answerFeedback").textContent = `错题复习课：先看上方小课，再完成 ${mistake.skill} 的同类题。`;
 }
 
 function renderSelectors() {
@@ -2779,6 +2822,23 @@ function appendInlineCoach(role, text) {
   renderInlineCoachPanel();
 }
 
+function mistakesForCurrentSkill(question = activeQuestions()[state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  return mistakesForStudent()
+    .filter((item) => item.subjectId === state.subject && item.skill === skill)
+    .slice(0, 3);
+}
+
+function sameSkillMistakeSummary(question = activeQuestions()[state.currentQuestion]) {
+  return mistakesForCurrentSkill(question).map((item) => ({
+    skill: item.skill,
+    prompt: item.prompt,
+    reason: item.reason,
+    attempts: item.attempts || 1,
+    selectedAnswer: item.selectedAnswer,
+  }));
+}
+
 async function askAiCoach(studentReply, history = state.chatHistory) {
   const question = activeQuestions()[state.currentQuestion];
   const payload = {
@@ -2790,6 +2850,7 @@ async function askAiCoach(studentReply, history = state.chatHistory) {
     skill: question?.skill || activeDiagnostic().skills[0][0],
     explanation: question?.explanation || "",
     coachHints: question?.coachHints || [],
+    recentSkillMistakes: sameSkillMistakeSummary(question),
     studentReply,
     history,
   };
@@ -2842,16 +2903,20 @@ function buildLocalCoachReply(studentReply) {
   const reply = studentReply.toLowerCase();
   const studentTurns = state.chatHistory.filter((message) => message.role === "student").length;
   const hints = question?.coachHints || [];
+  const recentSkillMistakes = mistakesForCurrentSkill(question);
+  const mistakePrefix = recentSkillMistakes.length
+    ? `你之前在同类题上卡过 ${recentSkillMistakes[0].attempts || 1} 次，`
+    : "";
 
   if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
     return {
-      reply: `${hints[0] || "先把题目中的关键词圈出来。"} 先不用选答案，请用自己的话说说题目真正问什么。`,
+      reply: `${mistakePrefix}${hints[0] || "先把题目中的关键词圈出来。"} 先不用选答案，请用自己的话说说题目真正问什么。`,
     };
   }
 
   if (studentTurns <= 1) {
     return {
-      reply: `${hints[0] || "方向不错。"} 下一步找一个关键词，并说明它为什么重要。`,
+      reply: `${mistakePrefix}${hints[0] || "方向不错。"} 下一步找一个关键词，并说明它为什么重要。`,
     };
   }
 
@@ -3091,14 +3156,12 @@ function bindEvents() {
   $("startDiagnosticButton").addEventListener("click", () => switchView("diagnostic"));
   $("reviewMistakesButton").addEventListener("click", () => {
     const firstMistake = mistakesForStudent()[0];
-    if (firstMistake?.subjectId) {
-      state.subject = firstMistake.subjectId;
-      state.grade = firstMistake.grade || state.grade;
-      state.currentQuestion = 0;
-      renderSelectors();
-      renderDiagnostic();
-    }
-    switchView("diagnostic");
+    if (firstMistake?.key) openMistakeReviewLesson(firstMistake.key);
+  });
+  $("mistakeReviewList").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-review-mistake]");
+    if (!button) return;
+    openMistakeReviewLesson(button.dataset.reviewMistake);
   });
   $("askCoachButton").addEventListener("click", () => switchView("coach"));
 

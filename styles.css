@@ -281,6 +281,13 @@ textarea {
   color: var(--green-dark);
 }
 
+.small-button {
+  min-height: 30px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
 .view {
   display: none;
 }
@@ -583,6 +590,14 @@ textarea {
 
 .today-progress-bar {
   margin: 12px 0;
+}
+
+.next-action {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #edf5ef;
+  color: var(--green-dark);
+  font-weight: 800;
 }
 
 .student-action-bar {

@@ -234,6 +234,27 @@ test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /AI 较慢/);
 });
 
+test("student coach uses recent same-skill mistakes", () => {
+  assert.match(js, /recentSkillMistakes/);
+  assert.match(js, /mistakesForCurrentSkill/);
+  assert.match(js, /sameSkillMistakeSummary/);
+});
+
+test("mistake review opens a targeted review lesson", () => {
+  assert.match(js, /openMistakeReviewLesson/);
+  assert.match(js, /data-review-mistake/);
+  assert.match(js, /复习这题/);
+  assert.match(js, /错题复习课/);
+});
+
+test("student daily plan shows next action and completion state", () => {
+  assert.match(html, /id="todayNextAction"/);
+  assert.match(js, /todayCompletionState/);
+  assert.match(js, /nextStudentAction/);
+  assert.match(js, /今日学习已完成/);
+  assert.match(js, /生成今日总结/);
+});
+
 test("parent plan settings can sync to Supabase after login", () => {
   assert.match(js, /cloudStudents/);
   assert.match(js, /loadPlanSettingsFromCloud/);

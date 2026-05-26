@@ -49,6 +49,34 @@ test("buildTutorRequest includes the five-step rule and blocks direct answers", 
   assert.match(text, /English I/);
 });
 
+test("buildTutorRequest includes recent mistakes for the same skill", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    recentSkillMistakes: [
+      {
+        skill: "识别中心观点",
+        prompt: "Which sentence best states the central idea?",
+        reason: "猜对后验证掌握",
+        attempts: 2,
+      },
+    ],
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /recentSkillMistakes/);
+  assert.match(text, /Which sentence best states/);
+  assert.match(text, /Use recent same-skill mistakes/);
+});
+
+test("fallback reply mentions same-skill mistake pattern when available", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    recentSkillMistakes: [{ skill: "识别中心观点", attempts: 2 }],
+  });
+
+  assert.match(reply, /同类题|之前/);
+});
+
 test("detectNeedsTeaching recognizes concept confusion", () => {
   assert.equal(detectNeedsTeaching("我不懂 central idea 是什么意思"), true);
   assert.equal(detectNeedsTeaching("I don't understand what evidence means"), true);

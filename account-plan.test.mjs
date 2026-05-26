@@ -397,6 +397,14 @@ test("variant submission returns teacher-style rubric feedback", () => {
   assert.match(css, /variant-rubric-feedback/);
 });
 
+test("variant rubric feedback updates live as the student types", () => {
+  assert.match(js, /function variantRubricItems/);
+  assert.match(js, /variantReply"\)\.addEventListener\("input", \(\) => renderVariantRubricFeedback\(\)\)/);
+  assert.match(js, /rubric-\$\{item\.ready \? "met" : "missing"\}/);
+  assert.match(css, /rubric-met/);
+  assert.match(css, /rubric-missing/);
+});
+
 test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
   assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);

@@ -2367,25 +2367,35 @@ function isVariantExplanationStrong(reply = "", variant = state.guidanceLock?.va
   return hasMethodLanguage && keywordHits >= 1;
 }
 
-function buildVariantRubricFeedback(reply = "", variant = state.guidanceLock?.variant) {
+function variantRubricItems(reply = "", variant = state.guidanceLock?.variant) {
   const text = String(reply).trim().toLowerCase();
   const keywordHits = variantKeywordBank(variant).filter((word) => text.includes(String(word).toLowerCase())).length;
   const typeReady = keywordHits >= 1 && !/答案是|选[a-d]|choose/.test(text);
   const firstStepReady = /先|第一步|看|找|用|比较|变化|证据|条件|first|compare|change|evidence/.test(text);
   const reasonReady = /因为|所以|为什么|说明|证明|原因|because|so that|why/.test(text);
-  const line = (label, ready, next) => `${ready ? "已做到" : "还要补"}：${label}${ready ? "" : `。${next}`}`;
   return [
-    line("题目类型", typeReady, "先说这题在考哪个知识点"),
-    line("第一步", firstStepReady, "写清第一步要看什么或怎么算"),
-    line("原因解释", reasonReady, "补上为什么这一步能帮助判断"),
-  ].join("；");
+    { label: "题目类型", ready: typeReady, next: "先说这题在考哪个知识点" },
+    { label: "第一步", ready: firstStepReady, next: "写清第一步要看什么或怎么算" },
+    { label: "原因解释", ready: reasonReady, next: "补上为什么这一步能帮助判断" },
+  ];
+}
+
+function buildVariantRubricFeedback(reply = "", variant = state.guidanceLock?.variant) {
+  return variantRubricItems(reply, variant)
+    .map((item) => `${item.ready ? "已做到" : "还要补"}：${item.label}${item.ready ? "" : `。${item.next}`}`)
+    .join("；");
 }
 
 function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", variant = state.guidanceLock?.variant) {
   const target = $("variantRubricFeedback");
   if (!target) return "";
   const feedback = buildVariantRubricFeedback(reply, variant);
-  target.innerHTML = feedback;
+  target.innerHTML = variantRubricItems(reply, variant)
+    .map(
+      (item) =>
+        `<span class="rubric-${item.ready ? "met" : "missing"}"><strong>${item.ready ? "已做到" : "还要补"}</strong>${item.label}</span>`
+    )
+    .join("");
   return feedback;
 }
 
@@ -4040,6 +4050,7 @@ function bindEvents() {
   });
 
   $("inlineCoachReply").addEventListener("input", () => renderReplyQuality());
+  $("variantReply").addEventListener("input", () => renderVariantRubricFeedback());
 
   $("variantForm").addEventListener("submit", (event) => {
     event.preventDefault();

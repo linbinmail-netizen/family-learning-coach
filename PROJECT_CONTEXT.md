@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `ef813f6`
+- Latest deployed version checked: `63c0f03`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -42,6 +42,7 @@ The student side is now the priority. Current behavior:
 - Variant verification now includes a structured method checklist: mission, three method steps, and self-check reminder.
 - Variant submission now returns teacher-style rubric feedback across three parts: topic/type, first step, and reason explanation.
 - Variant rubric feedback now updates live while the student types, using visible "done / needs work" chips.
+- Variant submit is now disabled until all three rubric checks are ready; incomplete direct submit attempts show a clear reminder.
 - The student must write a clear method explanation before moving to the next question.
 - Chinese, English, and mixed Chinese-English method explanations can pass when the reasoning is mathematically/conceptually equivalent.
 - If OpenAI is too strict but the local mastery check clearly passes, the local passing result can override the AI rejection.
@@ -76,7 +77,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 82 tests passed, syntax checks passed, and live Vercel deployment `ef813f6` opened correctly with no browser console warnings/errors.
+Latest result: 83 tests passed, syntax checks passed, and live Vercel deployment `63c0f03` opened correctly with no browser console warnings/errors.
 
 ## Next Recommended Work
 
@@ -103,7 +104,8 @@ Student-side v4.1 is the current usable baseline:
 - v4.5: variant verification now shows a mission, three-step method checklist, and self-check prompt before the student writes the open explanation.
 - v4.6: variant submission now gives teacher-style rubric feedback for what is done and what still needs improvement.
 - v4.7: variant rubric feedback now updates live as the student types, with visual done/needs-work chips.
-- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move, structured variant verification, teacher-style live variant rubric feedback, and less-strict Chinese/mixed-language mastery checks.
+- v4.8: variant submit is gated by live rubric readiness, so students must complete topic/type, first step, and reason explanation before AI grading.
+- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

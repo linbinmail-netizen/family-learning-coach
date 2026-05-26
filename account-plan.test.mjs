@@ -224,6 +224,23 @@ test("student guidance reply quality rejects short keyword-only replies", () => 
   assert.match(js, /解释要更完整/);
 });
 
+test("student guidance gives a concrete rescue prompt when the reply says they are stuck", () => {
+  assert.match(html, /id="replyHelperCard"/);
+  assert.match(html, /id="replyStarterText"/);
+  assert.match(html, /id="applyReplyStarterButton"/);
+  assert.match(js, /function guidanceReplyStarterForLock/);
+  assert.match(js, /const asksForHelp = .*不知道/);
+  assert.match(js, /没关系，先照这句填空/);
+  assert.match(js, /把方括号里的内容换成自己的话/);
+  assert.match(js, /applyReplyStarterButton"\)\.addEventListener\("click"/);
+  assert.match(css, /reply-helper-card/);
+});
+
+test("student guidance starter placeholders do not pass the quality gate", () => {
+  assert.match(js, /const hasPlaceholder = .*\\\[.*\\\]/);
+  assert.match(js, /ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && !asksForHelp && !hasPlaceholder/);
+});
+
 test("student cannot submit inline guidance until restatement is complete", () => {
   assert.match(html, /id="inlineCoachSubmit"/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready/);

@@ -2568,6 +2568,12 @@ function renderGuidanceScaffold(lock = state.guidanceLock) {
   $("scaffoldReasonStarter").textContent = scaffold.reasonStarter;
 }
 
+function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const scaffold = guidanceScaffoldForLock(lock, question);
+  const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || "关键词或条件";
+  return `这题要我[写题目目标]。我第一步先看[${firstStep}]，因为[说明这一步为什么有用]。`;
+}
+
 function evaluateGuidanceReplyQuality(reply = "") {
   const text = reply.trim().toLowerCase();
   const compactText = text.replace(/\s+/g, "");
@@ -2576,19 +2582,40 @@ function evaluateGuidanceReplyQuality(reply = "") {
   const hasQuestionGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate/.test(text);
   const hasMethodStep = /先|第一步|步骤|方法|看|找|用|变化|条件|证据|除以|比较|compare|divide|change|rate/.test(text);
   const hasReasonWhy = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that/.test(text);
+  const asksForHelp = /不知道|不会|不懂|写什么|怎么写|没思路|help|stuck|idk|not sure/.test(text);
+  const hasPlaceholder = /\[.*?\]|_{2,}/.test(reply);
   return {
     enoughDetail,
     questionGoal: hasQuestionGoal,
     methodStep: hasMethodStep,
     reasonWhy: hasReasonWhy,
-    ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy,
+    asksForHelp,
+    hasPlaceholder,
+    ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && !asksForHelp && !hasPlaceholder,
   };
+}
+
+function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQuality(reply)) {
+  if (quality.asksForHelp) {
+    return "没关系，先照这句填空。先不用写答案，只写你会怎么想。";
+  }
+  if (quality.hasPlaceholder) {
+    return "把方括号里的内容换成自己的话，再提交。";
+  }
+  const missing = [
+    !quality.enoughDetail && "把解释写完整一点",
+    !quality.questionGoal && "写清题目要找什么",
+    !quality.methodStep && "写清第一步看什么",
+    !quality.reasonWhy && "写清为什么这样做",
+  ].filter(Boolean);
+  return missing.length ? `下一步只补：${missing[0]}。可以先照下面句式写。` : "这句还不够清楚，先照下面句式补完整。";
 }
 
 function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   const card = $("replyQualityCard");
   if (!card) return;
   const quality = evaluateGuidanceReplyQuality(reply);
+  const helperCard = $("replyHelperCard");
   [
     ["qualityQuestionGoal", quality.questionGoal],
     ["qualityMethodStep", quality.methodStep],
@@ -2602,9 +2629,17 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     !quality.methodStep && "方法步骤",
     !quality.reasonWhy && "原因说明",
   ].filter(Boolean);
+  const starter = guidanceReplyStarterForLock(state.guidanceLock);
   $("replyQualityStatus").textContent = quality.ready
     ? "这句方法比较完整，可以提交给 AI 教练检查。"
-    : `还差：${missing.join("、")}。`;
+    : quality.asksForHelp || quality.hasPlaceholder
+      ? guidanceReplyHelpText(reply, quality)
+      : `还差：${missing.join("、")}。${guidanceReplyHelpText(reply, quality)}`;
+  if (helperCard) {
+    helperCard.classList.toggle("hidden", quality.ready);
+    $("replyHelperText").textContent = guidanceReplyHelpText(reply, quality);
+    $("replyStarterText").textContent = starter;
+  }
   $("inlineCoachSubmit").disabled = !quality.ready;
 }
 
@@ -4181,6 +4216,12 @@ function bindEvents() {
   });
 
   $("inlineCoachReply").addEventListener("input", () => renderReplyQuality());
+  $("applyReplyStarterButton").addEventListener("click", () => {
+    const input = $("inlineCoachReply");
+    input.value = guidanceReplyStarterForLock(state.guidanceLock);
+    input.focus();
+    renderReplyQuality(input.value);
+  });
   $("variantReply").addEventListener("input", () => renderVariantRubricFeedback());
   $("variantStarterBar").addEventListener("click", (event) => {
     const starter = event.target.closest("[data-starter-text]");

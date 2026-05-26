@@ -872,6 +872,50 @@ textarea {
   color: var(--green-dark);
 }
 
+.reply-helper-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(196, 132, 43, 0.28);
+  border-radius: 8px;
+  background: #fffaf1;
+}
+
+.reply-helper-card.hidden {
+  display: none;
+}
+
+.reply-helper-card strong {
+  margin-bottom: 0;
+}
+
+.reply-helper-card p {
+  margin: 0;
+  color: var(--soft-ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.reply-starter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.reply-starter-row span {
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid rgba(47, 111, 159, 0.18);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
 .variant-challenge {
   margin-top: 14px;
   padding-top: 14px;
@@ -1375,6 +1419,7 @@ li {
   .guidance-insight-card,
   .guidance-scaffold-card ol,
   .reply-quality-list,
+  .reply-starter-row,
   .chat-form,
   .auth-actions {
     grid-template-columns: 1fr;

@@ -213,6 +213,16 @@ test("student cannot submit inline guidance until restatement is complete", () =
   assert.match(js, /先把复述补完整/);
 });
 
+test("student guidance coach gives teaching feedback before variant verification", () => {
+  assert.match(js, /function buildGuidedTeachingMove/);
+  assert.match(js, /概念提醒/);
+  assert.match(js, /小例子/);
+  assert.match(js, /下一问/);
+  assert.match(js, /buildGuidedTeachingMove\(reply/);
+  assert.match(js, /state\.guidanceLock\.teachingTurns/);
+  assert.doesNotMatch(js, /正确答案是/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

@@ -2446,6 +2446,33 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   $("inlineCoachSubmit").disabled = !quality.ready;
 }
 
+function teachingMiniExampleForSkill(skill = "") {
+  if (/斜率|变化率|slope|rate/.test(skill)) {
+    return "如果题目问变化率，先看 x 怎么变、y 怎么变，再说明为什么要比较这两个变化。";
+  }
+  if (/证据|中心观点|主张|claim|evidence|author/.test(skill)) {
+    return "如果题目问作者观点，先找中心句，再找能直接支持它的证据。";
+  }
+  if (/方程|equation|逆运算/.test(skill)) {
+    return "如果题目是方程，先说清楚变量正在被做什么运算，再用相反运算保持两边平衡。";
+  }
+  if (/变量|实验|variable|experiment/.test(skill)) {
+    return "如果题目是实验，先分清谁被改变、谁被测量、谁要保持不变。";
+  }
+  return "先把题目目标和第一步拆开看，再解释这一步为什么能缩小判断范围。";
+}
+
+function buildGuidedTeachingMove(reply = "", lock = state.guidanceLock) {
+  const question = activeQuestions()[lock?.questionIndex || state.currentQuestion];
+  const lesson = conceptMiniLesson(question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const quality = evaluateGuidanceReplyQuality(reply);
+  const nextAsk = quality.reasonWhy
+    ? "把你的方法换成一句更具体的话：我先看____，因为____。"
+    : "先不要写答案，请补上“为什么这一步有用”。";
+  return `概念提醒：${lesson.steps?.[0] || "先看题目真正问什么"}，不是先猜选项。小例子：${teachingMiniExampleForSkill(skill)} 下一问：${nextAsk}`;
+}
+
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
   const variant = buildVariantQuestion(question);
   state.guidanceLock = {
@@ -2457,6 +2484,7 @@ function startGuidedMastery(question, selectedIndex, reason, confidence, issue) 
     issue,
     variant,
     status: "coaching",
+    teachingTurns: 0,
     complete: false,
   };
   state.inlineCoachHistory = [
@@ -3932,14 +3960,17 @@ function bindEvents() {
     askAiCoach(reply, state.inlineCoachHistory)
       .then((data) => {
         state.inlineCoachHistory.pop();
-        if (isReasonStrong(reply)) {
+        const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
+        const canMoveToVariant = isReasonStrong(reply) && (state.guidanceLock.teachingTurns || 0) >= 1;
+        state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+        if (canMoveToVariant) {
           state.inlineCoachHistory.push({
             role: "coach",
             text: `${data.reply} 现在做一道变式验证：不靠原题选项，判断哪一句才是真正的方法。`,
           });
           state.guidanceLock.status = "variant";
         } else {
-          state.inlineCoachHistory.push({ role: "coach", text: data.reply });
+          state.inlineCoachHistory.push({ role: "coach", text: `${data.reply} ${teachingMove}` });
         }
         saveData();
         renderDiagnostic();
@@ -3947,13 +3978,16 @@ function bindEvents() {
       .catch(() => {
         state.inlineCoachHistory.pop();
         const localReply = buildLocalCoachReply(reply).reply;
+        const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
+        const canMoveToVariant = isReasonStrong(reply) && (state.guidanceLock.teachingTurns || 0) >= 1;
+        state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
         state.inlineCoachHistory.push({
           role: "coach",
-          text: isReasonStrong(reply)
+          text: canMoveToVariant
             ? `AI 较慢，我先用本地引导。${localReply} 现在做一道变式验证，确认你不是靠猜。`
-            : `AI 较慢，我先用本地引导。${localReply}`,
+            : `AI 较慢，我先用本地引导。${localReply} ${teachingMove}`,
         });
-        if (isReasonStrong(reply)) state.guidanceLock.status = "variant";
+        if (canMoveToVariant) state.guidanceLock.status = "variant";
         saveData();
         renderDiagnostic();
       });

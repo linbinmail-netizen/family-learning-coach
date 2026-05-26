@@ -2150,12 +2150,11 @@ function buildVariantQuestion(question) {
 
 function variantMethodChecklistFor(variant = state.guidanceLock?.variant, question = activeQuestions()[state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
-  const expected = variant?.expectedMethod || question?.explanation || "先看题目要求，再写方法。";
   return {
     mission: `验证目标：判断题目类型是 ${skill}，用自己的话写出方法，不写答案字母。`,
     steps: [
       "判断题目类型：这题在考哪一个知识点？",
-      `写出第一步：${expected}`,
+      "写出第一步：先说明你会看什么、找什么，或先做哪一个计算。",
       "说明为什么：这一步怎样帮助你排除猜测或找到方法？",
     ],
     selfCheck: "自查：我的解释是否包含“先做什么”和“为什么这样做”？如果只写答案，需要补方法。",
@@ -3374,7 +3373,7 @@ function renderVariantVerification(lock = state.guidanceLock) {
         `<button class="starter-chip" type="button" data-starter-text="${starter.text}">${starter.label}</button>`
     )
     .join("");
-  $("variantFeedback").textContent = `请写出完整方法。参考方向：${lock.variant.expectedMethod}`;
+  $("variantFeedback").textContent = "先按清单写自己的方法；系统会检查表达是否完整，但不会先给参考答案。";
   $("variantReply").value = "";
   renderVariantRubricFeedback("", lock.variant);
 }
@@ -4105,7 +4104,7 @@ function bindEvents() {
     if (!reply) return;
     if (!isVariantRubricReady(reply, state.guidanceLock?.variant)) {
       renderVariantRubricFeedback(reply, state.guidanceLock?.variant);
-      $("variantFeedback").textContent = "先把三项变式说明补完整，再提交给 AI 批改。";
+      $("variantFeedback").textContent = "先补完整各项变式说明，再提交给 AI 批改。";
       $("variantReply").focus();
       return;
     }

@@ -370,7 +370,7 @@ test("student mastery loop requires open explanation before moving on", () => {
   assert.match(js, /guidedMasteryCount/);
   assert.match(js, /mode: "mastery_evaluation"/);
   assert.match(js, /变式解释通过/);
-  assert.match(js, /请写出完整方法/);
+  assert.match(js, /先按清单写自己的方法/);
   assert.doesNotMatch(html, /data-variant-index/);
 });
 
@@ -410,7 +410,7 @@ test("student cannot submit variant explanation until rubric is complete", () =>
   assert.match(js, /function isVariantRubricReady/);
   assert.match(js, /\$\("variantSubmit"\)\.disabled = !ready/);
   assert.match(js, /if \(!isVariantRubricReady\(reply/);
-  assert.match(js, /先把三项变式说明补完整/);
+  assert.match(js, /先补完整各项变式说明/);
 });
 
 test("variant explanation offers non-answer sentence starters", () => {
@@ -427,6 +427,13 @@ test("sentence starters alone do not complete variant mastery", () => {
   assert.match(js, /具体内容/);
   assert.match(js, /把句式后面的内容补完整/);
   assert.match(js, /hasMeaningfulVariantCompletion\(reply\)/);
+});
+
+test("variant verification does not reveal the expected method before the student writes", () => {
+  assert.doesNotMatch(js, /写出第一步：\$\{expected\}/);
+  assert.doesNotMatch(js, /参考方向：\$\{lock\.variant\.expectedMethod\}/);
+  assert.match(js, /先按清单写自己的方法/);
+  assert.match(js, /补完整各项变式说明/);
 });
 
 test("student AI requests have fast timeout fallback", () => {

@@ -183,13 +183,16 @@ function localMasterySignal(reply = "", expectedMethod = "", skill = "") {
   const text = String(reply).trim().toLowerCase();
   if (text.length < 18) return false;
   if (/猜|随便|不知道|不会|不确定|答案是|选[a-d]|choose|guess|idk/.test(text)) return false;
-  const methodWords = ["先", "因为", "所以", "题目", "关键词", "证据", "方法", "第一步", "看", "判断", "条件", "关系", "because", "first", "evidence", "method"];
+  const methodWords = ["先", "因为", "所以", "题目", "关键词", "证据", "方法", "第一步", "看", "判断", "条件", "关系", "变化", "除以", "because", "first", "evidence", "method"];
   const hasMethodLanguage = methodWords.some((word) => text.includes(word.toLowerCase()));
-  const expectedWords = [expectedMethod, skill]
-    .join(" ")
+  const expectedRaw = [expectedMethod, skill].join(" ").toLowerCase();
+  const expectedWords = expectedRaw
     .split(/[\s，。,.、：:；;]+/)
     .filter((word) => word.length >= 3)
     .slice(0, 10);
+  if (/斜率|变化率|slope|rate of change|rise over run/.test(expectedRaw)) {
+    expectedWords.push("斜率", "变化率", "除以", "x 变化", "y 变化", "rise", "run");
+  }
   const keywordHits = expectedWords.filter((word) => text.includes(String(word).toLowerCase())).length;
   return hasMethodLanguage && (keywordHits >= 1 || text.length >= 32);
 }
@@ -243,6 +246,7 @@ export function buildMasteryEvaluationRequest(body = {}) {
       "You are grading whether a student can explain the method for a middle/high school learning question.",
       "Return only valid JSON with keys: passed, reply, nextPrompt.",
       "passed must be true only when the student explains a reusable method, not just an answer choice.",
+      "Accept simplified Chinese, English, or mixed Chinese-English explanations when the method is mathematically or conceptually equivalent.",
       "Do not reveal the correct answer, correct option, or answer letter.",
       "不要直接说出正确选项、答案字母或最终答案。",
       "If not passed, reply with one concrete coaching prompt in simplified Chinese.",

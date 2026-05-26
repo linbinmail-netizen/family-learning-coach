@@ -162,6 +162,16 @@ test("fallback mastery evaluation distinguishes method explanation from guessing
   assert.match(weak.reply, /第一步|为什么|方法/);
 });
 
+test("fallback mastery evaluation accepts Chinese math method explanations", () => {
+  const result = buildFallbackMasteryEvaluation({
+    variantReply: "我会先找两个点的 x 变化和 y 变化，再用 y 的变化除以 x 的变化，因为斜率表示每增加 1 个 x，y 变多少。",
+    expectedMethod: "Slope shows the rate of change between two points.",
+    skill: "斜率与变化率",
+  });
+
+  assert.equal(result.passed, true);
+});
+
 test("fetchOpenAIWithTimeout aborts slow OpenAI requests", async () => {
   const startedAt = Date.now();
   await assert.rejects(

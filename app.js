@@ -1354,9 +1354,30 @@ const roleAllowedViews = {
   student: ["today", "diagnostic", "report", "coach"],
 };
 
-function loadSavedData() {
+function accountDataStorageKey() {
+  return state.authSession?.user?.id ? `${storageKey}:${state.authSession.user.id}` : storageKey;
+}
+
+function clearLearningStateForAccount() {
+  state.selectedAnswer = null;
+  state.selectedAnswers = {};
+  state.answerConfidence = {};
+  state.guidanceLock = null;
+  state.guidedMastery = {};
+  state.inlineCoachHistory = [];
+  state.currentQuestion = 0;
+  state.chatHistory = [];
+  state.reportReady = false;
+  state.records = [];
+  state.mistakeLog = [];
+  state.adaptiveLevels = {};
+  state.adaptiveStats = {};
+}
+
+function loadSavedData(key = storageKey, options = {}) {
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey));
+    if (options.resetLearning) clearLearningStateForAccount();
+    const saved = JSON.parse(localStorage.getItem(key));
     if (saved && Array.isArray(saved.records)) {
       state.records = saved.records;
     }
@@ -1364,9 +1385,12 @@ function loadSavedData() {
       state.mistakeLog = saved.mistakeLog;
     }
     if (saved?.answerConfidence) state.answerConfidence = saved.answerConfidence;
+    if (saved?.selectedAnswers) state.selectedAnswers = saved.selectedAnswers;
     if (saved?.guidanceLock) state.guidanceLock = saved.guidanceLock;
     if (saved?.guidedMastery) state.guidedMastery = saved.guidedMastery;
     if (Array.isArray(saved?.inlineCoachHistory)) state.inlineCoachHistory = saved.inlineCoachHistory;
+    if (Number.isInteger(saved?.currentQuestion)) state.currentQuestion = saved.currentQuestion;
+    if (typeof saved?.reportReady === "boolean") state.reportReady = saved.reportReady;
     if (saved?.accountId) state.accountId = saved.accountId;
     if (saved?.accountRole) state.accountRole = saved.accountRole;
     if (saved?.studentId) state.studentId = saved.studentId;
@@ -1385,16 +1409,19 @@ function loadSavedData() {
   }
 }
 
-function saveData() {
+function saveData(key = accountDataStorageKey()) {
   localStorage.setItem(
-    storageKey,
+    key,
     JSON.stringify({
       records: state.records,
       mistakeLog: state.mistakeLog,
+      selectedAnswers: state.selectedAnswers,
       answerConfidence: state.answerConfidence,
       guidanceLock: state.guidanceLock,
       guidedMastery: state.guidedMastery,
       inlineCoachHistory: state.inlineCoachHistory,
+      currentQuestion: state.currentQuestion,
+      reportReady: state.reportReady,
       accountId: state.accountId,
       accountRole: state.accountRole,
       studentId: state.studentId,
@@ -1566,8 +1593,9 @@ function signupProfileForCurrentForm(email) {
   return selectedSignupProfile();
 }
 
-function applyProfileToLocalState(profile) {
+function applyProfileToLocalState(profile, options = {}) {
   if (!profile) return;
+  const { persist = true } = options;
   state.authProfile = profile;
 
   if (profile.role === "parent") {
@@ -1584,7 +1612,7 @@ function applyProfileToLocalState(profile) {
     state.subject = planForStudent(localStudentId).focusSubject || subjects[state.grade][0].id;
   }
 
-  saveData();
+  if (persist) saveData(accountDataStorageKey());
 }
 
 function renderAuthGate() {
@@ -1593,6 +1621,15 @@ function renderAuthGate() {
   const appShell = $("appShell");
   if (loginView) loginView.classList.toggle("hidden", signedIn);
   if (appShell) appShell.classList.toggle("authenticated", signedIn);
+}
+
+function clearAuthForms() {
+  ["authEmail", "authPassword", "signupEmail", "signupPassword"].forEach((id) => {
+    const input = $(id);
+    if (input) input.value = "";
+  });
+  if ($("signupRole")) $("signupRole").value = "parent";
+  renderAuth();
 }
 
 function viewAllowedForRole(viewName) {
@@ -1801,7 +1838,9 @@ async function loadAuthProfile() {
   const data = profiles?.[0];
   if (!data) throw new Error("No profile found for current user.");
 
-  applyProfileToLocalState(data);
+  applyProfileToLocalState(data, { persist: false });
+  loadSavedData(accountDataStorageKey(), { resetLearning: true });
+  applyProfileToLocalState(data, { persist: false });
   if (data.role === "parent") {
     await supabaseRpc("ensure_family_links");
   }
@@ -1809,7 +1848,8 @@ async function loadAuthProfile() {
   await loadPlanSettingsFromCloud();
   await syncMistakeLogToCloud();
   await loadMistakesFromCloud();
-  applyProfileToLocalState(data);
+  applyProfileToLocalState(data, { persist: false });
+  saveData(accountDataStorageKey());
   setAuthStatus(`已登录：${currentAuthUserLabel()}`);
   renderAll();
   switchView(data.role === "parent" ? "parent" : "today");
@@ -1843,6 +1883,7 @@ async function initAuth() {
       state.authProfile = null;
       state.cloudStudents = {};
       setAuthStatus("已退出登录。");
+      clearAuthForms();
       renderAll();
       renderAuthGate();
       return;
@@ -1952,6 +1993,7 @@ async function signOut() {
   state.authProfile = null;
   state.cloudStudents = {};
   setAuthStatus("已退出登录。");
+  clearAuthForms();
   renderAll();
 }
 
@@ -2271,13 +2313,43 @@ function masteryOutcome(lock, variantReply = "") {
   };
 }
 
+function variantKeywordBank(variant = {}) {
+  const raw = [variant.prompt, variant.expectedMethod, ...(variant.keywords || [])].join(" ").toLowerCase();
+  const tokens = raw
+    .split(/[\s，。,.、：:；;()（）]+/)
+    .map((word) => word.trim())
+    .filter((word) => word.length >= 2);
+  const concepts = [];
+  if (/斜率|变化率|slope|rate of change|rise over run|change in y|change in x/.test(raw)) {
+    concepts.push("斜率", "变化率", "y 变化", "x 变化", "除以", "相除", "每增加", "rise", "run", "change");
+  }
+  if (/中心观点|claim|central idea|evidence|证据/.test(raw)) {
+    concepts.push("中心观点", "主张", "证据", "支持", "claim", "central", "evidence");
+  }
+  if (/方程|equation|inverse|逆运算/.test(raw)) {
+    concepts.push("方程", "逆运算", "两边", "平衡", "inverse", "equation");
+  }
+  if (/变量|variable|experiment|实验/.test(raw)) {
+    concepts.push("变量", "改变", "测量", "保持不变", "variable", "control");
+  }
+  return [...new Set([...tokens, ...concepts])];
+}
+
+function variantRetryPrompt(variant = {}) {
+  const bank = variantKeywordBank(variant).join(" ");
+  if (/斜率|变化率|slope|rise|run/.test(bank)) {
+    return "还差一点：请补上 x 怎么变、y 怎么变，以及为什么要用 y 的变化除以 x 的变化。";
+  }
+  return "还差一点：请补上第一步看什么，以及为什么这一步能帮你判断。";
+}
+
 function isVariantExplanationStrong(reply = "", variant = state.guidanceLock?.variant) {
   const text = String(reply).trim().toLowerCase();
   if (text.length < 18) return false;
   if (/猜|随便|不知道|不会|不确定|答案是|选[a-d]|choose|guess|idk/.test(text)) return false;
-  const methodWords = ["先", "因为", "所以", "题目", "关键词", "证据", "方法", "第一步", "看", "判断", "条件", "关系", "because", "first", "evidence", "method"];
+  const methodWords = ["先", "因为", "所以", "题目", "关键词", "证据", "方法", "第一步", "看", "判断", "条件", "关系", "变化", "除以", "because", "first", "evidence", "method"];
   const hasMethodLanguage = methodWords.some((word) => text.includes(word.toLowerCase()));
-  const keywordHits = (variant?.keywords || []).filter((word) => text.includes(String(word).toLowerCase())).length;
+  const keywordHits = variantKeywordBank(variant).filter((word) => text.includes(String(word).toLowerCase())).length;
   return hasMethodLanguage && keywordHits >= 1;
 }
 
@@ -2366,7 +2438,7 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
       {
         step: "第一步",
         title: `${focusSubject.label} 今日学习课`,
-        detail: `先看短讲解和例题，再完成 ${targetQuestions} 道练习；难度策略：${difficultyModeLabel(plan.difficultyMode)}。`,
+        detail: `先独立作答，答错或不确定后再看讲解和例题；完成 ${targetQuestions} 道练习，难度策略：${difficultyModeLabel(plan.difficultyMode)}。`,
         done,
         total: targetQuestions,
       },
@@ -2399,9 +2471,9 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
   return [
     {
       step: "第一步",
-      title: "概念讲解",
+      title: "独立诊断",
       minutes: blockMinutes.concept,
-      detail: `${student.name} 先用 15-20 分钟学习 ${focusSubject.label} 的核心概念、例题和易错点。`,
+      detail: `${student.name} 先独立完成 ${focusSubject.label} 的开场题；答错或不确定后，系统再展开概念、例题和易错点。`,
       done: answeredCount > 0 ? 1 : 0,
       total: 1,
     },
@@ -3601,9 +3673,16 @@ function switchView(viewName) {
   if (!viewAllowedForRole(viewName)) {
     viewName = state.accountRole === "parent" ? "parent" : "today";
   }
+  refreshViewData(viewName);
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === viewName));
   document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
   $(`${viewName}View`).classList.add("active");
+}
+
+function refreshViewData(viewName) {
+  if (viewName === "today") renderTodayPlan();
+  if (viewName === "diagnostic") renderDiagnostic();
+  if (viewName === "coach") renderCoach();
 }
 
 function bindEvents() {
@@ -3799,7 +3878,7 @@ function bindEvents() {
           return;
         }
         state.guidanceLock.status = "coaching";
-        appendInlineCoach("coach", evaluation.reply || "请写出完整方法：这类题第一步看什么？为什么这一步能帮你判断？");
+        appendInlineCoach("coach", evaluation.reply || evaluation.nextPrompt || variantRetryPrompt(state.guidanceLock?.variant));
         saveData();
         renderDiagnostic();
       })
@@ -3812,7 +3891,7 @@ function bindEvents() {
           return;
         }
         state.guidanceLock.status = "coaching";
-        appendInlineCoach("coach", "请写出完整方法：这类题第一步看什么？为什么这一步能帮你排除猜测？");
+        appendInlineCoach("coach", variantRetryPrompt(state.guidanceLock?.variant));
         saveData();
         renderDiagnostic();
       });

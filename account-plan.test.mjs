@@ -158,6 +158,14 @@ test("student is moved to guidance after a wrong or uncertain answer", () => {
   assert.match(js, /if \(issue\) focusGuidancePanel/);
 });
 
+test("local variant checks accept Chinese explanations for math skills", () => {
+  assert.match(js, /function variantKeywordBank/);
+  assert.match(js, /斜率/);
+  assert.match(js, /变化率/);
+  assert.match(js, /除以/);
+  assert.match(js, /variantRetryPrompt/);
+});
+
 test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="loginView"/);
   assert.match(html, /id="appShell"/);
@@ -184,6 +192,13 @@ test("login form does not ask for account type", () => {
   assert.doesNotMatch(loginForm, /signupStudent/);
   assert.match(signupForm, /signupRole/);
   assert.match(signupForm, /signupStudent/);
+});
+
+test("sign out clears login and signup form fields", () => {
+  assert.match(js, /function clearAuthForms/);
+  assert.match(js, /authEmail/);
+  assert.match(js, /signupEmail/);
+  assert.match(js, /clearAuthForms\(\)/);
 });
 
 test("login is separated from the learning app", () => {
@@ -332,6 +347,20 @@ test("student daily plan includes a wrap-up summary action", () => {
   assert.match(html, /id="finishTodayButton"/);
   assert.match(js, /function renderStudentWrapup/);
   assert.match(js, /家长端可以看到今天表现/);
+});
+
+test("student learning data is isolated per signed-in account", () => {
+  assert.match(js, /function accountDataStorageKey/);
+  assert.match(js, /function clearLearningStateForAccount/);
+  assert.match(js, /loadSavedData\(accountDataStorageKey\(\), \{ resetLearning: true \}\)/);
+  assert.match(js, /syncMistakeLogToCloud/);
+  assert.match(js, /saveData\(accountDataStorageKey\(\)\)/);
+});
+
+test("today page refreshes progress when students return from a lesson", () => {
+  assert.match(js, /function refreshViewData/);
+  assert.match(js, /if \(viewName === "today"\) renderTodayPlan\(\)/);
+  assert.match(js, /refreshViewData\(viewName\)/);
 });
 
 test("parent plan settings can sync to Supabase after login", () => {

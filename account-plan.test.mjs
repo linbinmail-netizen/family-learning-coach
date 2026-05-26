@@ -32,13 +32,22 @@ test("student home has clear action buttons", () => {
   assert.match(js, /AI 教练/);
 });
 
+test("student home action buttons do not collapse into narrow vertical labels", () => {
+  assert.match(css, /\.student-action-bar\s*{[\s\S]*display: flex/);
+  assert.match(css, /\.student-action-bar button\s*{[\s\S]*min-width: 128px/);
+  assert.match(css, /\.student-action-bar button\s*{[\s\S]*white-space: normal/);
+});
+
 test("logged-in app shows a family learning photo outside the login page", () => {
   assert.match(html, /id="familyMemoryCard"/);
-  assert.match(html, /assets\/family-learning-memory\.jpg/);
+  assert.match(html, /assets\/family-learning-memory\.png/);
   assert.match(html, /alt="MIA 和 EVA 的家庭学习照片"/);
   assert.match(css, /family-memory-card/);
+  assert.match(css, /grid-template-columns: minmax\(170px, 220px\) minmax\(0, 1fr\)/);
+  assert.match(css, /grid-row: 1 \/ span 2/);
   assert.match(css, /object-fit: cover/);
-  assert.match(css, /object-position: 54% 48%/);
+  assert.match(css, /position: absolute/);
+  assert.match(css, /height: clamp\(132px, 18vh, 168px\)/);
   assert.doesNotMatch(html.match(/<section class="login-view[\s\S]*?<\/section>/)?.[0] || "", /familyMemoryCard/);
 });
 

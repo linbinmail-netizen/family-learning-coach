@@ -273,6 +273,10 @@ textarea {
 }
 
 .workspace {
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+  column-gap: 22px;
+  align-items: start;
   min-width: 0;
   padding: 24px;
 }
@@ -281,38 +285,50 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  grid-column: 2;
   margin-bottom: 22px;
 }
 
 .family-memory-card {
   border: 1px solid var(--line);
   border-radius: 8px;
-  display: grid;
-  grid-template-columns: minmax(220px, 38%) minmax(0, 1fr);
-  margin-bottom: 22px;
-  min-height: 170px;
+  display: block;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  height: clamp(132px, 18vh, 168px);
+  margin-bottom: 0;
+  min-height: 132px;
   overflow: hidden;
   position: relative;
-  background: #ffffff;
+  top: 0;
+  background: #eef3ef;
 }
 
 .family-memory-card img {
+  inset: 0;
+  position: absolute;
   width: 100%;
   height: 100%;
-  min-height: 170px;
+  min-height: 0;
   object-fit: cover;
-  object-position: 54% 48%;
+  object-position: 50% 50%;
 }
 
 .family-memory-copy {
-  align-content: center;
+  align-content: end;
+  background: linear-gradient(180deg, rgba(24, 32, 47, 0) 0%, rgba(24, 32, 47, 0.72) 100%);
+  bottom: 0;
   display: grid;
   gap: 8px;
-  padding: 24px;
+  left: 0;
+  padding: 42px 14px 12px;
+  position: absolute;
+  right: 0;
+  z-index: 1;
 }
 
 .family-memory-copy p {
-  color: var(--green);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 12px;
   font-weight: 800;
   margin-bottom: 0;
@@ -320,10 +336,14 @@ textarea {
 }
 
 .family-memory-copy strong {
-  color: var(--ink);
-  font-size: 24px;
-  line-height: 1.25;
-  max-width: 520px;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.35;
+  max-width: 180px;
+}
+
+.view {
+  grid-column: 2;
 }
 
 .tab,
@@ -1025,10 +1045,16 @@ textarea {
 }
 
 .student-action-bar {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.student-action-bar button {
+  flex: 1 1 128px;
+  min-width: 128px;
+  white-space: normal;
 }
 
 .student-wrapup-panel {
@@ -1318,6 +1344,21 @@ li {
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
+
+  .workspace {
+    display: block;
+  }
+
+  .top-tabs,
+  .view {
+    grid-column: auto;
+  }
+
+  .family-memory-card {
+    height: 150px;
+    min-height: 150px;
+    margin-bottom: 18px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1345,6 +1386,12 @@ li {
   }
 
   .family-memory-copy strong {
-    font-size: 20px;
+    font-size: 14px;
+    max-width: 180px;
+  }
+
+  .family-memory-card {
+    height: 132px;
+    min-height: 132px;
   }
 }

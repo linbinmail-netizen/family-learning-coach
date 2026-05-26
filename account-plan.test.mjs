@@ -405,6 +405,14 @@ test("variant rubric feedback updates live as the student types", () => {
   assert.match(css, /rubric-missing/);
 });
 
+test("student cannot submit variant explanation until rubric is complete", () => {
+  assert.match(html, /id="variantSubmit"/);
+  assert.match(js, /function isVariantRubricReady/);
+  assert.match(js, /\$\("variantSubmit"\)\.disabled = !ready/);
+  assert.match(js, /if \(!isVariantRubricReady\(reply/);
+  assert.match(js, /先把三项变式说明补完整/);
+});
+
 test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
   assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);

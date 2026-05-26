@@ -2386,16 +2386,22 @@ function buildVariantRubricFeedback(reply = "", variant = state.guidanceLock?.va
     .join("；");
 }
 
+function isVariantRubricReady(reply = "", variant = state.guidanceLock?.variant) {
+  return variantRubricItems(reply, variant).every((item) => item.ready);
+}
+
 function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", variant = state.guidanceLock?.variant) {
   const target = $("variantRubricFeedback");
   if (!target) return "";
   const feedback = buildVariantRubricFeedback(reply, variant);
-  target.innerHTML = variantRubricItems(reply, variant)
+  const ready = isVariantRubricReady(reply, variant);
+  $("variantRubricFeedback").innerHTML = variantRubricItems(reply, variant)
     .map(
       (item) =>
         `<span class="rubric-${item.ready ? "met" : "missing"}"><strong>${item.ready ? "已做到" : "还要补"}</strong>${item.label}</span>`
     )
     .join("");
+  $("variantSubmit").disabled = !ready;
   return feedback;
 }
 
@@ -3335,7 +3341,8 @@ function renderVariantVerification(lock = state.guidanceLock) {
   $("variantMethodChecklist").innerHTML = checklist.steps.map((step) => `<li>${step}</li>`).join("");
   $("variantSelfCheck").textContent = checklist.selfCheck;
   $("variantFeedback").textContent = `请写出完整方法。参考方向：${lock.variant.expectedMethod}`;
-  $("variantRubricFeedback").innerHTML = "";
+  $("variantReply").value = "";
+  renderVariantRubricFeedback("", lock.variant);
 }
 
 async function saveParentPlanSettings() {
@@ -4057,6 +4064,12 @@ function bindEvents() {
     if (!hasActiveGuidanceLock()) return;
     const reply = $("variantReply").value.trim();
     if (!reply) return;
+    if (!isVariantRubricReady(reply, state.guidanceLock?.variant)) {
+      renderVariantRubricFeedback(reply, state.guidanceLock?.variant);
+      $("variantFeedback").textContent = "先把三项变式说明补完整，再提交给 AI 批改。";
+      $("variantReply").focus();
+      return;
+    }
     $("variantFeedback").textContent = "AI 正在批改你的方法解释...";
     const rubricFeedback = renderVariantRubricFeedback(reply, state.guidanceLock?.variant);
     askMasteryEvaluation(reply)

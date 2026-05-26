@@ -1885,15 +1885,65 @@ function buildVariantQuestion(question) {
   };
 }
 
+const lessonBlueprints = {
+  引用文本证据: {
+    concept: "证据必须直接支持你的答案，不能只凭感觉。",
+    example: "例子：如果题目问人物紧张，要找动作、语言或心理描写，而不是只说“我觉得”。",
+    steps: ["先读清题目要证明什么", "回到文本找一句能证明的细节", "把证据和结论用因为/所以连起来"],
+    trap: "不要选看起来很长但没有回答问题的句子。",
+    quickCheck: "我能指出哪一句文字证明了我的答案吗？",
+  },
+  识别中心观点: {
+    concept: "中心观点是文章最想让读者明白的主要想法。",
+    example: "例子：一段文章列出睡眠、注意力和健康，中心观点可能是“充足睡眠帮助学生学习”。",
+    steps: ["先看题目问主张还是细节", "找反复出现的关键词", "判断哪个选项能覆盖整段意思"],
+    trap: "不要把某个小例子当成全文中心。",
+    quickCheck: "这个答案能不能概括整段，而不是只解释一句话？",
+  },
+  斜率与变化率: {
+    concept: "斜率表示 y 每随着 x 增加 1 而变化多少。",
+    example: "例子：点从 (2, 7) 到 (5, 16)，x 增加 3，y 增加 9，所以变化率是 3。",
+    steps: ["先找两个点的 x 和 y 变化", "用 y 的变化除以 x 的变化", "检查单位和正负方向"],
+    trap: "不要把 x 的变化和 y 的变化写反。",
+    quickCheck: "我能说清楚“每增加 1 个 x，y 变多少”吗？",
+  },
+  方程逆运算: {
+    concept: "解方程就是用相反操作把 x 单独留下。",
+    example: "例子：3x + 5 = 20，先用减 5 去掉 +5，再用除以 3 去掉乘 3。",
+    steps: ["先找离 x 最远的运算", "两边做相同的逆运算", "最后把答案代回去检查"],
+    trap: "不要只改一边，方程两边必须保持平衡。",
+    quickCheck: "我每一步有没有同时作用在等号两边？",
+  },
+  变量控制: {
+    concept: "可靠实验一次只改变一个关键因素，才能知道结果来自哪里。",
+    example: "例子：研究阳光对植物高度的影响，就只改变阳光，水和土壤要保持一致。",
+    steps: ["先找学生故意改变的因素", "再找测量的结果", "检查其他条件是否保持不变"],
+    trap: "如果两个因素同时改变，就很难判断真正原因。",
+    quickCheck: "我能分清 independent variable 和 dependent variable 吗？",
+  },
+};
+
+function lessonBlueprintForSkill(skill = "") {
+  const direct = lessonBlueprints[skill];
+  if (direct) return direct;
+  const partialKey = Object.keys(lessonBlueprints).find((key) => skill.includes(key) || key.includes(skill));
+  if (partialKey) return lessonBlueprints[partialKey];
+  return null;
+}
+
 function conceptMiniLesson(question) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const explanation = question?.explanation || "先看题目真正问什么，再用已知条件缩小选项。";
   const firstHint = question?.coachHints?.[0] || "先圈出关键词。";
   const secondHint = question?.coachHints?.[1] || "再判断哪个选项直接回答问题。";
+  const blueprint = lessonBlueprintForSkill(skill);
   return {
     concept: `今天先练：${skill}`,
-    example: `例题思路：${explanation}`,
+    example: blueprint?.example || `例题思路：${explanation}`,
     method: `方法句：${firstHint} ${secondHint}`,
+    steps: blueprint?.steps || ["先读题目问什么", "圈出关键词或已知条件", "选择能直接回答问题的思路"],
+    trap: blueprint?.trap || "不要只看选项长度或熟悉程度，要回到题目要求。",
+    quickCheck: blueprint?.quickCheck || "我能用一句话说出这题第一步该做什么吗？",
   };
 }
 
@@ -2380,6 +2430,9 @@ function renderDiagnostic() {
   $("lessonConcept").textContent = lesson.concept;
   $("workedExample").textContent = lesson.example;
   $("methodHint").textContent = lesson.method;
+  $("lessonSteps").innerHTML = lesson.steps.map((step) => `<li>${step}</li>`).join("");
+  $("commonTrap").textContent = lesson.trap;
+  $("quickCheck").textContent = lesson.quickCheck;
   $("questionPrompt").textContent = question.prompt;
   $("confidenceSelect").value = confidence;
   const plan = planForStudent(student.id);

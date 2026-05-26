@@ -158,6 +158,9 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(html, /id="lessonConcept"/);
   assert.match(html, /id="workedExample"/);
   assert.match(html, /id="methodHint"/);
+  assert.match(html, /id="lessonSteps"/);
+  assert.match(html, /id="commonTrap"/);
+  assert.match(html, /id="quickCheck"/);
   assert.match(html, /id="confidenceSelect"/);
   assert.match(html, /id="inlineCoachPanel"/);
   assert.match(html, /id="inlineCoachForm"/);
@@ -168,6 +171,8 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(js, /answerConfidence/);
   assert.match(js, /guidanceLock/);
   assert.match(js, /conceptMiniLesson/);
+  assert.match(js, /lessonBlueprints/);
+  assert.match(js, /lessonBlueprintForSkill/);
   assert.match(js, /lessonMasteryStatus/);
   assert.match(js, /mastery-status/);
   assert.match(js, /今日学习课/);
@@ -181,6 +186,16 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(js, /nextQuestion"\)\.disabled = .*hasActiveGuidanceLock/s);
   assert.doesNotMatch(html, />诊断测试</);
   assert.doesNotMatch(html, /先写一句理由/);
+});
+
+test("student lesson includes concept, example, steps, trap, and quick check", () => {
+  assert.match(html, /方法步骤/);
+  assert.match(html, /易错提醒/);
+  assert.match(html, /快速自查/);
+  assert.match(js, /steps:/);
+  assert.match(js, /trap:/);
+  assert.match(js, /quickCheck:/);
+  assert.match(js, /引用文本证据|斜率与变化率|方程逆运算|变量控制/);
 });
 
 test("student mastery loop requires open explanation before moving on", () => {

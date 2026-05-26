@@ -2,17 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const source = readFileSync(new URL("./app.js", import.meta.url), "utf8");
+const appSource = readFileSync(new URL("./app.js", import.meta.url), "utf8");
+const questionBankSource = readFileSync(new URL("./content/question-bank.js", import.meta.url), "utf8");
+const source = `${appSource}\n${questionBankSource}`;
 const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
-const expandedStart = source.indexOf("const expandedQuestionBank = {");
-const expandedEnd = source.indexOf("\nlet state = {", expandedStart);
-const expandedSource = expandedStart === -1 || expandedEnd === -1 ? "" : source.slice(expandedStart, expandedEnd);
-const challengeStart = source.indexOf("const challengeQuestionBank = {");
-const challengeEnd = source.indexOf("\n};", challengeStart);
-const challengeSource = challengeStart === -1 || challengeEnd === -1 ? "" : source.slice(challengeStart, challengeEnd);
-const twoHourStart = source.indexOf("const twoHourExpansionQuestionBank = {");
-const twoHourEnd = source.indexOf("\n};", twoHourStart);
-const twoHourSource = twoHourStart === -1 || twoHourEnd === -1 ? "" : source.slice(twoHourStart, twoHourEnd);
+const expandedStart = appSource.indexOf("const expandedQuestionBank = {");
+const expandedEnd = appSource.indexOf("\nlet state = {", expandedStart);
+const expandedSource = expandedStart === -1 || expandedEnd === -1 ? "" : appSource.slice(expandedStart, expandedEnd);
+const challengeStart = appSource.indexOf("const challengeQuestionBank = {");
+const challengeEnd = appSource.indexOf("\n};", challengeStart);
+const challengeSource = challengeStart === -1 || challengeEnd === -1 ? "" : appSource.slice(challengeStart, challengeEnd);
+const twoHourStart = questionBankSource.indexOf("window.twoHourExpansionQuestionBank = {");
+const twoHourEnd = questionBankSource.indexOf("\n};", twoHourStart);
+const twoHourSource = twoHourStart === -1 || twoHourEnd === -1 ? "" : questionBankSource.slice(twoHourStart, twoHourEnd);
 
 function countSubjectQuestions(subjectId) {
   const marker = `${subjectId}: [`;
@@ -34,11 +36,20 @@ function countChallengeQuestions(subjectId) {
 
 function countTwoHourExpansionQuestions(subjectId) {
   const marker = `${subjectId}: [`;
-  const start = twoHourSource.indexOf(marker);
-  assert.notEqual(start, -1, `${subjectId} two-hour expansion bank should exist`);
-  const end = twoHourSource.indexOf("\n  ],", start);
-  const block = twoHourSource.slice(start, end);
-  return (block.match(/prompt: /g) || []).length;
+  let position = 0;
+  let count = 0;
+  let found = false;
+  while (true) {
+    const start = questionBankSource.indexOf(marker, position);
+    if (start === -1) break;
+    found = true;
+    const end = questionBankSource.indexOf("\n  ],", start);
+    const block = questionBankSource.slice(start, end);
+    count += (block.match(/prompt: /g) || []).length;
+    position = end + 1;
+  }
+  assert.ok(found, `${subjectId} two-hour expansion bank should exist`);
+  return count;
 }
 
 test("expanded question bank is present", () => {
@@ -118,7 +129,9 @@ test("question bank has a two-hour daily learning expansion target", () => {
 });
 
 test("first two-hour expansion batch is included in student question selection", () => {
-  assert.match(source, /const twoHourExpansionQuestionBank = {/);
+  assert.match(html, /src="content\/question-bank.js"/);
+  assert.match(questionBankSource, /window\.twoHourExpansionQuestionBank = {/);
+  assert.match(appSource, /window\.twoHourExpansionQuestionBank \|\| {}/);
   assert.match(source, /twoHourQuestions/);
   assert.match(source, /STAAR-style original batch/);
   assert.match(source, /openResponse: true/);
@@ -140,5 +153,13 @@ test("third two-hour expansion batch adds constructed explanation practice", () 
   assert.match(source, /constructedResponse: true/);
   for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
     assert.ok(countTwoHourExpansionQuestions(subject) >= 9, `${subject} should have at least nine two-hour expansion questions`);
+  }
+});
+
+test("fourth two-hour expansion batch adds spiral review in external bank", () => {
+  assert.match(source, /STAAR-style original batch 4/);
+  assert.match(source, /spiralReview: true/);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    assert.ok(countTwoHourExpansionQuestions(subject) >= 12, `${subject} should have at least twelve two-hour expansion questions`);
   }
 });

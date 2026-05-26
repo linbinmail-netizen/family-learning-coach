@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `35f4eb3`
+- Latest deployed version checked: `70494cb`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -23,6 +23,8 @@ Build a long-term custom web learning platform for the family. Students should r
 The student side is now the priority. Current behavior:
 
 - Login and registration are separate from the learning app.
+- The signed-out home page is intentionally minimal: username/email, password, login, and a register entry only.
+- Registration details appear only after clicking Register, where the user chooses parent/student account type and, for students, MIA or EVA.
 - Account type is chosen during registration, not during login.
 - Parent and student accounts see different content.
 - Learning progress is scoped to the signed-in account to avoid one student/account polluting another account's local learning state.
@@ -82,7 +84,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 88 tests passed, syntax checks passed, and live Vercel deployment `35f4eb3` opened correctly with no browser console warnings/errors.
+Latest result: 91 tests passed, syntax checks passed, and live Vercel deployment `70494cb` opened correctly. Browser verification confirmed the signed-out login page only shows username/email, password, login, and register; clicking Register opens the registration choices; returning to login hides registration details again.
 
 ## Next Recommended Work
 
@@ -115,6 +117,7 @@ Student-side v4.1 is the current usable baseline:
 - v5.1: variant verification hides the expected method before open response, so students must first write their own method.
 - v5.2: variant verification checklist now adapts by skill area while still avoiding direct answers.
 - v5.3: variant live feedback now gives the next missing writing step, then confirms when the method explanation is ready to submit.
+- v5.4: signed-out auth landing now follows a standard minimal pattern: login first, registration as a secondary entry, and account type only inside registration.
 - QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes

@@ -10,6 +10,9 @@ const expandedSource = expandedStart === -1 || expandedEnd === -1 ? "" : source.
 const challengeStart = source.indexOf("const challengeQuestionBank = {");
 const challengeEnd = source.indexOf("\n};", challengeStart);
 const challengeSource = challengeStart === -1 || challengeEnd === -1 ? "" : source.slice(challengeStart, challengeEnd);
+const twoHourStart = source.indexOf("const twoHourExpansionQuestionBank = {");
+const twoHourEnd = source.indexOf("\n};", twoHourStart);
+const twoHourSource = twoHourStart === -1 || twoHourEnd === -1 ? "" : source.slice(twoHourStart, twoHourEnd);
 
 function countSubjectQuestions(subjectId) {
   const marker = `${subjectId}: [`;
@@ -26,6 +29,15 @@ function countChallengeQuestions(subjectId) {
   assert.notEqual(start, -1, `${subjectId} challenge bank should exist`);
   const end = challengeSource.indexOf("\n  ],", start);
   const block = challengeSource.slice(start, end);
+  return (block.match(/prompt: /g) || []).length;
+}
+
+function countTwoHourExpansionQuestions(subjectId) {
+  const marker = `${subjectId}: [`;
+  const start = twoHourSource.indexOf(marker);
+  assert.notEqual(start, -1, `${subjectId} two-hour expansion bank should exist`);
+  const end = twoHourSource.indexOf("\n  ],", start);
+  const block = twoHourSource.slice(start, end);
   return (block.match(/prompt: /g) || []).length;
 }
 
@@ -103,4 +115,14 @@ test("question bank has a two-hour daily learning expansion target", () => {
   assert.match(source, /function bankScaleGap/);
   assert.match(source, /twoHourReadiness/);
   assert.match(html, /id="twoHourBankTarget"/);
+});
+
+test("first two-hour expansion batch is included in student question selection", () => {
+  assert.match(source, /const twoHourExpansionQuestionBank = {/);
+  assert.match(source, /twoHourQuestions/);
+  assert.match(source, /STAAR-style original batch/);
+  assert.match(source, /openResponse: true/);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    assert.ok(countTwoHourExpansionQuestions(subject) >= 3, `${subject} should have at least three two-hour expansion questions`);
+  }
 });

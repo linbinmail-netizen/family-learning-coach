@@ -422,6 +422,13 @@ test("variant explanation offers non-answer sentence starters", () => {
   assert.match(css, /variant-starter-bar/);
 });
 
+test("sentence starters alone do not complete variant mastery", () => {
+  assert.match(js, /function hasMeaningfulVariantCompletion/);
+  assert.match(js, /具体内容/);
+  assert.match(js, /把句式后面的内容补完整/);
+  assert.match(js, /hasMeaningfulVariantCompletion\(reply\)/);
+});
+
 test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
   assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);

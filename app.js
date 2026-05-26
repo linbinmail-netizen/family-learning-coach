@@ -2385,6 +2385,15 @@ function isVariantExplanationStrong(reply = "", variant = state.guidanceLock?.va
   return hasMethodLanguage && keywordHits >= 1;
 }
 
+function hasMeaningfulVariantCompletion(reply = "") {
+  const starterOnlyPattern = /这题属于|我先要看|第一步我会先|这样做是因为/g;
+  const remaining = String(reply)
+    .replace(starterOnlyPattern, "")
+    .replace(/[。；;，,\s_\-—]+/g, "")
+    .trim();
+  return remaining.length >= 8;
+}
+
 function variantRubricItems(reply = "", variant = state.guidanceLock?.variant) {
   const text = String(reply).trim().toLowerCase();
   const keywordHits = variantKeywordBank(variant).filter((word) => text.includes(String(word).toLowerCase())).length;
@@ -2395,6 +2404,7 @@ function variantRubricItems(reply = "", variant = state.guidanceLock?.variant) {
     { label: "题目类型", ready: typeReady, next: "先说这题在考哪个知识点" },
     { label: "第一步", ready: firstStepReady, next: "写清第一步要看什么或怎么算" },
     { label: "原因解释", ready: reasonReady, next: "补上为什么这一步能帮助判断" },
+    { label: "具体内容", ready: hasMeaningfulVariantCompletion(reply), next: "把句式后面的内容补完整" },
   ];
 }
 

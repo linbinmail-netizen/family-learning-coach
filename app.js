@@ -2148,14 +2148,66 @@ function buildVariantQuestion(question) {
   };
 }
 
+function variantSkillPracticeGuideFor(skill = "") {
+  const normalized = String(skill).toLowerCase();
+  if (/斜率|变化率|slope|rate|比例|函数|linear|unit/.test(normalized)) {
+    return {
+      focus: "看数量关系：先找 x 的变化和 y 的变化，或找固定单位率。",
+      firstStep: "写出第一步：先标出两个量分别怎样变化，再决定要比较哪两个变化。",
+      why: "说明为什么：这样能判断关系是否稳定，而不是只看数字大小。",
+    };
+  }
+  if (/方程|equation|逆运算|代数|expression|文字转符号/.test(normalized)) {
+    return {
+      focus: "看变量结构：先找变量周围最外层操作。",
+      firstStep: "写出第一步：先说变量被加、减、乘、除中的哪一种操作影响。",
+      why: "说明为什么：找到外层操作后，才能选择对应的逆运算或表达式结构。",
+    };
+  }
+  if (/证据|中心|主张|观点|claim|evidence|theme|作者|文本|rla|english/.test(normalized)) {
+    return {
+      focus: "看阅读目标：先找题干要证明的观点或要解释的中心意思。",
+      firstStep: "写出第一步：先回到文本找能直接支持这个观点的句子或细节。",
+      why: "说明为什么：证据必须直接回答题目，不能只靠感觉或选项长度。",
+    };
+  }
+  if (/变量|实验|experiment|variable|control|数据|science/.test(normalized)) {
+    return {
+      focus: "看实验结构：先分清改变什么、测量什么、保持什么不变。",
+      firstStep: "写出第一步：先标出 independent variable、dependent variable 或控制条件。",
+      why: "说明为什么：这样才能判断结论是否真的由一个因素造成。",
+    };
+  }
+  if (/全等|证明|几何|角|triangle|geometry|congruent/.test(normalized)) {
+    return {
+      focus: "看对应关系：先找对应边、对应角和题目已给条件。",
+      firstStep: "写出第一步：先标出能配对的边角，再判断能不能支持某个判定。",
+      why: "说明为什么：几何证明每一步都要有依据，不能只看图像像不像。",
+    };
+  }
+  if (/细胞|能量|生态|biology|cell|energy|ecosystem/.test(normalized)) {
+    return {
+      focus: "看系统关系：先找结构、功能、能量或物质在怎样流动。",
+      firstStep: "写出第一步：先说清哪个结构或过程在起作用。",
+      why: "说明为什么：科学题要把现象和机制连起来，而不是只背一个名词。",
+    };
+  }
+  return {
+    focus: "看题目目标：先判断这题真正要你证明、计算或解释什么。",
+    firstStep: "写出第一步：先说明你会看什么、找什么，或先做哪一个计算。",
+    why: "说明为什么：这一步怎样帮助你排除猜测或找到方法？",
+  };
+}
+
 function variantMethodChecklistFor(variant = state.guidanceLock?.variant, question = activeQuestions()[state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const guide = variantSkillPracticeGuideFor(skill);
   return {
     mission: `验证目标：判断题目类型是 ${skill}，用自己的话写出方法，不写答案字母。`,
     steps: [
-      "判断题目类型：这题在考哪一个知识点？",
-      "写出第一步：先说明你会看什么、找什么，或先做哪一个计算。",
-      "说明为什么：这一步怎样帮助你排除猜测或找到方法？",
+      `判断题目类型：${guide.focus}`,
+      guide.firstStep,
+      guide.why,
     ],
     selfCheck: "自查：我的解释是否包含“先做什么”和“为什么这样做”？如果只写答案，需要补方法。",
   };

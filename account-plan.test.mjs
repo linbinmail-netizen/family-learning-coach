@@ -386,6 +386,14 @@ test("variant verification gives a structured method checklist", () => {
   assert.match(css, /variant-method-card/);
 });
 
+test("variant method checklist adapts to the current skill without revealing answers", () => {
+  assert.match(js, /function variantSkillPracticeGuideFor/);
+  assert.match(js, /x 的变化和 y 的变化/);
+  assert.match(js, /变量周围最外层操作/);
+  assert.match(js, /题干要证明的观点/);
+  assert.doesNotMatch(js, /expectedMethod.*steps/);
+});
+
 test("variant submission returns teacher-style rubric feedback", () => {
   assert.match(html, /id="variantRubricFeedback"/);
   assert.match(js, /function buildVariantRubricFeedback/);

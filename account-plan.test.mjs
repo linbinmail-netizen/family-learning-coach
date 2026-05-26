@@ -142,6 +142,13 @@ test("student lesson view gives a clear next-step instruction", () => {
   assert.match(js, /可以进入下一题/);
 });
 
+test("student is moved to guidance after a wrong or uncertain answer", () => {
+  assert.match(js, /function focusGuidancePanel/);
+  assert.match(js, /scrollIntoView/);
+  assert.match(js, /inlineCoachReply"\)\?\.focus/);
+  assert.match(js, /if \(issue\) focusGuidancePanel/);
+});
+
 test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="loginView"/);
   assert.match(html, /id="appShell"/);

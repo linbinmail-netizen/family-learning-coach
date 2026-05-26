@@ -582,6 +582,10 @@ textarea {
   background: #fffaf1;
 }
 
+.inline-coach-panel:not(.hidden) {
+  box-shadow: 0 0 0 3px rgba(196, 132, 43, 0.12);
+}
+
 .inline-coach-panel.hidden,
 .variant-challenge.hidden {
   display: none;

@@ -3022,6 +3022,15 @@ function renderStudentNextStep(context) {
   $("studentNextStepBody").textContent = stateInfo.body;
 }
 
+function focusGuidancePanel() {
+  const panel = $("inlineCoachPanel");
+  if (!panel || panel.classList.contains("hidden")) return;
+  window.setTimeout(() => {
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("inlineCoachReply")?.focus({ preventScroll: true });
+  }, 80);
+}
+
 function renderLearningRouteMap() {
   const plan = planForStudent(state.studentId);
   const blocks = learningRouteBlocks(plan);
@@ -3666,6 +3675,7 @@ function bindEvents() {
     const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
     saveData();
     renderDiagnostic();
+    if (issue) focusGuidancePanel();
     if (adaptiveResult.message) {
       $("dailySuggestion").textContent = `${adaptiveResult.message} 当前目标难度：${difficultyLevels[adaptiveResult.level]}。`;
     }

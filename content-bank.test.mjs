@@ -134,3 +134,11 @@ test("second two-hour expansion batch deepens priority subjects", () => {
     assert.ok(countTwoHourExpansionQuestions(subject) >= 6, `${subject} should have at least six two-hour expansion questions`);
   }
 });
+
+test("third two-hour expansion batch adds constructed explanation practice", () => {
+  assert.match(source, /STAAR-style original batch 3/);
+  assert.match(source, /constructedResponse: true/);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    assert.ok(countTwoHourExpansionQuestions(subject) >= 9, `${subject} should have at least nine two-hour expansion questions`);
+  }
+});

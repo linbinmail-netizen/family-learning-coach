@@ -386,6 +386,17 @@ test("variant verification gives a structured method checklist", () => {
   assert.match(css, /variant-method-card/);
 });
 
+test("variant submission returns teacher-style rubric feedback", () => {
+  assert.match(html, /id="variantRubricFeedback"/);
+  assert.match(js, /function buildVariantRubricFeedback/);
+  assert.match(js, /题目类型/);
+  assert.match(js, /第一步/);
+  assert.match(js, /原因解释/);
+  assert.match(js, /buildVariantRubricFeedback\(reply/);
+  assert.match(js, /variantRubricFeedback"\)\.innerHTML/);
+  assert.match(css, /variant-rubric-feedback/);
+});
+
 test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
   assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);

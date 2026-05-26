@@ -2367,6 +2367,28 @@ function isVariantExplanationStrong(reply = "", variant = state.guidanceLock?.va
   return hasMethodLanguage && keywordHits >= 1;
 }
 
+function buildVariantRubricFeedback(reply = "", variant = state.guidanceLock?.variant) {
+  const text = String(reply).trim().toLowerCase();
+  const keywordHits = variantKeywordBank(variant).filter((word) => text.includes(String(word).toLowerCase())).length;
+  const typeReady = keywordHits >= 1 && !/答案是|选[a-d]|choose/.test(text);
+  const firstStepReady = /先|第一步|看|找|用|比较|变化|证据|条件|first|compare|change|evidence/.test(text);
+  const reasonReady = /因为|所以|为什么|说明|证明|原因|because|so that|why/.test(text);
+  const line = (label, ready, next) => `${ready ? "已做到" : "还要补"}：${label}${ready ? "" : `。${next}`}`;
+  return [
+    line("题目类型", typeReady, "先说这题在考哪个知识点"),
+    line("第一步", firstStepReady, "写清第一步要看什么或怎么算"),
+    line("原因解释", reasonReady, "补上为什么这一步能帮助判断"),
+  ].join("；");
+}
+
+function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", variant = state.guidanceLock?.variant) {
+  const target = $("variantRubricFeedback");
+  if (!target) return "";
+  const feedback = buildVariantRubricFeedback(reply, variant);
+  target.innerHTML = feedback;
+  return feedback;
+}
+
 function guidanceIssueText(issue) {
   if (issue === "answer") return "答案还不对，先回到题干和关键词。";
   if (issue === "confidence") return "你选择了不确定或猜测，我们用一道变式题确认你真的会了。";
@@ -3303,6 +3325,7 @@ function renderVariantVerification(lock = state.guidanceLock) {
   $("variantMethodChecklist").innerHTML = checklist.steps.map((step) => `<li>${step}</li>`).join("");
   $("variantSelfCheck").textContent = checklist.selfCheck;
   $("variantFeedback").textContent = `请写出完整方法。参考方向：${lock.variant.expectedMethod}`;
+  $("variantRubricFeedback").innerHTML = "";
 }
 
 async function saveParentPlanSettings() {
@@ -4024,31 +4047,32 @@ function bindEvents() {
     const reply = $("variantReply").value.trim();
     if (!reply) return;
     $("variantFeedback").textContent = "AI 正在批改你的方法解释...";
+    const rubricFeedback = renderVariantRubricFeedback(reply, state.guidanceLock?.variant);
     askMasteryEvaluation(reply)
       .then((evaluation) => {
         const passed = Boolean(evaluation.passed) || isVariantExplanationStrong(reply, state.guidanceLock?.variant);
         if (passed) {
           completeGuidedMastery(reply);
-          $("answerFeedback").textContent = evaluation.reply || "变式解释通过。现在可以进入下一题。";
+          $("answerFeedback").textContent = `${rubricFeedback}。${evaluation.reply || "变式解释通过。现在可以进入下一题。"}`;
           saveData();
           renderDiagnostic();
           return;
         }
         state.guidanceLock.status = "coaching";
-        appendInlineCoach("coach", evaluation.reply || evaluation.nextPrompt || variantRetryPrompt(state.guidanceLock?.variant));
+        appendInlineCoach("coach", `${rubricFeedback}。${evaluation.reply || evaluation.nextPrompt || variantRetryPrompt(state.guidanceLock?.variant)}`);
         saveData();
         renderDiagnostic();
       })
       .catch(() => {
         if (isVariantExplanationStrong(reply, state.guidanceLock.variant)) {
           completeGuidedMastery(reply);
-          $("answerFeedback").textContent = "AI 较慢，本地判断变式解释通过。现在可以进入下一题。";
+          $("answerFeedback").textContent = `${rubricFeedback}。AI 较慢，本地判断变式解释通过。现在可以进入下一题。`;
           saveData();
           renderDiagnostic();
           return;
         }
         state.guidanceLock.status = "coaching";
-        appendInlineCoach("coach", variantRetryPrompt(state.guidanceLock?.variant));
+        appendInlineCoach("coach", `${rubricFeedback}。${variantRetryPrompt(state.guidanceLock?.variant)}`);
         saveData();
         renderDiagnostic();
       });

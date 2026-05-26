@@ -2635,6 +2635,10 @@ function buildGuidedTeachingMove(reply = "", lock = state.guidanceLock) {
   return `概念提醒：${lesson.steps?.[0] || "先看题目真正问什么"}，不是先猜选项。小例子：${teachingMiniExampleForSkill(skill)} 下一问：${nextAsk}`;
 }
 
+function shouldMoveToVariantAfterReply(reply = "") {
+  return evaluateGuidanceReplyQuality(reply).ready || isReasonStrong(reply);
+}
+
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
   const variant = buildVariantQuestion(question);
   state.guidanceLock = {
@@ -4141,13 +4145,14 @@ function bindEvents() {
     askAiCoach(reply, state.inlineCoachHistory)
       .then((data) => {
         state.inlineCoachHistory.pop();
+        if (!state.guidanceLock) return;
         const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
-        const canMoveToVariant = isReasonStrong(reply) && (state.guidanceLock.teachingTurns || 0) >= 1;
+        const canMoveToVariant = shouldMoveToVariantAfterReply(reply);
         state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
         if (canMoveToVariant) {
           state.inlineCoachHistory.push({
             role: "coach",
-            text: `${data.reply} 现在做一道变式验证：不靠原题选项，判断哪一句才是真正的方法。`,
+            text: `${data.reply} ${teachingMove} 现在做一道变式验证：不靠原题选项，用自己的话写出方法。`,
           });
           state.guidanceLock.status = "variant";
         } else {
@@ -4158,14 +4163,15 @@ function bindEvents() {
       })
       .catch(() => {
         state.inlineCoachHistory.pop();
+        if (!state.guidanceLock) return;
         const localReply = buildLocalCoachReply(reply).reply;
         const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
-        const canMoveToVariant = isReasonStrong(reply) && (state.guidanceLock.teachingTurns || 0) >= 1;
+        const canMoveToVariant = shouldMoveToVariantAfterReply(reply);
         state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
         state.inlineCoachHistory.push({
           role: "coach",
           text: canMoveToVariant
-            ? `AI 较慢，我先用本地引导。${localReply} 现在做一道变式验证，确认你不是靠猜。`
+            ? `AI 较慢，我先用本地引导。${localReply} ${teachingMove} 现在做一道变式验证，确认你不是靠猜。`
             : `AI 较慢，我先用本地引导。${localReply} ${teachingMove}`,
         });
         if (canMoveToVariant) state.guidanceLock.status = "variant";

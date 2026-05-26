@@ -233,6 +233,16 @@ test("student guidance coach gives teaching feedback before variant verification
   assert.doesNotMatch(js, /正确答案是/);
 });
 
+test("complete guidance restatement opens variant verification without a second coach turn", () => {
+  assert.match(js, /function shouldMoveToVariantAfterReply/);
+  assert.match(js, /evaluateGuidanceReplyQuality\(reply\)\.ready/);
+  assert.doesNotMatch(
+    js,
+    /isReasonStrong\(reply\) && \(state\.guidanceLock\.teachingTurns \|\| 0\) >= 1/
+  );
+  assert.match(js, /现在做一道变式验证/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

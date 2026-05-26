@@ -170,6 +170,106 @@ export function buildFallbackReply(body = {}) {
   return step.fallback;
 }
 
+function localMasterySignal(reply = "", expectedMethod = "", skill = "") {
+  const text = String(reply).trim().toLowerCase();
+  if (text.length < 18) return false;
+  if (/猜|随便|不知道|不会|不确定|答案是|选[a-d]|choose|guess|idk/.test(text)) return false;
+  const methodWords = ["先", "因为", "所以", "题目", "关键词", "证据", "方法", "第一步", "看", "判断", "条件", "关系", "because", "first", "evidence", "method"];
+  const hasMethodLanguage = methodWords.some((word) => text.includes(word.toLowerCase()));
+  const expectedWords = [expectedMethod, skill]
+    .join(" ")
+    .split(/[\s，。,.、：:；;]+/)
+    .filter((word) => word.length >= 3)
+    .slice(0, 10);
+  const keywordHits = expectedWords.filter((word) => text.includes(String(word).toLowerCase())).length;
+  return hasMethodLanguage && (keywordHits >= 1 || text.length >= 32);
+}
+
+export function buildFallbackMasteryEvaluation(body = {}) {
+  const passed = localMasterySignal(body.variantReply, body.expectedMethod, body.skill);
+  if (passed) {
+    return {
+      passed: true,
+      reply: "解释通过：你说清楚了第一步和理由。现在可以进入下一题。",
+      nextPrompt: "",
+    };
+  }
+  return {
+    passed: false,
+    reply: "还需要再具体一点。请写出第一步看什么，以及为什么这一步能帮助你判断。",
+    nextPrompt: "请用“先看...因为...”写一句完整方法。",
+  };
+}
+
+export function extractMasteryEvaluation(data) {
+  const text = extractOpenAIText(data);
+  try {
+    const parsed = JSON.parse(text);
+    return {
+      passed: Boolean(parsed.passed),
+      reply: String(parsed.reply || parsed.nextPrompt || "").slice(0, 160),
+      nextPrompt: String(parsed.nextPrompt || "").slice(0, 160),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function buildMasteryEvaluationRequest(body = {}) {
+  const {
+    studentName,
+    grade,
+    subject,
+    question,
+    skill,
+    explanation,
+    expectedMethod,
+    variantReply,
+    history = [],
+  } = body;
+
+  return {
+    model: process.env.OPENAI_MODEL || "gpt-5-mini",
+    instructions: [
+      "You are grading whether a student can explain the method for a middle/high school learning question.",
+      "Return only valid JSON with keys: passed, reply, nextPrompt.",
+      "passed must be true only when the student explains a reusable method, not just an answer choice.",
+      "Do not reveal the correct answer, correct option, or answer letter.",
+      "不要直接说出正确选项、答案字母或最终答案。",
+      "If not passed, reply with one concrete coaching prompt in simplified Chinese.",
+      "Keep reply and nextPrompt each under 80 Chinese characters.",
+    ].join("\n"),
+    input: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: JSON.stringify({
+              mode: "mastery_evaluation",
+              studentName,
+              grade,
+              subject,
+              currentQuestion: question,
+              targetSkill: skill,
+              teacherExplanationForInternalUseOnly: explanation || expectedMethod,
+              expectedReusableMethod: expectedMethod,
+              recentHistory: history.slice(-8),
+              studentOpenExplanation: variantReply,
+              rubric: [
+                "Does the student name a first step?",
+                "Does the student explain why that step matters?",
+                "Can this method transfer to a similar question?",
+                "Reject guessing, answer letters, or answer-only replies.",
+              ],
+            }),
+          },
+        ],
+      },
+    ],
+  };
+}
+
 export default async function handler(request, response) {
   if (request.method !== "POST") {
     response.status(405).json({ error: "Method not allowed" });
@@ -178,6 +278,10 @@ export default async function handler(request, response) {
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
+    if (request.body?.mode === "mastery_evaluation") {
+      response.status(200).json(buildFallbackMasteryEvaluation(request.body || {}));
+      return;
+    }
     response.status(200).json({
       reply:
         "AI 服务还没有配置好。请先在 Vercel 环境变量里添加 OPENAI_API_KEY。现在我先用本地提示方式引导：请你先说明题目在问什么，再找一个已知条件。",
@@ -186,6 +290,28 @@ export default async function handler(request, response) {
   }
 
   try {
+    if (request.body?.mode === "mastery_evaluation") {
+      const evaluationRequest = buildMasteryEvaluationRequest(request.body || {});
+      const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(evaluationRequest),
+      });
+
+      if (!openaiResponse.ok) {
+        const message = await openaiResponse.text();
+        throw new Error(message);
+      }
+
+      const data = await openaiResponse.json();
+      const evaluation = extractMasteryEvaluation(data) || buildFallbackMasteryEvaluation(request.body || {});
+      response.status(200).json(evaluation);
+      return;
+    }
+
     const tutorRequest = buildTutorRequest(request.body || {});
 
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -207,6 +333,13 @@ export default async function handler(request, response) {
 
     response.status(200).json({ reply });
   } catch (error) {
+    if (request.body?.mode === "mastery_evaluation") {
+      response.status(200).json({
+        ...buildFallbackMasteryEvaluation(request.body || {}),
+        detail: error.message,
+      });
+      return;
+    }
     response.status(200).json({
       reply: buildFallbackReply(request.body || {}),
       detail: error.message,

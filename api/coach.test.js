@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildFallbackMasteryEvaluation,
+  buildMasteryEvaluationRequest,
   buildFallbackReply,
   buildTutorRequest,
   detectNeedsTeaching,
@@ -97,4 +99,36 @@ test("extractOpenAIText handles Responses API output content", () => {
   });
 
   assert.equal(text, "请先说出题目真正问的是什么。");
+});
+
+test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {
+  const request = buildMasteryEvaluationRequest({
+    ...baseBody,
+    variantReply: "第一步要先看题目问的中心观点，因为证据必须支持这个观点。",
+    expectedMethod: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /mastery_evaluation/);
+  assert.match(text, /passed/);
+  assert.match(text, /nextPrompt/);
+  assert.match(text, /不要直接说出正确选项/);
+});
+
+test("fallback mastery evaluation distinguishes method explanation from guessing", () => {
+  const strong = buildFallbackMasteryEvaluation({
+    variantReply: "第一步先看题目问的中心观点，因为证据要支持这个观点，所以不能只看最长选项。",
+    expectedMethod: "Evidence should support a claim or central idea.",
+    skill: "识别中心观点",
+  });
+  const weak = buildFallbackMasteryEvaluation({
+    variantReply: "我觉得选 B，应该是这个。",
+    expectedMethod: "Evidence should support a claim or central idea.",
+    skill: "识别中心观点",
+  });
+
+  assert.equal(strong.passed, true);
+  assert.match(strong.reply, /通过|清楚/);
+  assert.equal(weak.passed, false);
+  assert.match(weak.reply, /第一步|为什么|方法/);
 });

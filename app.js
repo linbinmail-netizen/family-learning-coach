@@ -2679,6 +2679,31 @@ async function askAiCoach(studentReply, history = state.chatHistory) {
   return response.json();
 }
 
+async function askMasteryEvaluation(variantReply) {
+  const question = activeQuestions()[state.currentQuestion];
+  const payload = {
+    mode: "mastery_evaluation",
+    studentName: activeStudent().name,
+    grade: state.grade,
+    subject: activeSubject().label,
+    question: question?.prompt,
+    skill: question?.skill || activeDiagnostic().skills[0][0],
+    explanation: question?.explanation || "",
+    expectedMethod: state.guidanceLock?.variant?.expectedMethod || question?.explanation || "",
+    variantReply,
+    history: state.inlineCoachHistory,
+  };
+
+  const response = await fetch("/api/coach", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) throw new Error("AI mastery evaluation failed");
+  return response.json();
+}
+
 function buildLocalCoachReply(studentReply) {
   const question = activeQuestions()[state.currentQuestion];
   const reply = studentReply.toLowerCase();
@@ -3017,17 +3042,36 @@ function bindEvents() {
     event.preventDefault();
     if (!hasActiveGuidanceLock()) return;
     const reply = $("variantReply").value.trim();
-    if (isVariantExplanationStrong(reply, state.guidanceLock.variant)) {
-      completeGuidedMastery(reply);
-      $("answerFeedback").textContent = "变式解释通过。现在可以进入下一题。";
-      saveData();
-      renderDiagnostic();
-      return;
-    }
-    state.guidanceLock.status = "coaching";
-    appendInlineCoach("coach", "请写出完整方法：这类题第一步看什么？为什么这一步能帮你排除猜测？");
-    saveData();
-    renderDiagnostic();
+    if (!reply) return;
+    $("variantFeedback").textContent = "AI 正在批改你的方法解释...";
+    askMasteryEvaluation(reply)
+      .then((evaluation) => {
+        const passed = Boolean(evaluation.passed) || isVariantExplanationStrong(reply, state.guidanceLock?.variant);
+        if (passed) {
+          completeGuidedMastery(reply);
+          $("answerFeedback").textContent = evaluation.reply || "变式解释通过。现在可以进入下一题。";
+          saveData();
+          renderDiagnostic();
+          return;
+        }
+        state.guidanceLock.status = "coaching";
+        appendInlineCoach("coach", evaluation.reply || "请写出完整方法：这类题第一步看什么？为什么这一步能帮你判断？");
+        saveData();
+        renderDiagnostic();
+      })
+      .catch(() => {
+        if (isVariantExplanationStrong(reply, state.guidanceLock.variant)) {
+          completeGuidedMastery(reply);
+          $("answerFeedback").textContent = "变式解释通过。现在可以进入下一题。";
+          saveData();
+          renderDiagnostic();
+          return;
+        }
+        state.guidanceLock.status = "coaching";
+        appendInlineCoach("coach", "请写出完整方法：这类题第一步看什么？为什么这一步能帮你排除猜测？");
+        saveData();
+        renderDiagnostic();
+      });
   });
 
   $("copyDigest").addEventListener("click", async () => {

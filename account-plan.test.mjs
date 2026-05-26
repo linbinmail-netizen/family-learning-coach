@@ -119,6 +119,15 @@ test("two-hour student plan shows estimated time for each learning block", () =>
   assert.match(js, /预计/);
 });
 
+test("student lesson view shows the current learning route", () => {
+  assert.match(html, /id="learningRouteMap"/);
+  assert.match(js, /function learningRouteBlocks/);
+  assert.match(js, /function renderLearningRouteMap/);
+  assert.match(js, /route-step active/);
+  assert.match(js, /route-step done/);
+  assert.match(js, /学习路线/);
+});
+
 test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="loginView"/);
   assert.match(html, /id="appShell"/);

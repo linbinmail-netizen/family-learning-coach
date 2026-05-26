@@ -2525,6 +2525,20 @@ function learningBlockForQuestionIndex(index = state.currentQuestion, plan = pla
   return { id: "challenge", label: "挑战拔高", rangeEnd: targetQuestions };
 }
 
+function learningRouteBlocks(plan = planForStudent(state.studentId)) {
+  const targetQuestions = dailyQuestionLimit(plan);
+  if (!isTwoHourPlan(plan)) {
+    return [{ id: "practice", label: "今日学习", start: 0, end: targetQuestions }];
+  }
+  const foundationEnd = Math.max(4, Math.round(targetQuestions * 0.45));
+  const reviewEnd = foundationEnd + Math.max(2, Math.round(targetQuestions * 0.2));
+  return [
+    { id: "foundation", label: "基础练习", start: 0, end: foundationEnd },
+    { id: "review", label: "错题复盘", start: foundationEnd, end: reviewEnd },
+    { id: "challenge", label: "挑战拔高", start: reviewEnd, end: targetQuestions },
+  ];
+}
+
 function selectAdaptiveQuestions(questions) {
   const target = adaptiveLevelForSubject();
   const sorted = [...questions].sort((a, b) => {
@@ -2912,6 +2926,7 @@ function renderDiagnostic() {
     $("answerFeedback").textContent = "这题需要完成引导后再进入下一题。";
   }
   renderInlineCoachPanel();
+  renderLearningRouteMap();
 
   $("knowledgeGrid").innerHTML = diagnostic.skills
     .map(([skill, score]) => {
@@ -2927,6 +2942,29 @@ function renderDiagnostic() {
       `;
     })
     .join("");
+}
+
+function renderLearningRouteMap() {
+  const plan = planForStudent(state.studentId);
+  const blocks = learningRouteBlocks(plan);
+  $("learningRouteMap").innerHTML = `
+    <div class="route-title">学习路线</div>
+    <div class="route-steps">
+      ${blocks
+        .map((block) => {
+          const active = state.currentQuestion >= block.start && state.currentQuestion < block.end;
+          const done = state.currentQuestion >= block.end;
+          const className = active ? "route-step active" : done ? "route-step done" : "route-step";
+          return `
+            <div class="${className}">
+              <strong>${block.label}</strong>
+              <span>${block.start + 1}-${block.end} 题</span>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
 }
 
 function renderInlineCoachPanel() {

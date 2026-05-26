@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `79b1b6d`
+- Latest deployed version checked: `a85ad04`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -46,6 +46,7 @@ The student side is now the priority. Current behavior:
 - Variant explanation now includes non-answer sentence starter chips so students can begin a method explanation without receiving the solution.
 - Sentence starters alone do not complete mastery; the rubric also requires student-added concrete content after the starter text.
 - Variant verification no longer reveals the expected method before the student writes; it only shows a generic method checklist and non-answer starters.
+- Variant verification now adapts the method checklist by skill, such as slope/change rate, equations, text evidence, experiments, geometry, and biology.
 - The student must write a clear method explanation before moving to the next question.
 - Chinese, English, and mixed Chinese-English method explanations can pass when the reasoning is mathematically/conceptually equivalent.
 - If OpenAI is too strict but the local mastery check clearly passes, the local passing result can override the AI rejection.
@@ -80,7 +81,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 86 tests passed, syntax checks passed, and live Vercel deployment `79b1b6d` opened correctly with no browser console warnings/errors.
+Latest result: 87 tests passed, syntax checks passed, and live Vercel deployment `a85ad04` opened correctly with no browser console warnings/errors.
 
 ## Next Recommended Work
 
@@ -111,7 +112,8 @@ Student-side v4.1 is the current usable baseline:
 - v4.9: variant explanation now offers sentence starter chips for topic, first step, and reason, helping students write without giving the answer.
 - v5.0: sentence starter text alone no longer passes the variant rubric; students must add concrete content after the scaffold.
 - v5.1: variant verification hides the expected method before open response, so students must first write their own method.
-- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, and less-strict Chinese/mixed-language mastery checks.
+- v5.2: variant verification checklist now adapts by skill area while still avoiding direct answers.
+- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

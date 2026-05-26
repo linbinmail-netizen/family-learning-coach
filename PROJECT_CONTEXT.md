@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `dba3e6f`
+- Latest deployed version checked: `45d8130`
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -36,6 +36,7 @@ The student side is now the priority. Current behavior:
 - The guidance panel now includes a three-part method restatement scaffold: what the question asks, what to inspect first, and why that step helps. The scaffold prefers Chinese lesson steps over raw English answer hints.
 - While the student types a restatement, the app now gives immediate local quality feedback for three parts: question goal, method step, and reason why. Short keyword-only replies are rejected with a request for more complete explanation.
 - The inline AI guidance submit button stays disabled until the restatement is complete enough; direct submit attempts are also blocked with a clear reminder.
+- After a complete restatement, the coach now gives one guided teaching move before variant verification: concept reminder, small example, and next question.
 - The locked question requires a mastery loop: teach, restate, variant explanation.
 - Variant verification is open-ended, not multiple choice, to reduce guessing.
 - The student must write a clear method explanation before moving to the next question.
@@ -72,7 +73,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 78 tests passed, syntax checks passed, and live Vercel deployment `dba3e6f` rejected short keyword-only replies while accepting fuller method explanations. Browser QA also confirmed no console warnings/errors during the submit-gate check.
+Latest result: 79 tests passed, syntax checks passed, and live Vercel deployment `45d8130` opened correctly with no browser console warnings/errors.
 
 ## Next Recommended Work
 
@@ -95,7 +96,8 @@ Student-side v4.1 is the current usable baseline:
 - v4.1: the restatement input gives immediate quality feedback while the student types.
 - v4.2: reply-quality feedback now requires enough detail, so short keyword-only replies do not pass.
 - v4.3: the AI guidance submit button is locked until the restatement quality gate is ready, preventing empty or incomplete replies from being sent.
-- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, and less-strict Chinese/mixed-language mastery checks.
+- v4.4: after a valid restatement, the coach provides concept reminder, small example, and next question before moving to variant verification.
+- QA baseline: account-scoped local progress, independent-first answering, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, locked guidance submit, guided teaching move, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

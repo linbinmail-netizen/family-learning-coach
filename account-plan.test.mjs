@@ -186,6 +186,18 @@ test("student guidance scaffold prefers lesson steps over raw answer hints", () 
   assert.match(js, /const firstHint = lesson\.steps\?\.\[0\] \|\| question\?\.coachHints\?\.\[0\]/);
 });
 
+test("student guidance reply gives immediate quality feedback while typing", () => {
+  assert.match(html, /id="replyQualityCard"/);
+  assert.match(html, /id="replyQualityStatus"/);
+  assert.match(html, /id="qualityQuestionGoal"/);
+  assert.match(html, /id="qualityMethodStep"/);
+  assert.match(html, /id="qualityReasonWhy"/);
+  assert.match(js, /function evaluateGuidanceReplyQuality/);
+  assert.match(js, /function renderReplyQuality/);
+  assert.match(js, /inlineCoachReply"\)\.addEventListener\("input"/);
+  assert.match(css, /reply-quality-card/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

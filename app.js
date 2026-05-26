@@ -2406,6 +2406,40 @@ function renderGuidanceScaffold(lock = state.guidanceLock) {
   $("scaffoldReasonStarter").textContent = scaffold.reasonStarter;
 }
 
+function evaluateGuidanceReplyQuality(reply = "") {
+  const text = reply.trim().toLowerCase();
+  const hasQuestionGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate/.test(text);
+  const hasMethodStep = /先|第一步|步骤|方法|看|找|用|变化|条件|证据|divide|change|because/.test(text);
+  const hasReasonWhy = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that/.test(text);
+  return {
+    questionGoal: hasQuestionGoal,
+    methodStep: hasMethodStep,
+    reasonWhy: hasReasonWhy,
+    ready: hasQuestionGoal && hasMethodStep && hasReasonWhy,
+  };
+}
+
+function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
+  const card = $("replyQualityCard");
+  if (!card) return;
+  const quality = evaluateGuidanceReplyQuality(reply);
+  [
+    ["qualityQuestionGoal", quality.questionGoal],
+    ["qualityMethodStep", quality.methodStep],
+    ["qualityReasonWhy", quality.reasonWhy],
+  ].forEach(([id, met]) => {
+    $(id).classList.toggle("met", met);
+  });
+  const missing = [
+    !quality.questionGoal && "题目目标",
+    !quality.methodStep && "方法步骤",
+    !quality.reasonWhy && "原因说明",
+  ].filter(Boolean);
+  $("replyQualityStatus").textContent = quality.ready
+    ? "这句方法比较完整，可以提交给 AI 教练检查。"
+    : `还差：${missing.join("、")}。`;
+}
+
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
   const variant = buildVariantQuestion(question);
   state.guidanceLock = {
@@ -3194,6 +3228,7 @@ function renderInlineCoachPanel() {
   $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
   renderGuidanceInsight(lock);
   renderGuidanceScaffold(lock);
+  renderReplyQuality();
   const activeStep = lock.status === "variant" ? 2 : state.inlineCoachHistory.some((message) => message.role === "student") ? 1 : 0;
   $("masteryStepList").innerHTML = ["讲解", "复述", "变式"]
     .map((label, index) => `<li class="${index < activeStep ? "done" : index === activeStep ? "active" : ""}">${label}</li>`)
@@ -3878,6 +3913,7 @@ function bindEvents() {
     if (!reply) return;
     appendInlineCoach("student", reply);
     input.value = "";
+    renderReplyQuality("");
     appendInlineCoach("coach", "我在看你的解释...");
 
     askAiCoach(reply, state.inlineCoachHistory)
@@ -3909,6 +3945,8 @@ function bindEvents() {
         renderDiagnostic();
       });
   });
+
+  $("inlineCoachReply").addEventListener("input", () => renderReplyQuality());
 
   $("variantForm").addEventListener("submit", (event) => {
     event.preventDefault();

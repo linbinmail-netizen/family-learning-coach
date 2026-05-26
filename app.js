@@ -2336,12 +2336,29 @@ function resetDiagnosticProgress() {
   state.reportReady = false;
 }
 
+function twoHourBlockMinutes(totalMinutes = 120) {
+  const minutes = Math.max(60, Number(totalMinutes) || 120);
+  const concept = Math.max(12, Math.round(minutes * 0.16));
+  const foundation = Math.max(20, Math.round(minutes * 0.34));
+  const review = Math.max(15, Math.round(minutes * 0.2));
+  const challenge = Math.max(15, Math.round(minutes * 0.22));
+  const used = concept + foundation + review + challenge;
+  return {
+    concept,
+    foundation,
+    review,
+    challenge,
+    summary: Math.max(8, minutes - used),
+  };
+}
+
 function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount, guidedCount, report, openMistakes }) {
   const targetQuestions = plan.questionTarget || Math.max(4, Math.min(24, Math.round(plan.minutes / 5)));
   const foundationTarget = Math.max(4, Math.round(targetQuestions * 0.45));
   const reviewTarget = Math.max(2, Math.round(targetQuestions * 0.2));
   const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
   const twoHourMode = plan.minutes >= 90 || targetQuestions >= 18;
+  const blockMinutes = twoHourBlockMinutes(plan.minutes);
 
   if (!twoHourMode) {
     const done = Math.min(answeredCount, targetQuestions);
@@ -2383,6 +2400,7 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
     {
       step: "第一步",
       title: "概念讲解",
+      minutes: blockMinutes.concept,
       detail: `${student.name} 先用 15-20 分钟学习 ${focusSubject.label} 的核心概念、例题和易错点。`,
       done: answeredCount > 0 ? 1 : 0,
       total: 1,
@@ -2390,6 +2408,7 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
     {
       step: "第二步",
       title: "基础练习",
+      minutes: blockMinutes.foundation,
       detail: `完成约 ${foundationTarget} 道基础和中等题，目标是把方法做稳，而不是追求速度。`,
       done: Math.min(answeredCount, foundationTarget),
       total: foundationTarget,
@@ -2397,6 +2416,7 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
     {
       step: "第三步",
       title: "错题复盘",
+      minutes: blockMinutes.review,
       detail: openMistakes.length
         ? `优先复盘 ${openMistakes[0].skill}，用 AI 引导讲清楚错因。`
         : `完成约 ${reviewTarget} 道滚动复习题，防止旧知识掉线。`,
@@ -2406,6 +2426,7 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
     {
       step: "第四步",
       title: "挑战拔高",
+      minutes: blockMinutes.challenge,
       detail: `完成约 ${challengeTarget} 道挑战题或解释题，每题都要能说出理由。`,
       done: Math.min(Math.max(answeredCount - foundationTarget - reviewTarget, 0), challengeTarget),
       total: challengeTarget,
@@ -2413,6 +2434,7 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
     {
       step: "第五步",
       title: "今日总结",
+      minutes: blockMinutes.summary,
       detail: "生成今日总结，记录掌握度、错题知识点和明天计划。",
       done: report ? 1 : 0,
       total: 1,
@@ -2737,6 +2759,7 @@ function renderTodayPlan() {
         <li class="${task.done >= task.total ? "task-done" : "task-pending"}">
           <span class="task-step">${task.step}</span>
           <strong>${task.title}</strong><br />
+          ${task.minutes ? `<span class="task-minutes">预计 ${task.minutes} 分钟</span><br />` : ""}
           ${task.detail}<br />
           进度：${Math.min(task.done, task.total)} / ${task.total}
         </li>

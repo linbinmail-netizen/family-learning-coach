@@ -109,6 +109,16 @@ test("parent can apply a one-click two-hour plan preset", () => {
   assert.match(js, /planDifficultyMode"\)\.value = "adaptive"/);
 });
 
+test("two-hour student plan shows estimated time for each learning block", () => {
+  assert.match(js, /function twoHourBlockMinutes/);
+  assert.match(js, /minutes: blockMinutes\.concept/);
+  assert.match(js, /minutes: blockMinutes\.foundation/);
+  assert.match(js, /minutes: blockMinutes\.review/);
+  assert.match(js, /minutes: blockMinutes\.challenge/);
+  assert.match(js, /minutes: blockMinutes\.summary/);
+  assert.match(js, /预计/);
+});
+
 test("supabase auth sign in controls exist", () => {
   assert.match(html, /id="loginView"/);
   assert.match(html, /id="appShell"/);

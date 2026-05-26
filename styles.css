@@ -614,6 +614,14 @@ textarea {
   margin-right: 8px;
 }
 
+.task-minutes {
+  display: inline-block;
+  margin: 6px 0;
+  color: var(--soft-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .task-done {
   color: var(--soft-ink);
 }

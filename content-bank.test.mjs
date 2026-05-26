@@ -7,6 +7,9 @@ const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
 const expandedStart = source.indexOf("const expandedQuestionBank = {");
 const expandedEnd = source.indexOf("\nlet state = {", expandedStart);
 const expandedSource = expandedStart === -1 || expandedEnd === -1 ? "" : source.slice(expandedStart, expandedEnd);
+const challengeStart = source.indexOf("const challengeQuestionBank = {");
+const challengeEnd = source.indexOf("\n};", challengeStart);
+const challengeSource = challengeStart === -1 || challengeEnd === -1 ? "" : source.slice(challengeStart, challengeEnd);
 
 function countSubjectQuestions(subjectId) {
   const marker = `${subjectId}: [`;
@@ -14,6 +17,15 @@ function countSubjectQuestions(subjectId) {
   assert.notEqual(start, -1, `${subjectId} bank should exist`);
   const end = expandedSource.indexOf("\n  ],", start);
   const block = expandedSource.slice(start, end);
+  return (block.match(/prompt: /g) || []).length;
+}
+
+function countChallengeQuestions(subjectId) {
+  const marker = `${subjectId}: [`;
+  const start = challengeSource.indexOf(marker);
+  assert.notEqual(start, -1, `${subjectId} challenge bank should exist`);
+  const end = challengeSource.indexOf("\n  ],", start);
+  const block = challengeSource.slice(start, end);
   return (block.match(/prompt: /g) || []).length;
 }
 
@@ -72,4 +84,12 @@ test("parent dashboard can show question bank quality audit", () => {
   assert.match(source, /buildQuestionQualityAudit\(\)/);
   assert.match(source, /weakSubjects/);
   assert.match(source, /题库质量/);
+});
+
+test("priority subjects have at least two school-level challenge questions", () => {
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    assert.ok(countChallengeQuestions(subject) >= 2, `${subject} should have at least two challenge questions`);
+  }
+  assert.match(source, /schoolExamDepth/);
+  assert.match(source, /multiStepReasoning/);
 });

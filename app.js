@@ -4691,6 +4691,29 @@ function parentDigestMailtoUrl() {
   return `mailto:${encodeURIComponent(parentDigestEmailAddress())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
+async function sendParentDigestEmail() {
+  const body = $("emailPreview")?.innerText.trim();
+  if (!body) {
+    $("cloudStatus").textContent = "请先生成日报";
+    return false;
+  }
+
+  const student = activeStudent();
+  const response = await fetch("/api/digest-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: parentDigestEmailAddress(),
+      subject: `${student.name} 今日学习报告`,
+      body,
+    }),
+  });
+
+  if (!response.ok) throw new Error("Digest email provider unavailable");
+  $("cloudStatus").textContent = "日报邮件已发送";
+  return true;
+}
+
 function recordTimestamp(record) {
   if (record.createdAt) return Date.parse(record.createdAt);
   if (record.date) {
@@ -5239,12 +5262,19 @@ function bindEvents() {
     setTimeout(() => ($("copyDigest").textContent = "复制日报内容"), 1200);
   });
 
-  $("emailDigestButton").addEventListener("click", () => {
+  $("emailDigestButton").addEventListener("click", async () => {
     if (!$("emailPreview").innerText.trim()) {
       $("cloudStatus").textContent = "请先生成日报";
       return;
     }
-    window.location.href = parentDigestMailtoUrl();
+    $("cloudStatus").textContent = "正在发送日报...";
+    try {
+      await sendParentDigestEmail();
+    } catch (error) {
+      console.warn(error);
+      $("cloudStatus").textContent = "未配置自动邮件，已打开邮件草稿";
+      window.location.href = parentDigestMailtoUrl();
+    }
   });
 
   $("planStudent").addEventListener("change", (event) => {

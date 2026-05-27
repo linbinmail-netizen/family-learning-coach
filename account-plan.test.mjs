@@ -204,6 +204,13 @@ test("parent can send the daily digest as an email draft", () => {
   assert.match(js, /linbinmail@gmail\.com/);
 });
 
+test("parent digest can use automatic email API with mailto fallback", () => {
+  assert.match(js, /function sendParentDigestEmail/);
+  assert.match(js, /\/api\/digest-email/);
+  assert.match(js, /日报邮件已发送/);
+  assert.match(js, /未配置自动邮件，已打开邮件草稿/);
+});
+
 test("parent can adjust study plan settings", () => {
   assert.match(html, /id="parentPlanForm"/);
   assert.match(html, /id="planMinutes"/);

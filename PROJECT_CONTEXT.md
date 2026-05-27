@@ -102,17 +102,16 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node cloud-skill-mastery-schema.test.mjs; node cloud-practice-sessions-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 130 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content. The new system pages were verified through local preview file checks because the in-app browser automation pane was unavailable in this run.
+Latest result: 131 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content. The new system pages were verified through local preview file checks because the in-app browser automation pane was unavailable in this run.
 
-## Next Recommended Work
+## Next Production Work
 
-Continue deepening the student side:
+The planned application features are covered in code. The remaining work is production setup and content expansion:
 
-1. Improve the actual lesson content quality for 8th and 9th grade.
-2. Add richer open-ended answer evaluation with rubrics per skill, beyond simple keyword checks.
-3. Make the AI coach faster and more consistent with streaming or precomputed local prompts.
-4. Improve the student lesson UI so each session feels like a guided class.
-5. Later, improve parent weekly reports and email delivery.
+1. Run the latest Supabase SQL scripts for long-term cloud storage.
+2. Configure Vercel email and service-role environment variables for automatic parent digest emails.
+3. Continue expanding 8th/9th grade question volume and local Frisco/Liberty course alignment.
+4. Collect real student usage feedback and tune AI coaching prompts from actual stuck points.
 
 ## Student Finalization Completed
 

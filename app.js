@@ -2070,6 +2070,30 @@ async function loadPracticeSessionsFromCloud() {
   }
 }
 
+async function checkCloudTable(path) {
+  if (!state.authSession) return { ready: false, note: "登录后检查" };
+  try {
+    await supabaseRequest(`${path}?${new URLSearchParams({ select: "id", limit: "1" }).toString()}`, { headers: { Prefer: "" } });
+    return { ready: true, note: "已可用" };
+  } catch {
+    return { ready: false, note: "需要在 Supabase 运行对应 SQL" };
+  }
+}
+
+async function loadSystemStatus() {
+  try {
+    const response = await fetch("/api/system-status");
+    if (!response.ok) throw new Error("System status unavailable");
+    return response.json();
+  } catch {
+    return {
+      emailConfigured: false,
+      digestEmailFromConfigured: false,
+      requiredSupabaseScripts: ["010_skill_mastery.sql", "011_practice_sessions.sql"],
+    };
+  }
+}
+
 async function loadAuthProfile() {
   if (!state.authSession?.user?.id) return;
   await supabaseRpc("ensure_my_profile");
@@ -4888,6 +4912,57 @@ function renderQuestionQualityAudit() {
     : "<li>重点科目已达到当前质量门槛，下一步可以增加学校考试同等难度的综合题。</li>";
 }
 
+async function renderProductionReadiness() {
+  const list = $("productionReadinessList");
+  const status = $("productionReadinessStatus");
+  if (!list || !status) return;
+  status.textContent = "检查中";
+  list.innerHTML = `
+    <article class="readiness-item"><strong>正在检查</strong><span>系统会检查云端数据表和邮件服务。</span></article>
+  `;
+
+  const [systemStatus, masteryStatus, practiceStatus] = await Promise.all([
+    loadSystemStatus(),
+    checkCloudTable("skill_mastery"),
+    checkCloudTable("practice_sessions"),
+  ]);
+  const items = [
+    {
+      title: "知识点掌握度云端表",
+      ready: masteryStatus.ready,
+      note: masteryStatus.ready ? "孩子的掌握度可长期保存" : "运行 supabase/010_skill_mastery.sql",
+    },
+    {
+      title: "学习行为云端表",
+      ready: practiceStatus.ready,
+      note: practiceStatus.ready ? "用时、提示、正确率可长期保存" : "运行 supabase/011_practice_sessions.sql",
+    },
+    {
+      title: "自动日报邮件",
+      ready: systemStatus.emailConfigured,
+      note: systemStatus.emailConfigured ? "已配置自动发送" : "未配置 RESEND_API_KEY，会打开邮件草稿",
+    },
+    {
+      title: "发件人域名",
+      ready: systemStatus.digestEmailFromConfigured,
+      note: systemStatus.digestEmailFromConfigured ? "已配置发件人" : "可先测试，正式发送建议配置 DIGEST_EMAIL_FROM",
+    },
+  ];
+
+  const readyCount = items.filter((item) => item.ready).length;
+  status.textContent = readyCount === items.length ? "正式可用" : `${readyCount}/${items.length} 已准备`;
+  list.innerHTML = items
+    .map(
+      (item) => `
+        <article class="readiness-item ${item.ready ? "ready" : "needs-setup"}">
+          <strong>${item.ready ? "已完成" : "待设置"} · ${item.title}</strong>
+          <span>${item.note}</span>
+        </article>
+      `
+    )
+    .join("");
+}
+
 function renderActivity() {
   if (!state.records.length) {
     $("activityList").innerHTML = "<li>还没有学习记录。完成一次诊断后会自动保存。</li>";
@@ -5310,6 +5385,7 @@ function renderAll() {
   renderParentDashboardSummary();
   renderWeeklyTrend();
   renderQuestionQualityAudit();
+  renderProductionReadiness();
   applyRoleVisibility();
   $("reportStatus").textContent = state.reportReady ? "已生成" : "等待诊断";
   $("overallScore").textContent = state.reportReady ? $("overallScore").textContent : "--";

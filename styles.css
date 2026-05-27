@@ -1418,6 +1418,41 @@ textarea {
   color: var(--soft-ink);
 }
 
+.readiness-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.readiness-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.readiness-item.ready {
+  border-color: #b6dec6;
+  background: #f3fbf6;
+}
+
+.readiness-item.needs-setup {
+  border-color: #f1d5a8;
+  background: #fff9ed;
+}
+
+.readiness-item strong {
+  display: block;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.readiness-item span {
+  color: var(--soft-ink);
+  font-size: 0.9rem;
+}
+
 .today-progress-bar {
   margin: 12px 0;
 }

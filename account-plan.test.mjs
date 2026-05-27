@@ -211,6 +211,17 @@ test("parent digest can use automatic email API with mailto fallback", () => {
   assert.match(js, /未配置自动邮件，已打开邮件草稿/);
 });
 
+test("parent dashboard shows production readiness status", () => {
+  assert.match(html, /id="productionReadinessPanel"/);
+  assert.match(html, /id="productionReadinessStatus"/);
+  assert.match(html, /id="productionReadinessList"/);
+  assert.match(js, /function renderProductionReadiness/);
+  assert.match(js, /\/api\/system-status/);
+  assert.match(js, /checkCloudTable\("skill_mastery"\)/);
+  assert.match(js, /checkCloudTable\("practice_sessions"\)/);
+  assert.match(css, /readiness-grid/);
+});
+
 test("parent can adjust study plan settings", () => {
   assert.match(html, /id="parentPlanForm"/);
   assert.match(html, /id="planMinutes"/);

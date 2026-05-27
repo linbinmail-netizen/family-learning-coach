@@ -34,6 +34,7 @@ https://family-learning-coach.vercel.app/
 - Parent and student accounts are separate.
 - Students see only student learning views.
 - Parents see dashboard, reports, plan controls, and digest email actions.
+- Parent Dashboard includes a production readiness panel for Supabase tables and automatic email configuration.
 - Wrong or uncertain answers enter guided mastery before the next question.
 - Correct confident answers advance automatically.
 - Mistakes, mastery, and practice-session behavior are cloud-ready.

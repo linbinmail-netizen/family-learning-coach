@@ -1190,3 +1190,202 @@ const twoHourExpansionBatch4 = {
 Object.entries(twoHourExpansionBatch4).forEach(([subjectId, questions]) => {
   window.twoHourExpansionQuestionBank[subjectId] = (window.twoHourExpansionQuestionBank[subjectId] || []).concat(questions);
 });
+
+const systematicExpansionBlueprints = {
+  math8: {
+    standard: "Grade 8 Math: STAAR-style Original Practice",
+    skillCycle: ["斜率概念", "多步文字题", "比例关系", "数据图表", "方程建模", "函数关系"],
+    stems: [
+      "A gym charges a fixed sign-up fee and a monthly fee. Which expression represents the total cost after n months?",
+      "A table shows x increasing by 2 while y increases by 7. What should the student compare first?",
+      "A recipe uses 3 cups of flour for 8 servings. What question checks whether a student understands the unit rate?",
+      "A graph shows a line crossing the y-axis above zero and rising. What can a student conclude before calculating?",
+      "A student solves an inequality but forgets to include the fixed starting amount. What is the likely mistake?",
+      "A scatterplot has a clear downward trend with a few points not on the trend line. Which interpretation is most careful?",
+    ],
+    corrects: [
+      "fixed fee + monthly fee times n",
+      "change in y divided by change in x",
+      "how much flour is needed for one serving",
+      "the relationship has a positive rate and a positive starting value",
+      "the model is missing the initial value",
+      "there is a negative association, but predictions are estimates",
+    ],
+    explanation: "This question asks students to identify structure before calculating, which is expected in school-level multi-step math practice.",
+    mistake: "Students often choose an operation from the numbers without naming the relationship first.",
+  },
+  rla8: {
+    standard: "Grade 8 RLA: STAAR-style Original Practice",
+    skillCycle: ["中心思想", "文本证据", "推断", "词汇语境", "作者目的", "细节支持"],
+    stems: [
+      "A paragraph begins with a claim and then gives two examples. What should a student identify first?",
+      "A question asks which sentence best supports an inference. What should the student look for?",
+      "A character changes their decision after hearing new information. What does this most likely show?",
+      "A word has a familiar meaning, but the sentence uses it differently. What is the best first step?",
+      "An author includes a statistic after a personal story. Why might the author do this?",
+      "Two details point to the same conclusion, but one answer choice only repeats a detail. What is the issue?",
+    ],
+    corrects: [
+      "the central claim and how the examples support it",
+      "a detail that directly proves the inference",
+      "the character's motivation has changed",
+      "use surrounding words to infer the meaning",
+      "to support the point with evidence",
+      "the answer needs to explain the idea, not only repeat evidence",
+    ],
+    explanation: "Reading questions require students to connect claim, evidence, and inference rather than choosing familiar words.",
+    mistake: "Students often pick a true detail that does not answer the exact question.",
+  },
+  science8: {
+    standard: "Grade 8 Science: STAAR-style Original Practice",
+    skillCycle: ["变量识别", "科学图表", "生态系统", "力和运动", "实验设计", "证据推理"],
+    stems: [
+      "A lab changes the amount of light and measures plant growth. What is the independent variable?",
+      "A graph shows temperature rising while solubility also rises. What should a student describe first?",
+      "A food web loses one predator. What should a student trace before predicting the effect?",
+      "A cart moves farther when a stronger push is used. Which relationship is being tested?",
+      "A student wants a fair test with two groups. What must stay the same?",
+      "A conclusion is written without mentioning data. What is missing?",
+    ],
+    corrects: [
+      "the amount of light",
+      "the pattern between temperature and solubility",
+      "how energy and population relationships change",
+      "force and motion",
+      "controlled variables",
+      "evidence from the investigation",
+    ],
+    explanation: "Science questions should be answered by identifying variables, patterns, and evidence before choosing a claim.",
+    mistake: "Students often describe the topic but forget to connect it to measured evidence.",
+  },
+  english1: {
+    standard: "English I: STAAR EOC-style Original Practice",
+    skillCycle: ["识别中心观点", "引用文本证据", "分析作者意图", "写作修订", "推断", "论证结构"],
+    stems: [
+      "An author opens with a problem and ends with a call to action. What should a student identify first?",
+      "A question asks which evidence best supports a claim about school policy. What makes evidence strong?",
+      "A paragraph includes a counterargument. Why might the writer include it?",
+      "A sentence is wordy and repeats the same idea twice. What revision is best?",
+      "An answer choice sounds reasonable but is not stated or supported. What is the problem?",
+      "A short response has a claim and quote but no explanation. What is missing?",
+    ],
+    corrects: [
+      "the author's central position",
+      "it directly connects to the claim",
+      "to respond to an opposing view",
+      "combine the repeated idea into a clearer sentence",
+      "it is not supported by the text",
+      "the reasoning that explains how the evidence proves the claim",
+    ],
+    explanation: "English I questions expect students to connect claim, evidence, and reasoning, especially in EOC-style reading and writing tasks.",
+    mistake: "Students often quote evidence but skip the explanation that connects it to the claim.",
+  },
+  algebra1: {
+    standard: "Algebra I: STAAR EOC-style Original Practice",
+    skillCycle: ["斜率与变化率", "线性方程建模", "解一元一次方程", "函数图像解释", "不等式", "系统建模"],
+    stems: [
+      "A phone plan has a base fee and a charge per gigabyte. Which part is the y-intercept?",
+      "A line passes through two points. What does a student calculate before writing y = mx + b?",
+      "A student solves 5x - 9 = 26 but adds 9 to only one side. What rule is broken?",
+      "A graph crosses the x-axis at 4. What does that point represent in context?",
+      "A word problem says the cost must be at most 60 dollars. Which inequality symbol fits?",
+      "Two plans have equal cost at one point. What does the intersection represent?",
+    ],
+    corrects: [
+      "the base fee",
+      "the slope",
+      "the same operation must be done to both sides",
+      "the input where the output is zero",
+      "less than or equal to",
+      "the input where both plans cost the same",
+    ],
+    explanation: "Algebra I practice should connect equations, graphs, and context before focusing on calculation.",
+    mistake: "Students often manipulate symbols without naming what each part means.",
+  },
+  geometry: {
+    standard: "Geometry: TEKS-style Original Practice",
+    skillCycle: ["全等判定", "角关系", "证明书写", "几何词汇", "相似三角形", "圆和面积"],
+    stems: [
+      "Two triangles have two pairs of equal angles. What can be concluded first?",
+      "Parallel lines are cut by a transversal. Which angle relationship should be checked?",
+      "A proof lists statements but no reasons. What is incomplete?",
+      "A student confuses radius and diameter in a circle problem. What should be identified first?",
+      "Two triangles have proportional sides. What relationship may apply?",
+      "A composite figure combines a rectangle and semicircle. What should a student do first?",
+    ],
+    corrects: [
+      "the triangles may be similar by angle-angle",
+      "corresponding or alternate interior angles",
+      "the reasons that justify each statement",
+      "which segment goes from center to edge",
+      "triangle similarity",
+      "split the figure into known shapes",
+    ],
+    explanation: "Geometry questions require students to name relationships and justify steps, not only calculate a number.",
+    mistake: "Students often jump to a formula before identifying the figure relationship.",
+  },
+  biology: {
+    standard: "Biology: STAAR EOC-style Original Practice",
+    skillCycle: ["细胞结构功能", "能量转化", "遗传基础", "生态系统关系", "科学图表分析", "稳态"],
+    stems: [
+      "A cell needs more ATP for active transport. Which process should a student connect to this need?",
+      "A model compares photosynthesis and respiration. What relationship should be described?",
+      "A Punnett square shows two heterozygous parents. What does it predict?",
+      "A population decreases after its food source declines. What should be traced first?",
+      "A graph shows enzyme activity changing with temperature. What feature matters most?",
+      "The body sweats when temperature rises. Which concept does this show?",
+    ],
+    corrects: [
+      "cellular respiration",
+      "one process stores energy and the other releases usable energy",
+      "probable offspring genotypes or traits",
+      "energy flow and resource availability",
+      "the temperature where activity is highest",
+      "homeostasis",
+    ],
+    explanation: "Biology questions should connect structures, processes, and data patterns to the scientific claim.",
+    mistake: "Students often memorize terms without explaining the process or evidence behind them.",
+  },
+};
+
+function buildSystematicExpansionQuestions(subjectId, blueprint) {
+  const difficulties = ["基础", "中等", "进阶", "挑战"];
+  return Array.from({ length: 18 }, (_, index) => {
+    const patternIndex = index % blueprint.stems.length;
+    const cycle = Math.floor(index / blueprint.stems.length) + 1;
+    const skill = blueprint.skillCycle[index % blueprint.skillCycle.length];
+    return {
+      prompt: `${blueprint.stems[patternIndex]} (Systematic practice ${cycle}.${patternIndex + 1})`,
+      standard: blueprint.standard,
+      difficulty: difficulties[index % difficulties.length],
+      sourceBatch: "systematic original expansion v1",
+      structuredBank: true,
+      multiStepReasoning: index % 2 === 0,
+      openResponse: index % 3 !== 1,
+      errorAnalysis: index % 4 === 0,
+      answers: [
+        blueprint.corrects[patternIndex],
+        "choose the longest answer without checking the question",
+        "ignore the context and use any familiar formula",
+        "skip the evidence and guess from keywords",
+      ],
+      correct: 0,
+      skill,
+      explanation: `${blueprint.explanation} Focus skill: ${skill}.`,
+      commonMistakes: [blueprint.mistake, "Guessing from keywords instead of explaining the first step."],
+      aiHintLevel1: "先说题目真正问什么，不要先选答案。",
+      aiHintLevel2: "圈出关键词，并说明它和当前技能点有什么关系。",
+      aiHintLevel3: "把方法写成一句完整话：我第一步先____，因为____。",
+      coachHints: [
+        "What is the question asking you to identify first?",
+        "Which clue connects directly to the skill being practiced?",
+      ],
+    };
+  });
+}
+
+Object.entries(systematicExpansionBlueprints).forEach(([subjectId, blueprint]) => {
+  window.twoHourExpansionQuestionBank[subjectId] = (window.twoHourExpansionQuestionBank[subjectId] || []).concat(
+    buildSystematicExpansionQuestions(subjectId, blueprint)
+  );
+});

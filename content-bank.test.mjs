@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import vm from "node:vm";
 
 const appSource = readFileSync(new URL("./app.js", import.meta.url), "utf8");
 const questionBankSource = readFileSync(new URL("./content/question-bank.js", import.meta.url), "utf8");
@@ -50,6 +51,15 @@ function countTwoHourExpansionQuestions(subjectId) {
   }
   assert.ok(found, `${subjectId} two-hour expansion bank should exist`);
   return count;
+}
+
+function runtimeTwoHourQuestionCounts() {
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(questionBankSource, context);
+  return Object.fromEntries(
+    Object.entries(context.window.twoHourExpansionQuestionBank || {}).map(([subjectId, questions]) => [subjectId, questions.length])
+  );
 }
 
 test("expanded question bank is present", () => {
@@ -177,5 +187,19 @@ test("fourth two-hour expansion batch adds spiral review in external bank", () =
   assert.match(source, /spiralReview: true/);
   for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
     assert.ok(countTwoHourExpansionQuestions(subject) >= 12, `${subject} should have at least twelve two-hour expansion questions`);
+  }
+});
+
+test("systematic expansion brings core subjects to at least thirty structured questions", () => {
+  assert.match(questionBankSource, /const systematicExpansionBlueprints = {/);
+  assert.match(questionBankSource, /function buildSystematicExpansionQuestions/);
+  assert.match(questionBankSource, /commonMistakes/);
+  assert.match(questionBankSource, /aiHintLevel1/);
+  assert.match(questionBankSource, /aiHintLevel2/);
+  assert.match(questionBankSource, /aiHintLevel3/);
+  assert.match(questionBankSource, /systematic original expansion v1/);
+  const counts = runtimeTwoHourQuestionCounts();
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    assert.ok(counts[subject] >= 30, `${subject} should have at least thirty runtime expansion questions`);
   }
 });

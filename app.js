@@ -2737,6 +2737,26 @@ function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activ
   return `这题要我[写题目目标]。我第一步先看[${firstStep}]，因为[说明这一步为什么有用]。`;
 }
 
+function guidanceReplyPlaceholderForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  if (/斜率|变化率|slope|rate|线性|函数/.test(skill)) {
+    return "例如：这题要我判断变化关系。我第一步先看 x 和 y 怎么变，因为...";
+  }
+  if (/证据|中心观点|主张|作者|文本|claim|evidence|author|theme/.test(skill)) {
+    return "例如：这题要我判断文章想说明什么。我第一步先找中心句和证据，因为...";
+  }
+  if (/方程|equation|逆运算|代数/.test(skill)) {
+    return "例如：这题要我解出未知数。我第一步先看离 x 最远的运算，因为...";
+  }
+  if (/变量|实验|variable|experiment/.test(skill)) {
+    return "例如：这题要我判断实验关系。我第一步先分清改变什么和测量什么，因为...";
+  }
+  if (/细胞|能量|生态|biology|cell|energy/.test(skill)) {
+    return "例如：这题要我解释科学现象。我第一步先找结构、功能或能量变化，因为...";
+  }
+  return "例如：这题要我判断题目目标。我第一步先看关键词和条件，因为...";
+}
+
 function guidanceTeacherModelForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const lesson = conceptMiniLesson(question);
   const skill = question?.skill || activeDiagnostic().skills[0][0];
@@ -3641,6 +3661,7 @@ function renderInlineCoachPanel() {
   if (!lock) return;
 
   $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
+  $("inlineCoachReply").placeholder = guidanceReplyPlaceholderForLock(lock);
   renderGuidanceTask(lock);
   renderGuidanceUnlockProgress(lock);
   renderGuidanceInsight(lock);

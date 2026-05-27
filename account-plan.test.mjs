@@ -273,6 +273,16 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
   assert.match(css, /reply-helper-card/);
 });
 
+test("student guidance reply placeholder adapts to the skill", () => {
+  assert.match(js, /function guidanceReplyPlaceholderForLock/);
+  assert.match(js, /inlineCoachReply"\)\.placeholder = guidanceReplyPlaceholderForLock\(lock\)/);
+  assert.match(js, /x 和 y 怎么变/);
+  assert.match(js, /中心句和证据/);
+  assert.match(js, /离 x 最远的运算/);
+  assert.match(js, /改变什么和测量什么/);
+  assert.doesNotMatch(js, /guidanceReplyPlaceholderForLock[\s\S]*正确答案是/);
+});
+
 test("student can request a teacher model sentence without seeing the answer", () => {
   assert.match(html, /id="applyTeacherModelButton"/);
   assert.match(html, /看老师示范句/);

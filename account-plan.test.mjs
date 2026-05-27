@@ -71,7 +71,7 @@ test("skill mastery tracking updates learning path and reports", () => {
   assert.match(js, /attempts/);
   assert.match(js, /accuracy/);
   assert.match(js, /status: skillMasteryStatus/);
-  assert.match(js, /updateSkillMastery\(question, { correct: true }\)/);
+  assert.match(js, /updateSkillMastery\(question, { correct: true, seconds: practiceEvent\.seconds }\)/);
   assert.match(js, /updateSkillMastery\(question, { guided: true }\)/);
   assert.match(js, /updateSkillMastery\(question, { reviewed: true }\)/);
   assert.match(js, /tracked\?\.mastery/);
@@ -764,9 +764,24 @@ test("student daily plan includes a wrap-up summary action", () => {
   assert.match(html, /id="wrapupAnswered"/);
   assert.match(html, /id="wrapupGuided"/);
   assert.match(html, /id="wrapupMistakes"/);
+  assert.match(html, /id="wrapupAccuracy"/);
+  assert.match(html, /id="wrapupTime"/);
   assert.match(html, /id="finishTodayButton"/);
   assert.match(js, /function renderStudentWrapup/);
   assert.match(js, /家长端可以看到今天表现/);
+});
+
+test("practice sessions track time hints accuracy and learning behavior", () => {
+  assert.match(js, /practiceSessions: \[\]/);
+  assert.match(js, /function currentPracticeSession/);
+  assert.match(js, /function recordPracticeAttempt/);
+  assert.match(js, /function todayPracticeSessionSummary/);
+  assert.match(js, /questionsAnswered/);
+  assert.match(js, /hintsUsed/);
+  assert.match(js, /slowCount/);
+  assert.match(js, /guessingCount/);
+  assert.match(js, /state\.hintUsage\[questionProgressKey\(\)\] = true/);
+  assert.match(js, /recordPracticeAttempt\(question, selectedIndex, confidence, adaptiveResult\)/);
 });
 
 test("student learning data is isolated per signed-in account", () => {

@@ -1328,6 +1328,7 @@ let state = {
   selectedAnswer: null,
   selectedAnswers: {},
   answerConfidence: {},
+  hintUsage: {},
   guidanceLock: null,
   guidedMastery: {},
   inlineCoachHistory: [],
@@ -1345,6 +1346,10 @@ let state = {
   adaptiveLevels: {},
   adaptiveStats: {},
   skillMastery: {},
+  practiceSessions: [],
+  activePracticeSessionId: "",
+  activeQuestionProgressKey: "",
+  questionStartedAt: "",
   learningPathSubject: "math",
   planSettings: {
     older: { minutes: 30, questionTarget: 8, difficultyMode: "adaptive", focusSubject: "english1" },
@@ -1373,6 +1378,7 @@ function clearLearningStateForAccount() {
   state.selectedAnswer = null;
   state.selectedAnswers = {};
   state.answerConfidence = {};
+  state.hintUsage = {};
   state.guidanceLock = null;
   state.guidedMastery = {};
   state.inlineCoachHistory = [];
@@ -1384,6 +1390,10 @@ function clearLearningStateForAccount() {
   state.adaptiveLevels = {};
   state.adaptiveStats = {};
   state.skillMastery = {};
+  state.practiceSessions = [];
+  state.activePracticeSessionId = "";
+  state.activeQuestionProgressKey = "";
+  state.questionStartedAt = "";
 }
 
 function loadSavedData(key = storageKey, options = {}) {
@@ -1398,6 +1408,7 @@ function loadSavedData(key = storageKey, options = {}) {
     }
     if (saved?.answerConfidence) state.answerConfidence = saved.answerConfidence;
     if (saved?.selectedAnswers) state.selectedAnswers = saved.selectedAnswers;
+    if (saved?.hintUsage) state.hintUsage = saved.hintUsage;
     if (saved?.guidanceLock) state.guidanceLock = saved.guidanceLock;
     if (saved?.guidedMastery) state.guidedMastery = saved.guidedMastery;
     if (Array.isArray(saved?.inlineCoachHistory)) state.inlineCoachHistory = saved.inlineCoachHistory;
@@ -1418,6 +1429,10 @@ function loadSavedData(key = storageKey, options = {}) {
     if (saved?.adaptiveLevels) state.adaptiveLevels = saved.adaptiveLevels;
     if (saved?.adaptiveStats) state.adaptiveStats = saved.adaptiveStats;
     if (saved?.skillMastery) state.skillMastery = saved.skillMastery;
+    if (Array.isArray(saved?.practiceSessions)) state.practiceSessions = saved.practiceSessions;
+    if (saved?.activePracticeSessionId) state.activePracticeSessionId = saved.activePracticeSessionId;
+    if (saved?.activeQuestionProgressKey) state.activeQuestionProgressKey = saved.activeQuestionProgressKey;
+    if (saved?.questionStartedAt) state.questionStartedAt = saved.questionStartedAt;
   } catch {
     state.records = [];
   }
@@ -1431,6 +1446,7 @@ function saveData(key = accountDataStorageKey()) {
       mistakeLog: state.mistakeLog,
       selectedAnswers: state.selectedAnswers,
       answerConfidence: state.answerConfidence,
+      hintUsage: state.hintUsage,
       guidanceLock: state.guidanceLock,
       guidedMastery: state.guidedMastery,
       inlineCoachHistory: state.inlineCoachHistory,
@@ -1446,6 +1462,10 @@ function saveData(key = accountDataStorageKey()) {
       adaptiveLevels: state.adaptiveLevels,
       adaptiveStats: state.adaptiveStats,
       skillMastery: state.skillMastery,
+      practiceSessions: state.practiceSessions,
+      activePracticeSessionId: state.activePracticeSessionId,
+      activeQuestionProgressKey: state.activeQuestionProgressKey,
+      questionStartedAt: state.questionStartedAt,
       lastUpdated: new Date().toISOString(),
     })
   );
@@ -3096,10 +3116,13 @@ function resetDiagnosticProgress() {
   state.selectedAnswer = null;
   state.selectedAnswers = {};
   state.answerConfidence = {};
+  state.hintUsage = {};
   state.guidanceLock = null;
   state.guidedMastery = {};
   state.inlineCoachHistory = [];
   state.currentQuestion = 0;
+  state.activeQuestionProgressKey = "";
+  state.questionStartedAt = "";
   state.lastAdvanceNotice = "";
   state.reportReady = false;
 }
@@ -3423,6 +3446,105 @@ function dailyQuestionLimit(plan = planForStudent(state.studentId)) {
   return Math.max(1, Number(plan.questionTarget || (isTwoHourPlan(plan) ? 24 : 8)));
 }
 
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function currentPracticeSession() {
+  const today = todayIsoDate();
+  const active = state.practiceSessions.find((session) => session.id === state.activePracticeSessionId);
+  if (active && active.studentId === state.studentId && active.subject === state.subject && active.startedAt?.startsWith(today)) {
+    return active;
+  }
+
+  const session = {
+    id: `${state.studentId}-${state.subject}-${Date.now()}`,
+    studentId: state.studentId,
+    subject: state.subject,
+    skill: activeQuestions()[state.currentQuestion]?.skill || activeDiagnostic().skills[0][0],
+    startedAt: new Date().toISOString(),
+    endedAt: "",
+    questionsAnswered: 0,
+    correctCount: 0,
+    hintsUsed: 0,
+    difficultyStart: adaptiveLevelForSubject(),
+    difficultyEnd: adaptiveLevelForSubject(),
+    slowCount: 0,
+    guessingCount: 0,
+    events: [],
+  };
+  state.practiceSessions.unshift(session);
+  state.practiceSessions = state.practiceSessions.slice(0, 40);
+  state.activePracticeSessionId = session.id;
+  return session;
+}
+
+function markQuestionTimer(progressKey = questionProgressKey()) {
+  if (state.activeQuestionProgressKey !== progressKey) {
+    state.activeQuestionProgressKey = progressKey;
+    state.questionStartedAt = new Date().toISOString();
+  }
+}
+
+function secondsOnCurrentQuestion() {
+  const started = Date.parse(state.questionStartedAt || "");
+  if (!started) return 0;
+  return Math.max(1, Math.round((Date.now() - started) / 1000));
+}
+
+function recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResult) {
+  const session = currentPracticeSession();
+  const seconds = secondsOnCurrentQuestion();
+  const correct = selectedIndex === question.correct;
+  const event = {
+    questionKey: mistakeKey(state.studentId, state.subject, question),
+    skill: question.skill || activeDiagnostic().skills[0][0],
+    difficulty: question.difficulty || difficultyLevels[adaptiveLevelForSubject()],
+    correct,
+    confidence,
+    seconds,
+    usedHint: Boolean(state.hintUsage?.[questionProgressKey()]),
+    issueType: !correct ? mistakeTypeFor({ reason: guidanceIssueText("answer"), skill: question.skill }) : seconds > 90 ? "slow_mastery" : confidence !== "sure" ? "guessing" : "secure",
+    answeredAt: new Date().toISOString(),
+  };
+
+  session.skill = event.skill;
+  session.questionsAnswered += 1;
+  session.correctCount += correct ? 1 : 0;
+  session.hintsUsed += event.usedHint ? 1 : 0;
+  session.difficultyEnd = adaptiveResult?.level ?? adaptiveLevelForSubject();
+  session.slowCount += correct && seconds > 90 ? 1 : 0;
+  session.guessingCount += !correct && seconds <= 12 ? 1 : 0;
+  session.endedAt = event.answeredAt;
+  session.events = [event, ...(session.events || [])].slice(0, 80);
+  return event;
+}
+
+function todayPracticeSessionSummary(studentId = state.studentId) {
+  const today = todayIsoDate();
+  const sessions = state.practiceSessions.filter((session) => session.studentId === studentId && session.startedAt?.startsWith(today));
+  const answered = sessions.reduce((sum, session) => sum + (session.questionsAnswered || 0), 0);
+  const correct = sessions.reduce((sum, session) => sum + (session.correctCount || 0), 0);
+  const hints = sessions.reduce((sum, session) => sum + (session.hintsUsed || 0), 0);
+  const slow = sessions.reduce((sum, session) => sum + (session.slowCount || 0), 0);
+  const guessing = sessions.reduce((sum, session) => sum + (session.guessingCount || 0), 0);
+  const seconds = sessions.reduce(
+    (sum, session) =>
+      sum + Math.max(0, (Date.parse(session.endedAt || session.startedAt) - Date.parse(session.startedAt || session.endedAt || new Date().toISOString())) / 1000),
+    0
+  );
+  return {
+    sessions: sessions.length,
+    answered,
+    correct,
+    accuracy: answered ? Math.round((correct / answered) * 100) : 0,
+    hints,
+    slow,
+    guessing,
+    minutes: Math.max(0, Math.round(seconds / 60)),
+  };
+}
+
 function updateAdaptiveDifficulty(question, selectedIndex) {
   const subjectId = state.subject;
   const isCorrect = selectedIndex === question.correct;
@@ -3694,15 +3816,18 @@ function renderStudentWrapup(completion = todayCompletionState()) {
   const mistakes = mistakesForStudent(state.studentId).length;
   const target = dailyQuestionLimit(planForStudent(state.studentId));
   const ready = completion.complete || answered >= target;
+  const session = todayPracticeSessionSummary(state.studentId);
 
   $("wrapupAnswered").textContent = answered;
   $("wrapupGuided").textContent = guided;
   $("wrapupMistakes").textContent = mistakes;
+  $("wrapupAccuracy").textContent = `${session.accuracy}%`;
+  $("wrapupTime").textContent = `${session.minutes} 分钟`;
   $("finishTodayButton").disabled = answered === 0;
   $("finishTodayButton").textContent = ready ? "生成今日总结" : "先生成阶段总结";
   $("wrapupMessage").textContent = ready
     ? "今日目标已达到。生成总结后，家长端可以看到今天表现和明天建议。"
-    : `今天目标是 ${target} 题，目前已答 ${answered} 题。可以先继续学习，也可以生成阶段总结。`;
+    : `今天目标是 ${target} 题，目前已答 ${answered} 题。正确率 ${session.accuracy || 0}%，使用提示 ${session.hints} 次；可以继续学习，也可以生成阶段总结。`;
 }
 
 function renderStudentActionBar() {
@@ -3861,6 +3986,7 @@ function renderDiagnostic() {
   const adaptiveLabel = difficultyLevels[adaptiveLevel];
   const learningBlock = learningBlockForQuestionIndex(state.currentQuestion);
   const progressKey = questionProgressKey();
+  markQuestionTimer(progressKey);
   const selectedAnswer = state.selectedAnswers[state.currentQuestion];
   const confidence = state.answerConfidence[progressKey] || "sure";
   const locked = hasActiveGuidanceLock();
@@ -4514,12 +4640,15 @@ function renderParentDashboardSummary() {
   const tasks = buildDailyTasks(student);
   const completion = todayCompletionState(tasks);
   const mistakes = mistakesForStudent(student.id);
+  const session = todayPracticeSessionSummary(student.id);
   const weakSkills = [...new Set(weakSkillMasteryItems(student.id).map((item) => item.skill).concat(topMistakeSkills(mistakes).map(([skill]) => skill)))];
-  const estimatedMinutes = Math.round((plan.minutes || 30) * (completion.percent / 100));
+  const estimatedMinutes = session.minutes || Math.round((plan.minutes || 30) * (completion.percent / 100));
   $("parentTodayTime").textContent = `${estimatedMinutes}/${plan.minutes} 分钟`;
   $("parentCompletedTasks").textContent = `${completion.completed}/${completion.total}`;
   $("parentMistakeCount").textContent = `${mistakes.length}`;
-  $("parentRecommendation").textContent = weakSkills.length ? `复习 ${weakSkills[0]}` : "保持今日计划";
+  $("parentRecommendation").textContent = weakSkills.length
+    ? `复习 ${weakSkills[0]}；今日正确率 ${session.accuracy || "--"}%，提示 ${session.hints || 0} 次。`
+    : `保持今日计划；今日正确率 ${session.accuracy || "--"}%。`;
 }
 
 function renderQuestionQualityAudit() {
@@ -4688,15 +4817,16 @@ function bindEvents() {
     state.lastAdvanceNotice = "";
     state.selectedAnswers[state.currentQuestion] = selectedIndex;
     const issue = shouldStartGuidance(selectedIndex, question, confidence);
+    const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
+    const practiceEvent = recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResult);
     if (!issue) {
-      updateSkillMastery(question, { correct: true });
+      updateSkillMastery(question, { correct: true, seconds: practiceEvent.seconds });
       markMistakeReviewed(question);
       advanceToNextQuestionAfterCompletion(state.currentQuestion, "correct");
     } else {
       recordMistake(question, selectedIndex, guidanceIssueText(issue));
       startGuidedMastery(question, selectedIndex, "", confidence, issue);
     }
-    const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
     saveData();
     renderDiagnostic();
     if (issue) focusGuidancePanel();
@@ -4763,6 +4893,8 @@ function bindEvents() {
   });
   $("practiceHintButton").addEventListener("click", () => {
     const question = activeQuestions()[state.currentQuestion];
+    state.hintUsage[questionProgressKey()] = true;
+    saveData();
     $("answerFeedback").textContent = question.coachHints?.[0] || "先说题目真正问什么，再圈关键词。";
   });
   $("practiceExplainButton").addEventListener("click", () => {

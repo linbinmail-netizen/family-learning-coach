@@ -17,6 +17,7 @@ Daily Mission -> Practice -> AI Guided Feedback -> Mistake Notebook -> Skill Mas
 - AI Guided Feedback: completed, with no direct answer reveal, coaching scaffold, rescue prompts, teacher model sentence, variant verification, and rubric-gated mastery.
 - Mistake Notebook: completed, with filters, review dates, one-click review, and same-skill practice packs.
 - Skill Mastery: completed, with mastery, accuracy, attempts, review count, status, and Supabase sync.
+- Learning Motivation: completed, with behavior-based badges and a weekly challenge tied to mastery, review, accuracy, and hint usage.
 
 ## Parent Side
 

@@ -4912,6 +4912,75 @@ function renderQuestionQualityAudit() {
     : "<li>重点科目已达到当前质量门槛，下一步可以增加学校考试同等难度的综合题。</li>";
 }
 
+function studentAchievementBadges(studentId = state.studentId) {
+  const masteryItems = Object.values(state.skillMastery).filter((item) => item.studentId === studentId);
+  const masteredCount = masteryItems.filter((item) => item.status === "mastered" || item.mastery >= 82).length;
+  const reviewedCount = masteryItems.reduce((sum, item) => sum + (item.reviewCount || 0), 0);
+  const session = todayPracticeSessionSummary(studentId);
+  const mistakePackCount = mistakesForStudent(studentId).length;
+  return [
+    {
+      title: "Steady Starter",
+      earned: session.answered >= 1,
+      note: session.answered >= 1 ? "今天已经开始学习" : "完成今天第一题",
+    },
+    {
+      title: "Mistake Fixer",
+      earned: reviewedCount >= 1,
+      note: reviewedCount >= 1 ? `已复盘 ${reviewedCount} 次` : "完成一次错题复盘",
+    },
+    {
+      title: "Skill Master",
+      earned: masteredCount >= 1,
+      note: masteredCount >= 1 ? `掌握 ${masteredCount} 个技能点` : "把一个技能点提升到 Mastered",
+    },
+    {
+      title: "Focus Builder",
+      earned: session.hints <= 2 && session.answered >= 5,
+      note: session.answered >= 5 ? `提示 ${session.hints} 次` : "完成 5 题并少用提示",
+    },
+    {
+      title: "Challenge Ready",
+      earned: session.accuracy >= 80 && session.answered >= 8,
+      note: session.answered >= 8 ? `正确率 ${session.accuracy}%` : "完成 8 题且正确率 80%+",
+    },
+    {
+      title: "Review Queue Clear",
+      earned: mistakePackCount === 0 && session.answered > 0,
+      note: mistakePackCount ? `还有 ${mistakePackCount} 条待复习` : "暂无待复习错题",
+    },
+  ];
+}
+
+function weeklyChallengeForStudent(studentId = state.studentId) {
+  const session = todayPracticeSessionSummary(studentId);
+  const weakSkill = weakSkillMasteryItems(studentId)[0]?.skill || mistakesForStudent(studentId)[0]?.skill || activeDiagnostic().skills[0][0];
+  const target = Math.max(8, Math.min(24, planForStudent(studentId).questionTarget || 8));
+  const progress = Math.min(100, Math.round((session.answered / target) * 100));
+  return {
+    text: `本周挑战：围绕 ${weakSkill} 完成 ${target} 题，并把每道错题写出第一步和原因。当前 ${session.answered}/${target} 题。`,
+    progress,
+  };
+}
+
+function renderStudentAchievements() {
+  const badgeGrid = $("studentBadgeGrid");
+  if (!badgeGrid) return;
+  badgeGrid.innerHTML = studentAchievementBadges(state.studentId)
+    .map(
+      (badge) => `
+        <article class="achievement-badge ${badge.earned ? "earned" : "locked"}">
+          <strong>${badge.earned ? "已获得" : "未解锁"} · ${badge.title}</strong>
+          <span>${badge.note}</span>
+        </article>
+      `
+    )
+    .join("");
+  const challenge = weeklyChallengeForStudent(state.studentId);
+  $("weeklyChallengeText").textContent = challenge.text;
+  $("weeklyChallengeProgress").style.width = `${challenge.progress}%`;
+}
+
 async function renderProductionReadiness() {
   const list = $("productionReadinessList");
   const status = $("productionReadinessStatus");
@@ -5003,6 +5072,7 @@ function refreshViewData(viewName) {
   if (viewName === "learningPath") renderLearningPath();
   if (viewName === "diagnostic") renderDiagnostic();
   if (viewName === "mistakes") renderMistakeNotebook();
+  if (viewName === "report") renderStudentAchievements();
   if (viewName === "coach") renderCoach();
   if (viewName === "parent") renderParentDashboardSummary();
 }
@@ -5388,6 +5458,7 @@ function renderAll() {
   renderMistakeNotebook();
   renderEmail();
   renderCoach();
+  renderStudentAchievements();
   renderParentPlanControls();
   renderParentDashboardSummary();
   renderWeeklyTrend();

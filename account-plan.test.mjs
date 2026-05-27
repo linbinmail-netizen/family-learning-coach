@@ -44,6 +44,19 @@ test("student dashboard is a mission control page, not only a chat entry", () =>
   assert.match(css, /student-dashboard-grid/);
 });
 
+test("student progress report includes badges and a weekly challenge", () => {
+  assert.match(html, /id="studentBadgeGrid"/);
+  assert.match(html, /id="weeklyChallengeText"/);
+  assert.match(html, /id="weeklyChallengeProgress"/);
+  assert.match(js, /function studentAchievementBadges/);
+  assert.match(js, /function weeklyChallengeForStudent/);
+  assert.match(js, /function renderStudentAchievements/);
+  assert.match(js, /Steady Starter/);
+  assert.match(js, /Mistake Fixer/);
+  assert.match(js, /Skill Master/);
+  assert.match(css, /achievement-badge/);
+});
+
 test("student learning path page has subject modules and mastery status", () => {
   assert.match(html, /data-view="learningPath"/);
   assert.match(html, /id="learningPathView"/);

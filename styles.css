@@ -1453,6 +1453,44 @@ textarea {
   font-size: 0.9rem;
 }
 
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.achievement-badge {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.achievement-badge.earned {
+  border-color: #b6dec6;
+  background: #f2fbf5;
+}
+
+.achievement-badge.locked {
+  opacity: 0.72;
+}
+
+.achievement-badge strong {
+  display: block;
+  color: var(--green-dark);
+}
+
+.achievement-badge span {
+  display: block;
+  margin-top: 4px;
+  color: var(--soft-ink);
+  font-size: 0.9rem;
+}
+
+.weekly-challenge-panel .progress {
+  margin-top: 10px;
+}
+
 .today-progress-bar {
   margin: 12px 0;
 }

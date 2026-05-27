@@ -249,9 +249,19 @@ test("parent dashboard shows production readiness status", () => {
   assert.match(js, /\/api\/system-status/);
   assert.match(js, /checkCloudTable\("skill_mastery"\)/);
   assert.match(js, /checkCloudTable\("practice_sessions"\)/);
+  assert.match(js, /000_run_all_learning_platform\.sql/);
+  assert.match(js, /完整学习闭环表/);
   assert.match(js, /每日自动日报/);
   assert.match(js, /scheduledDigestConfigured/);
   assert.match(css, /readiness-grid/);
+});
+
+test("student answer submission also syncs through the standard learning API", () => {
+  assert.match(js, /function callLearningApi/);
+  assert.match(js, /function syncAnswerSubmitToApi/);
+  assert.match(js, /\/api\/answer\/submit/);
+  assert.match(js, /syncAnswerSubmitToApi\(question, selectedIndex, confidence, practiceEvent\)/);
+  assert.match(js, /subjectLabelById/);
 });
 
 test("parent can adjust study plan settings", () => {

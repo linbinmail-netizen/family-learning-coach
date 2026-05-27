@@ -2089,9 +2089,36 @@ async function loadSystemStatus() {
     return {
       emailConfigured: false,
       digestEmailFromConfigured: false,
-      requiredSupabaseScripts: ["010_skill_mastery.sql", "011_practice_sessions.sql"],
+      requiredSupabaseScripts: ["000_run_all_learning_platform.sql"],
     };
   }
+}
+
+async function callLearningApi(path, payload = {}) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(`Learning API failed: ${path}`);
+  return response.json();
+}
+
+function syncAnswerSubmitToApi(question, selectedIndex, confidence, practiceEvent = {}) {
+  const selectedLabel = String.fromCharCode(65 + selectedIndex);
+  callLearningApi("/api/answer/submit", {
+    studentId: state.studentId,
+    question: {
+      id: question.id || question.prompt,
+      subject: subjectLabelById(state.subject),
+      skill: question.skill || question.knowledgePoint || question.topic || "",
+      correctAnswer: String.fromCharCode(65 + question.correct),
+      hintSteps: question.coachHints || question.hints || [],
+    },
+    studentAnswer: selectedLabel,
+    confidence,
+    timeSpentSeconds: practiceEvent.seconds || 0,
+  }).catch((error) => console.warn("Learning API answer sync skipped.", error));
 }
 
 async function loadAuthProfile() {
@@ -2289,6 +2316,10 @@ function activeAccount() {
 
 function subjectById(subjectId) {
   return Object.values(subjects).flat().find((subject) => subject.id === subjectId);
+}
+
+function subjectLabelById(subjectId) {
+  return subjectById(subjectId)?.label || activeSubject()?.label || "Learning";
 }
 
 function defaultSubjectForStudent(studentId) {
@@ -5046,7 +5077,13 @@ async function renderProductionReadiness() {
     checkCloudTable("skill_mastery"),
     checkCloudTable("practice_sessions"),
   ]);
+  const requiredScripts = systemStatus.requiredSupabaseScripts || ["000_run_all_learning_platform.sql"];
   const items = [
+    {
+      title: "一键数据库脚本",
+      ready: requiredScripts.includes("000_run_all_learning_platform.sql"),
+      note: "Supabase SQL Editor 运行 supabase/000_run_all_learning_platform.sql",
+    },
     {
       title: "知识点掌握度云端表",
       ready: masteryStatus.ready,
@@ -5056,6 +5093,11 @@ async function renderProductionReadiness() {
       title: "学习行为云端表",
       ready: practiceStatus.ready,
       note: practiceStatus.ready ? "用时、提示、正确率可长期保存" : "运行 supabase/011_practice_sessions.sql",
+    },
+    {
+      title: "完整学习闭环表",
+      ready: requiredScripts.includes("012_learning_closure_tables.sql"),
+      note: "包含今日计划、错题本、掌握记录、家长报告等正式表结构",
     },
     {
       title: "自动日报邮件",
@@ -5195,6 +5237,7 @@ function bindEvents() {
     const issue = shouldStartGuidance(selectedIndex, question, confidence);
     const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
     const practiceEvent = recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResult);
+    syncAnswerSubmitToApi(question, selectedIndex, confidence, practiceEvent);
     if (!issue) {
       updateSkillMastery(question, { correct: true, seconds: practiceEvent.seconds });
       markMistakeReviewed(question);

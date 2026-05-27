@@ -2812,6 +2812,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   if (!card) return;
   const quality = evaluateGuidanceReplyQuality(reply);
   const helperCard = $("replyHelperCard");
+  const canAskForHelp = quality.asksForHelp;
   [
     ["qualityQuestionGoal", quality.questionGoal],
     ["qualityMethodStep", quality.methodStep],
@@ -2836,7 +2837,8 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     $("replyHelperText").textContent = guidanceReplyHelpText(reply, quality);
     $("replyStarterText").textContent = starter;
   }
-  $("inlineCoachSubmit").disabled = !quality.ready;
+  $("inlineCoachSubmit").disabled = !quality.ready && !canAskForHelp;
+  $("inlineCoachSubmit").textContent = canAskForHelp ? "帮我开头" : "继续引导";
   renderGuidanceUnlockProgress();
 }
 
@@ -2865,6 +2867,15 @@ function buildGuidedTeachingMove(reply = "", lock = state.guidanceLock) {
     ? "把你的方法换成一句更具体的话：我先看____，因为____。"
     : "先不要写答案，请补上“为什么这一步有用”。";
   return `概念提醒：${lesson.steps?.[0] || "先看题目真正问什么"}，不是先猜选项。小例子：${teachingMiniExampleForSkill(skill)} 下一问：${nextAsk}`;
+}
+
+function buildGuidanceRescueMove(lock = state.guidanceLock) {
+  const question = activeQuestions()[lock?.questionIndex || state.currentQuestion];
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const lesson = conceptMiniLesson(question);
+  const firstStep = lesson.steps?.[0] || question?.coachHints?.[0] || "先看题目真正问什么";
+  const modelSentence = guidanceTeacherModelForLock(lock, question);
+  return `可以，不会写时先不要硬猜。这个知识点是 ${skill}。先记住：${firstStep}。你可以照这个开头改成自己的话：${modelSentence}`;
 }
 
 function shouldMoveToVariantAfterReply(reply = "") {
@@ -4373,6 +4384,16 @@ function bindEvents() {
     const reply = input.value.trim();
     if (!reply) return;
     const quality = evaluateGuidanceReplyQuality(reply);
+    if (quality.asksForHelp) {
+      appendInlineCoach("student", reply);
+      state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+      state.inlineCoachHistory.push({ role: "coach", text: buildGuidanceRescueMove(state.guidanceLock) });
+      input.value = guidanceReplyStarterForLock(state.guidanceLock);
+      saveData();
+      renderDiagnostic();
+      focusGuidancePanel();
+      return;
+    }
     if (!quality.ready) {
       renderReplyQuality(reply);
       $("replyQualityStatus").textContent = "先把复述补完整，再提交给 AI 教练。";

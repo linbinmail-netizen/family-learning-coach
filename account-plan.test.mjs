@@ -266,11 +266,23 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
   assert.match(html, /id="replyStarterText"/);
   assert.match(html, /id="applyReplyStarterButton"/);
   assert.match(js, /function guidanceReplyStarterForLock/);
+  assert.match(js, /function buildGuidanceRescueMove/);
   assert.match(js, /const asksForHelp = .*不知道/);
   assert.match(js, /没关系，先照这句填空/);
+  assert.match(js, /不会写时先不要硬猜/);
   assert.match(js, /把方括号里的内容换成自己的话/);
   assert.match(js, /applyReplyStarterButton"\)\.addEventListener\("click"/);
   assert.match(css, /reply-helper-card/);
+});
+
+test("student stuck replies can submit for rescue instead of staying blocked", () => {
+  assert.match(js, /const canAskForHelp = quality\.asksForHelp/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.textContent = canAskForHelp \? "帮我开头" : "继续引导"/);
+  assert.match(js, /if \(quality\.asksForHelp\)/);
+  assert.match(js, /buildGuidanceRescueMove\(state\.guidanceLock\)/);
+  assert.match(js, /input\.value = guidanceReplyStarterForLock\(state\.guidanceLock\)/);
+  assert.doesNotMatch(js, /buildGuidanceRescueMove[\s\S]*正确答案是/);
 });
 
 test("student guidance reply placeholder adapts to the skill", () => {
@@ -303,7 +315,7 @@ test("student guidance starter placeholders do not pass the quality gate", () =>
 
 test("student cannot submit inline guidance until restatement is complete", () => {
   assert.match(html, /id="inlineCoachSubmit"/);
-  assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
   assert.match(js, /const quality = evaluateGuidanceReplyQuality\(reply\)/);
   assert.match(js, /if \(!quality\.ready\)/);
   assert.match(js, /先把复述补完整/);

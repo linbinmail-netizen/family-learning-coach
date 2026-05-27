@@ -178,6 +178,10 @@ test("parent dashboard shows a weekly learning trend", () => {
   assert.match(js, /renderWeeklyTrend/);
   assert.match(js, /本周学习趋势/);
   assert.match(js, /高频错题知识点/);
+  assert.match(js, /weeklySessions/);
+  assert.match(js, /hintsUsed/);
+  assert.match(js, /slowCount/);
+  assert.match(js, /guessingCount/);
 });
 
 test("parent dashboard includes clear summary cards and recommendation", () => {
@@ -795,9 +799,12 @@ test("practice sessions track time hints accuracy and learning behavior", () => 
 test("practice sessions can sync with Supabase without blocking student answers", () => {
   assert.match(js, /savePracticeSessionToCloud/);
   assert.match(js, /syncPracticeSessionsToCloud/);
+  assert.match(js, /loadPracticeSessionsFromCloud/);
+  assert.match(js, /cloudPracticeSessionToLocal/);
   assert.match(js, /practice_sessions/);
   assert.match(js, /savePracticeSessionToCloud\(session\)\.catch/);
   assert.match(js, /Practice session cloud save skipped/);
+  assert.match(js, /Practice session cloud load skipped/);
 });
 
 test("student learning data is isolated per signed-in account", () => {

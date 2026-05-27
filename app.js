@@ -2019,6 +2019,57 @@ async function syncPracticeSessionsToCloud() {
   }
 }
 
+async function cloudPracticeSessionToLocal(row) {
+  const localStudentId = Object.keys(state.cloudStudents).find((key) => state.cloudStudents[key] === row.student_id);
+  const localSubject = await findLocalSubjectByCloudId(row.subject_id);
+  if (!localStudentId || !localSubject || !row.local_session_id) return null;
+
+  return {
+    id: row.local_session_id,
+    studentId: localStudentId,
+    subject: localSubject.id,
+    skill: row.skill || "",
+    startedAt: row.started_at || "",
+    endedAt: row.ended_at || "",
+    questionsAnswered: row.questions_answered || 0,
+    correctCount: row.correct_count || 0,
+    hintsUsed: row.hints_used || 0,
+    difficultyStart: row.difficulty_start || 0,
+    difficultyEnd: row.difficulty_end || 0,
+    slowCount: row.slow_count || 0,
+    guessingCount: row.guessing_count || 0,
+    events: [],
+  };
+}
+
+async function loadPracticeSessionsFromCloud() {
+  if (!state.authSession) return;
+  const cloudStudentIds = Object.values(state.cloudStudents).filter(Boolean);
+  if (!cloudStudentIds.length) return;
+
+  try {
+    const data = await supabaseRequest(
+      `practice_sessions?${new URLSearchParams({
+        select: "local_session_id,student_id,subject_id,skill,started_at,ended_at,questions_answered,correct_count,hints_used,difficulty_start,difficulty_end,slow_count,guessing_count",
+        student_id: `in.(${cloudStudentIds.join(",")})`,
+        order: "started_at.desc",
+      }).toString()}`,
+      { headers: { Prefer: "" } }
+    );
+
+    const merged = new Map(state.practiceSessions.map((session) => [session.id, session]));
+    for (const row of data || []) {
+      const localSession = await cloudPracticeSessionToLocal(row);
+      if (!localSession) continue;
+      merged.set(localSession.id, { ...(merged.get(localSession.id) || {}), ...localSession });
+    }
+    state.practiceSessions = Array.from(merged.values()).slice(0, 80);
+    saveData();
+  } catch (error) {
+    console.warn("Practice session cloud load skipped.", error);
+  }
+}
+
 async function loadAuthProfile() {
   if (!state.authSession?.user?.id) return;
   await supabaseRpc("ensure_my_profile");
@@ -2046,6 +2097,7 @@ async function loadAuthProfile() {
   await syncSkillMasteryToCloud();
   await loadSkillMasteryFromCloud();
   await syncPracticeSessionsToCloud();
+  await loadPracticeSessionsFromCloud();
   applyProfileToLocalState(data, { persist: false });
   saveData(accountDataStorageKey());
   setAuthStatus(`已登录：${currentAuthUserLabel()}`);
@@ -4651,6 +4703,10 @@ function buildWeeklyTrend(studentId = state.studentId) {
   const weeklyRecords = state.records.filter((record) => {
     return record.student === student.name && isWithinLastWeek(recordTimestamp(record));
   });
+  const weeklySessions = state.practiceSessions.filter((session) => {
+    const timestamp = session.startedAt ? Date.parse(session.startedAt) : Date.now();
+    return session.studentId === studentId && isWithinLastWeek(timestamp);
+  });
   const weeklyMistakes = state.mistakeLog.filter((item) => {
     const timestamp = item.lastMissedIso ? Date.parse(item.lastMissedIso) : Date.now();
     return item.studentId === studentId && isWithinLastWeek(timestamp);
@@ -4658,27 +4714,39 @@ function buildWeeklyTrend(studentId = state.studentId) {
   const averageScore = weeklyRecords.length
     ? Math.round(weeklyRecords.reduce((sum, record) => sum + (record.score || 0), 0) / weeklyRecords.length)
     : 0;
-  const completedQuestions = weeklyRecords.reduce((sum, record) => sum + (record.answered || 0), 0);
-  const correctQuestions = weeklyRecords.reduce((sum, record) => sum + (record.correct || 0), 0);
+  const sessionQuestions = weeklySessions.reduce((sum, session) => sum + (session.questionsAnswered || 0), 0);
+  const sessionCorrect = weeklySessions.reduce((sum, session) => sum + (session.correctCount || 0), 0);
+  const completedQuestions = sessionQuestions || weeklyRecords.reduce((sum, record) => sum + (record.answered || 0), 0);
+  const correctQuestions = sessionQuestions ? sessionCorrect : weeklyRecords.reduce((sum, record) => sum + (record.correct || 0), 0);
   const accuracy = completedQuestions ? Math.round((correctQuestions / completedQuestions) * 100) : 0;
+  const hintsUsed = weeklySessions.reduce((sum, session) => sum + (session.hintsUsed || 0), 0);
+  const slowCount = weeklySessions.reduce((sum, session) => sum + (session.slowCount || 0), 0);
+  const guessingCount = weeklySessions.reduce((sum, session) => sum + (session.guessingCount || 0), 0);
   const frequentMistakes = topMistakeSkills(weeklyMistakes);
   const weakestSkill = frequentMistakes[0]?.[0] || weeklyRecords.find((record) => record.weak?.length)?.weak?.[0] || "";
 
   let nextPlan = "本周数据还不够，建议先完成 2 次诊断，系统再给出更稳定的下周计划。";
-  if (weeklyRecords.length >= 2 && accuracy >= 80 && frequentMistakes.length <= 1) {
+  if (guessingCount >= 2) {
+    nextPlan = "下周先降低速度要求，每题必须写一句理由后再提交，减少靠排除法猜题。";
+  } else if (slowCount >= 2) {
+    nextPlan = "下周先做基础讲解和例题，再做限时练习，帮助孩子把慢掌握变成稳定掌握。";
+  } else if ((weeklyRecords.length >= 2 || weeklySessions.length >= 2) && accuracy >= 80 && frequentMistakes.length <= 1) {
     nextPlan = "下周可以保持当前题量，并加入挑战题；重点训练解释理由和综合应用。";
-  } else if (weeklyRecords.length && weakestSkill) {
+  } else if ((weeklyRecords.length || weeklySessions.length) && weakestSkill) {
     nextPlan = `下周优先复习 ${weakestSkill}，题量保持稳定，AI 先讲概念再让孩子复述。`;
-  } else if (weeklyRecords.length) {
+  } else if (weeklyRecords.length || weeklySessions.length) {
     nextPlan = "下周保持当前学习节奏，每次诊断后做 1 次错题复盘。";
   }
 
   return {
     studentName: student.name,
-    sessions: weeklyRecords.length,
+    sessions: Math.max(weeklyRecords.length, weeklySessions.length),
     averageScore,
     accuracy,
     completedQuestions,
+    hintsUsed,
+    slowCount,
+    guessingCount,
     frequentMistakes,
     nextPlan,
   };
@@ -4693,6 +4761,9 @@ function renderWeeklyTrend() {
     <div><strong>${trend.averageScore || "--"}${trend.averageScore ? "%" : ""}</strong><span>平均掌握度</span></div>
     <div><strong>${trend.accuracy || "--"}${trend.accuracy ? "%" : ""}</strong><span>本周正确率</span></div>
     <div><strong>${trend.completedQuestions}</strong><span>完成题目</span></div>
+    <div><strong>${trend.hintsUsed}</strong><span>提示使用</span></div>
+    <div><strong>${trend.slowCount}</strong><span>慢掌握</span></div>
+    <div><strong>${trend.guessingCount}</strong><span>可能猜题</span></div>
   `;
   $("weeklyMistakes").innerHTML = trend.frequentMistakes.length
     ? trend.frequentMistakes.map(([skill, count]) => `<li><strong>${skill}</strong>：本周累计 ${count} 次，需要优先复习。</li>`).join("")

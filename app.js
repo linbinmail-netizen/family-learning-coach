@@ -3876,6 +3876,16 @@ function nextReviewDateForMistake(item = {}) {
   return last.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function similarPracticePackForMistake(item = {}, limit = 3) {
+  const bank = mergeQuestions(
+    localQuestionBank[item.subjectId] || [],
+    (expandedQuestionBank[item.subjectId] || []).concat(challengeQuestionBank[item.subjectId] || [], twoHourExpansionQuestionBank[item.subjectId] || [])
+  );
+  const sameSkill = bank.filter((question) => question.skill === item.skill && question.prompt !== item.prompt);
+  const nearby = bank.filter((question) => question.skill !== item.skill && difficultyScore(question.difficulty) <= difficultyScore(item.difficulty || "中等") + 1);
+  return mergeQuestions(sameSkill, nearby).slice(0, limit);
+}
+
 function renderMistakeNotebook() {
   const mistakes = mistakesForStudent();
   const subjectFilter = $("mistakeSubjectFilter");
@@ -3915,6 +3925,14 @@ function renderMistakeNotebook() {
                 <li>下次复习：${nextReviewDateForMistake(item)}</li>
               </ul>
               <p class="form-note">AI 复习重点：先解释为什么错，再做 3 道同类题，不直接背答案。</p>
+              <div class="similar-practice-pack">
+                <strong>同类练习包</strong>
+                <ol>
+                  ${similarPracticePackForMistake(item)
+                    .map((question) => `<li>${question.skill} · ${question.difficulty}</li>`)
+                    .join("") || "<li>题库正在补充同类题，先从当前错题复习开始。</li>"}
+                </ol>
+              </div>
               <button class="primary-button small-button" type="button" data-review-mistake="${item.key}">重新练习</button>
             </article>
           `

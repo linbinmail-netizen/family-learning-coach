@@ -1399,6 +1399,25 @@ textarea {
   background: #f8faf8;
 }
 
+.similar-practice-pack {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #d8e7dd;
+  border-radius: 8px;
+  background: #f7fbf8;
+}
+
+.similar-practice-pack strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.similar-practice-pack ol {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--soft-ink);
+}
+
 .today-progress-bar {
   margin: 12px 0;
 }

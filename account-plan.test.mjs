@@ -751,6 +751,14 @@ test("mistake review opens a targeted review lesson", () => {
   assert.match(js, /错题复习课/);
 });
 
+test("mistake notebook shows a three-question similar practice pack", () => {
+  assert.match(js, /function similarPracticePackForMistake/);
+  assert.match(js, /similarPracticePackForMistake\(item\)/);
+  assert.match(js, /同类练习包/);
+  assert.match(js, /slice\(0, limit\)/);
+  assert.match(css, /similar-practice-pack/);
+});
+
 test("student daily plan shows next action and completion state", () => {
   assert.match(html, /id="todayNextAction"/);
   assert.match(js, /todayCompletionState/);

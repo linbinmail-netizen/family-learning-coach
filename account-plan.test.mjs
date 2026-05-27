@@ -21,6 +21,16 @@ test("student daily task view exists", () => {
   assert.match(js, /renderTodayPlan/);
 });
 
+test("daily missions show explicit task statuses", () => {
+  assert.match(js, /function dailyMissionStatus/);
+  assert.match(js, /Pending/);
+  assert.match(js, /In Progress/);
+  assert.match(js, /Completed/);
+  assert.match(js, /Skipped/);
+  assert.match(js, /mission-status-chip/);
+  assert.match(css, /mission-status-in-progress/);
+});
+
 test("student dashboard is a mission control page, not only a chat entry", () => {
   assert.match(html, /id="studentDashboardStats"/);
   assert.match(html, /id="dashboardGreeting"/);
@@ -50,6 +60,21 @@ test("student learning path page has subject modules and mastery status", () => 
   assert.match(js, /Needs Review/);
   assert.match(js, /Mastered/);
   assert.match(css, /path-module-grid/);
+});
+
+test("skill mastery tracking updates learning path and reports", () => {
+  assert.match(js, /skillMastery: {}/);
+  assert.match(js, /function skillMasteryKey/);
+  assert.match(js, /function updateSkillMastery/);
+  assert.match(js, /function masteryForSkill/);
+  assert.match(js, /function weakSkillMasteryItems/);
+  assert.match(js, /attempts/);
+  assert.match(js, /accuracy/);
+  assert.match(js, /status: skillMasteryStatus/);
+  assert.match(js, /updateSkillMastery\(question, { correct: true }\)/);
+  assert.match(js, /updateSkillMastery\(question, { guided: true }\)/);
+  assert.match(js, /updateSkillMastery\(question, { reviewed: true }\)/);
+  assert.match(js, /tracked\?\.mastery/);
 });
 
 test("student mistake notebook is filterable and opens review practice", () => {

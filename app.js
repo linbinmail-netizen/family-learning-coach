@@ -1344,6 +1344,7 @@ let state = {
   cloudStudents: {},
   adaptiveLevels: {},
   adaptiveStats: {},
+  skillMastery: {},
   learningPathSubject: "math",
   planSettings: {
     older: { minutes: 30, questionTarget: 8, difficultyMode: "adaptive", focusSubject: "english1" },
@@ -1382,6 +1383,7 @@ function clearLearningStateForAccount() {
   state.mistakeLog = [];
   state.adaptiveLevels = {};
   state.adaptiveStats = {};
+  state.skillMastery = {};
 }
 
 function loadSavedData(key = storageKey, options = {}) {
@@ -1415,6 +1417,7 @@ function loadSavedData(key = storageKey, options = {}) {
     }
     if (saved?.adaptiveLevels) state.adaptiveLevels = saved.adaptiveLevels;
     if (saved?.adaptiveStats) state.adaptiveStats = saved.adaptiveStats;
+    if (saved?.skillMastery) state.skillMastery = saved.skillMastery;
   } catch {
     state.records = [];
   }
@@ -1442,6 +1445,7 @@ function saveData(key = accountDataStorageKey()) {
       planSettings: state.planSettings,
       adaptiveLevels: state.adaptiveLevels,
       adaptiveStats: state.adaptiveStats,
+      skillMastery: state.skillMastery,
       lastUpdated: new Date().toISOString(),
     })
   );
@@ -2114,6 +2118,7 @@ function recordMistake(question, selectedIndex, reason = "答错") {
     existing.selectedAnswer = selectedAnswer;
     existing.reason = reason;
     existing.resolved = false;
+    updateSkillMastery(question, { correct: false });
     saveMistakeToCloud(existing).catch((error) => console.error(error));
     return;
   }
@@ -2138,6 +2143,7 @@ function recordMistake(question, selectedIndex, reason = "答错") {
   };
   state.mistakeLog.unshift(mistake);
   state.mistakeLog = state.mistakeLog.slice(0, 40);
+  updateSkillMastery(question, { correct: false });
   saveMistakeToCloud(mistake).catch((error) => console.error(error));
 }
 
@@ -2149,8 +2155,67 @@ function markMistakeReviewed(question) {
     existing.resolved = true;
     existing.reviewedAt = new Date().toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
     existing.reviewedIso = new Date().toISOString();
+    existing.reviewCount = (existing.reviewCount || 0) + 1;
+    updateSkillMastery(question, { reviewed: true });
     saveMistakeToCloud(existing).catch((error) => console.error(error));
   }
+}
+
+function skillMasteryKey(studentId = state.studentId, subjectId = state.subject, skill = "") {
+  return [studentId, subjectId, skill].join("::");
+}
+
+function skillMasteryStatus(mastery = 0, accuracy = 0, attempts = 0) {
+  if (!attempts) return "not_started";
+  if (mastery >= 82 && accuracy >= 75) return "mastered";
+  if (mastery < 55 || accuracy < 55) return "needs_review";
+  return "learning";
+}
+
+function updateSkillMastery(question, outcome = {}) {
+  if (!question) return null;
+  const skill = question.skill || activeDiagnostic().skills[0][0];
+  const key = skillMasteryKey(state.studentId, state.subject, skill);
+  const current = state.skillMastery[key] || {
+    studentId: state.studentId,
+    subject: state.subject,
+    skill,
+    mastery: 45,
+    attempts: 0,
+    correctCount: 0,
+    reviewCount: 0,
+    averageTime: 0,
+    status: "not_started",
+  };
+  const delta = outcome.reviewed ? 10 : outcome.guided ? 8 : outcome.correct ? 6 : -10;
+  const attempts = current.attempts + 1;
+  const correctCount = current.correctCount + (outcome.correct || outcome.guided || outcome.reviewed ? 1 : 0);
+  const reviewCount = current.reviewCount + (outcome.reviewed ? 1 : 0);
+  const mastery = Math.max(5, Math.min(100, current.mastery + delta));
+  const accuracy = Math.round((correctCount / attempts) * 100);
+  state.skillMastery[key] = {
+    ...current,
+    mastery,
+    attempts,
+    correctCount,
+    reviewCount,
+    accuracy,
+    averageTime: outcome.seconds || current.averageTime || 0,
+    lastPracticedAt: new Date().toISOString(),
+    status: skillMasteryStatus(mastery, accuracy, attempts),
+  };
+  return state.skillMastery[key];
+}
+
+function masteryForSkill(subjectId = state.subject, skill = "") {
+  return state.skillMastery[skillMasteryKey(state.studentId, subjectId, skill)];
+}
+
+function weakSkillMasteryItems(studentId = state.studentId) {
+  return Object.values(state.skillMastery)
+    .filter((item) => item.studentId === studentId && item.status === "needs_review")
+    .sort((a, b) => a.mastery - b.mastery || b.attempts - a.attempts)
+    .slice(0, 5);
 }
 
 function questionProgressKey(index = state.currentQuestion) {
@@ -2923,6 +2988,7 @@ function completeGuidedMastery(variantReply = "") {
   if (!state.guidanceLock) return;
   const question = activeQuestions()[state.guidanceLock.questionIndex];
   const outcome = masteryOutcome(state.guidanceLock, variantReply);
+  updateSkillMastery(question, { guided: true });
   markMistakeReviewed(question);
   state.guidedMastery[state.guidanceLock.questionKey] = {
     ...outcome,
@@ -3073,6 +3139,14 @@ function todayCompletionState(tasks = buildDailyTasks()) {
   };
 }
 
+function dailyMissionStatus(task = {}, index = 0, tasks = []) {
+  if (task.skipped) return "Skipped";
+  if (task.done >= task.total) return "Completed";
+  const previousDone = tasks.slice(0, index).every((item) => item.done >= item.total);
+  if (task.done > 0 || previousDone) return "In Progress";
+  return "Pending";
+}
+
 function subjectPathCategory(subjectId = state.subject) {
   if (/math|algebra|geometry|preAlgebra/i.test(subjectId)) return "math";
   if (/rla|english/i.test(subjectId)) return "reading";
@@ -3100,13 +3174,14 @@ function learningPathModulesFor(category = state.learningPathSubject) {
         || skillLower.split(/\s|与|和|、/).some((token) => token.length > 2 && moduleLower.includes(token));
     });
     const mistake = mistakesForStudent().find((item) => item.skill === related?.skill || item.skill?.includes(moduleName));
+    const tracked = masteryForSkill(preferredSubjectForPathCategory(category), related?.skill || moduleName);
     const fallbackScore = Math.max(25, 72 - index * 6);
-    const mastery = Math.max(0, Math.min(100, related?.score ?? fallbackScore));
+    const mastery = Math.max(0, Math.min(100, tracked?.mastery ?? related?.score ?? fallbackScore));
     return {
       title: moduleName,
       skill: related?.skill || moduleName,
-      mastery: mistake ? Math.max(25, mastery - 18) : mastery,
-      status: moduleStatusFromScore(mistake ? mastery - 18 : mastery, Boolean(mistake)),
+      mastery: mistake && !tracked ? Math.max(25, mastery - 18) : mastery,
+      status: tracked?.status ? tracked.status.replace("_", " ") : moduleStatusFromScore(mistake ? mastery - 18 : mastery, Boolean(mistake)),
       subjectId: preferredSubjectForPathCategory(category),
     };
   });
@@ -3127,10 +3202,12 @@ function preferredSubjectForPathCategory(category) {
 function dashboardStats(student = activeStudent(), tasks = buildDailyTasks(student)) {
   const completion = todayCompletionState(tasks);
   const mistakes = mistakesForStudent(student.id);
+  const trackedWeak = weakSkillMasteryItems(student.id).map((item) => item.skill);
   const answered = Object.keys(state.selectedAnswers).length;
   const guided = guidedMasteryCount(student.id);
   const reportDays = new Set(state.records.filter((record) => record.student === student.name).map((record) => record.date)).size;
-  const masteryScores = activeDiagnostic().skills.map(([, score]) => score);
+  const trackedMastery = Object.values(state.skillMastery).filter((item) => item.studentId === student.id);
+  const masteryScores = trackedMastery.length ? trackedMastery.map((item) => item.mastery) : activeDiagnostic().skills.map(([, score]) => score);
   const averageMastery = masteryScores.length
     ? Math.round(masteryScores.reduce((sum, score) => sum + score, 0) / masteryScores.length)
     : 0;
@@ -3140,7 +3217,7 @@ function dashboardStats(student = activeStudent(), tasks = buildDailyTasks(stude
     level: averageMastery >= 80 ? "Level 4" : averageMastery >= 65 ? "Level 3" : averageMastery >= 50 ? "Level 2" : "Level 1",
     streak: Math.max(reportDays, answered ? 1 : 0),
     xp,
-    weakSkills: topMistakeSkills(mistakes).map(([skill]) => skill).concat(activeDiagnostic().skills.filter(([, score]) => score < 60).map(([skill]) => skill)).slice(0, 3),
+    weakSkills: [...new Set(trackedWeak.concat(topMistakeSkills(mistakes).map(([skill]) => skill), activeDiagnostic().skills.filter(([, score]) => score < 60).map(([skill]) => skill)))].slice(0, 3),
   };
 }
 
@@ -3462,15 +3539,19 @@ function renderTodayPlan() {
   $("todayNextAction").textContent = nextStudentAction(tasks);
   $("todayTaskList").innerHTML = tasks
     .map(
-      (task) => `
-        <li class="${task.done >= task.total ? "task-done" : "task-pending"}">
+      (task, index) => {
+        const status = dailyMissionStatus(task, index, tasks);
+        return `
+        <li class="${task.done >= task.total ? "task-done" : "task-pending"} mission-status-${status.toLowerCase().replace(/\s+/g, "-")}">
           <span class="task-step">${task.step}</span>
+          <span class="mission-status-chip">${status}</span>
           <strong>${task.title}</strong><br />
           ${task.minutes ? `<span class="task-minutes">预计 ${task.minutes} 分钟</span><br />` : ""}
           ${task.detail}<br />
           进度：${Math.min(task.done, task.total)} / ${task.total}
         </li>
-      `
+      `;
+      }
     )
     .join("");
   renderStudentWrapup(completion);
@@ -3745,14 +3826,16 @@ function renderDiagnostic() {
 
   $("knowledgeGrid").innerHTML = diagnostic.skills
     .map(([skill, score]) => {
-      const level = score >= 70 ? "high" : score >= 55 ? "mid" : "low";
-      const status = lessonMasteryStatus(skill, score);
+      const tracked = masteryForSkill(state.subject, skill);
+      const displayScore = tracked?.mastery ?? score;
+      const level = displayScore >= 70 ? "high" : displayScore >= 55 ? "mid" : "low";
+      const status = tracked?.status ? tracked.status.replace("_", " ") : lessonMasteryStatus(skill, score);
       return `
         <div class="skill-card ${level}">
           <strong>${skill}</strong>
           <span class="mastery-status">${status}</span>
-          <p>${score}% 掌握</p>
-          <div class="progress"><span style="width:${score}%"></span></div>
+          <p>${displayScore}% 掌握${tracked ? ` · ${tracked.accuracy}% 正确率` : ""}</p>
+          <div class="progress"><span style="width:${displayScore}%"></span></div>
         </div>
       `;
     })
@@ -4338,7 +4421,7 @@ function renderParentDashboardSummary() {
   const tasks = buildDailyTasks(student);
   const completion = todayCompletionState(tasks);
   const mistakes = mistakesForStudent(student.id);
-  const weakSkills = topMistakeSkills(mistakes).map(([skill]) => skill);
+  const weakSkills = [...new Set(weakSkillMasteryItems(student.id).map((item) => item.skill).concat(topMistakeSkills(mistakes).map(([skill]) => skill)))];
   const estimatedMinutes = Math.round((plan.minutes || 30) * (completion.percent / 100));
   $("parentTodayTime").textContent = `${estimatedMinutes}/${plan.minutes} 分钟`;
   $("parentCompletedTasks").textContent = `${completion.completed}/${completion.total}`;
@@ -4513,6 +4596,7 @@ function bindEvents() {
     state.selectedAnswers[state.currentQuestion] = selectedIndex;
     const issue = shouldStartGuidance(selectedIndex, question, confidence);
     if (!issue) {
+      updateSkillMastery(question, { correct: true });
       markMistakeReviewed(question);
       advanceToNextQuestionAfterCompletion(state.currentQuestion, "correct");
     } else {

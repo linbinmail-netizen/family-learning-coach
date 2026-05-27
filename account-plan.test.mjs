@@ -515,6 +515,19 @@ test("variant live feedback tells the student the next missing step", () => {
   assert.match(js, /variantFeedback"\)\.textContent = variantNextActionText/);
 });
 
+test("variant verification can insert the next missing method sentence", () => {
+  assert.match(html, /id="variantNextHelp"/);
+  assert.match(html, /id="applyVariantNextStepButton"/);
+  assert.match(html, /补下一句/);
+  assert.match(js, /function variantNextStepStarterFor/);
+  assert.match(js, /function renderVariantNextHelp/);
+  assert.match(js, /applyVariantNextStepButton"\)\.addEventListener\("click"/);
+  assert.match(js, /applyVariantStarter\(variantNextStepStarterFor/);
+  assert.match(js, /不要写答案/);
+  assert.doesNotMatch(js, /variantNextStepStarterFor[\s\S]*正确答案是/);
+  assert.match(css, /variant-next-help/);
+});
+
 test("student cannot submit variant explanation until rubric is complete", () => {
   assert.match(html, /id="variantSubmit"/);
   assert.match(js, /function isVariantRubricReady/);
@@ -537,6 +550,9 @@ test("sentence starters alone do not complete variant mastery", () => {
   assert.match(js, /具体内容/);
   assert.match(js, /把句式后面的内容补完整/);
   assert.match(js, /hasMeaningfulVariantCompletion\(reply\)/);
+  assert.match(js, /我先要判断/);
+  assert.match(js, /这一步能帮我判断方法，而不是直接猜选项/);
+  assert.match(js, /具体来说，我还要把题目里的条件和我的方法连起来说明/);
 });
 
 test("variant verification does not reveal the expected method before the student writes", () => {

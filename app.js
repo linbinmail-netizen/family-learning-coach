@@ -2274,6 +2274,22 @@ function applyVariantStarter(text = "") {
   input.focus();
 }
 
+function variantNextStepStarterFor(reply = "", variant = state.guidanceLock?.variant, question = activeQuestions()[state.guidanceLock?.questionIndex ?? state.currentQuestion]) {
+  const missing = variantRubricItems(reply, variant).find((item) => !item.ready);
+  if (!missing) return "";
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  if (missing.label === "题目类型") {
+    return `这题考的是 ${skill}，我先要判断 `;
+  }
+  if (missing.label === "第一步") {
+    return "第一步我先看题目中的关键词、条件或关系：";
+  }
+  if (missing.label === "原因解释") {
+    return "这样做是因为 ";
+  }
+  return "具体来说，我还要把题目里的条件和我的方法连起来说明：";
+}
+
 const lessonBlueprints = {
   引用文本证据: {
     concept: "证据必须直接支持你的答案，不能只凭感觉。",
@@ -2480,8 +2496,12 @@ function isVariantExplanationStrong(reply = "", variant = state.guidanceLock?.va
 }
 
 function hasMeaningfulVariantCompletion(reply = "") {
-  const starterOnlyPattern = /这题属于|我先要看|第一步我会先|这样做是因为/g;
-  const remaining = String(reply)
+  const raw = String(reply).trim();
+  if (/我先要(看|判断)\s*$|第一步(我会先|我先看题目中的关键词、条件或关系[:：]?)\s*$|这样做是因为\s*$|具体来说，我还要把题目里的条件和我的方法连起来说明[:：]?\s*$/.test(raw)) {
+    return false;
+  }
+  const starterOnlyPattern = /这题属于|这题考的是|我先要看|我先要判断|第一步我会先|第一步我先看题目中的关键词、条件或关系|这样做是因为|这一步能帮我判断方法，而不是直接猜选项|具体来说，我还要把题目里的条件和我的方法连起来说明/g;
+  const remaining = raw
     .replace(starterOnlyPattern, "")
     .replace(/[。；;，,\s_\-—]+/g, "")
     .trim();
@@ -2532,7 +2552,20 @@ function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", var
     .join("");
   $("variantFeedback").textContent = variantNextActionText(reply, variant);
   $("variantSubmit").disabled = !ready;
+  renderVariantNextHelp(reply, variant);
   return feedback;
+}
+
+function renderVariantNextHelp(reply = $("variantReply")?.value || "", variant = state.guidanceLock?.variant) {
+  const help = $("variantNextHelp");
+  if (!help) return;
+  const ready = isVariantRubricReady(reply, variant);
+  const starter = variantNextStepStarterFor(reply, variant);
+  help.classList.toggle("hidden", ready);
+  $("variantNextHelpText").textContent = ready
+    ? "说明已经完整，可以提交给 AI 教练检查。"
+    : `${variantNextActionText(reply, variant)} 卡住时点“补下一句”，系统只给句式，不给答案。`;
+  $("applyVariantNextStepButton").disabled = ready || !starter;
 }
 
 function guidanceIssueText(issue) {
@@ -4273,6 +4306,9 @@ function bindEvents() {
     const starter = event.target.closest("[data-starter-text]");
     if (!starter) return;
     applyVariantStarter(starter.dataset.starterText);
+  });
+  $("applyVariantNextStepButton").addEventListener("click", () => {
+    applyVariantStarter(variantNextStepStarterFor($("variantReply").value, state.guidanceLock?.variant));
   });
 
   $("variantForm").addEventListener("submit", (event) => {

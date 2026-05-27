@@ -953,6 +953,27 @@ textarea {
   gap: 8px;
 }
 
+.variant-next-help {
+  align-items: center;
+  background: #fffaf1;
+  border: 1px solid rgba(196, 132, 43, 0.28);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 10px 12px;
+}
+
+.variant-next-help.hidden {
+  display: none;
+}
+
+.variant-next-help span {
+  color: var(--soft-ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .starter-chip {
   min-height: 32px;
   padding: 6px 10px;

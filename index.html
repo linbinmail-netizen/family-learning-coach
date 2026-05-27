@@ -116,8 +116,10 @@
 
       <section class="workspace">
         <nav class="top-tabs" aria-label="平台模块">
-          <button class="tab studentOnly active" data-view="today">今日任务</button>
-          <button class="tab studentOnly" data-view="diagnostic">今日学习</button>
+          <button class="tab studentOnly active" data-view="today">学生首页</button>
+          <button class="tab studentOnly" data-view="learningPath">学习路径</button>
+          <button class="tab studentOnly" data-view="diagnostic">练习</button>
+          <button class="tab studentOnly" data-view="mistakes">错题本</button>
           <button class="tab studentOnly" data-view="report">掌握报告</button>
           <button class="tab studentOnly" data-view="coach">AI 引导</button>
           <button class="tab parentOnly" data-view="parent">家长日报</button>
@@ -133,6 +135,20 @@
             <span class="status-pill" id="todayProgress">0 / 0</span>
           </div>
           <div class="today-layout">
+            <section class="student-dashboard-hero">
+              <div>
+                <p class="eyebrow">Student Dashboard</p>
+                <h3 id="dashboardGreeting">今天从一个清楚的目标开始</h3>
+                <p id="dashboardMissionText">系统会根据今日计划、错题和掌握度安排下一步。</p>
+              </div>
+              <button class="primary-button" id="continueLearningButton" type="button">继续学习</button>
+            </section>
+            <div class="student-dashboard-grid" id="studentDashboardStats">
+              <article><span>当前等级</span><strong id="dashboardLevel">--</strong><small id="dashboardLevelNote">根据掌握度计算</small></article>
+              <article><span>连续学习</span><strong id="dashboardStreak">--</strong><small>完成学习记录后累计</small></article>
+              <article><span>今日 XP</span><strong id="dashboardXp">--</strong><small>任务、错题复习和掌握徽章</small></article>
+              <article><span>本周薄弱点</span><strong id="dashboardWeakCount">--</strong><small id="dashboardWeakNote">优先复习</small></article>
+            </div>
             <div class="score-card">
               <p>今日预计学习</p>
               <strong id="todayMinutes">--</strong>
@@ -167,6 +183,24 @@
               <h3>错题复习</h3>
               <ul id="mistakeReviewList"></ul>
             </div>
+            <div class="report-panel">
+              <h3>推荐下一步训练</h3>
+              <ul id="dashboardNextTraining"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="learningPathView">
+          <div class="view-header">
+            <div>
+              <p class="eyebrow">Learning Path</p>
+              <h2>学习路径</h2>
+            </div>
+            <span class="status-pill" id="learningPathStatus">按掌握度更新</span>
+          </div>
+          <div class="learning-path-layout">
+            <aside class="path-subject-list" id="learningPathSubjects"></aside>
+            <section class="path-module-grid" id="learningPathModules"></section>
           </div>
         </section>
 
@@ -182,6 +216,17 @@
           <section class="learning-route-map" id="learningRouteMap" aria-label="学习路线"></section>
 
           <div class="question-card">
+            <section class="practice-context-panel" id="practiceContextPanel">
+              <div><span>当前科目</span><strong id="practiceSubject">--</strong></div>
+              <div><span>技能点</span><strong id="practiceSkill">--</strong></div>
+              <div><span>难度</span><strong id="practiceDifficulty">--</strong></div>
+              <div><span>任务进度</span><strong id="practiceProgress">--</strong></div>
+            </section>
+            <div class="practice-tool-row" aria-label="练习辅助按钮">
+              <button class="secondary-button small-button" id="practiceHintButton" type="button">提示</button>
+              <button class="secondary-button small-button" id="practiceExplainButton" type="button">讲解</button>
+              <button class="secondary-button small-button" id="practiceSimilarButton" type="button">同类题</button>
+            </div>
             <section class="student-next-step-card" id="studentNextStepCard" aria-label="当前任务">
               <span id="studentNextStepBadge">当前任务</span>
               <div>
@@ -339,6 +384,39 @@
           </section>
         </section>
 
+        <section class="view" id="mistakesView">
+          <div class="view-header">
+            <div>
+              <p class="eyebrow">Mistake Notebook</p>
+              <h2>错题本</h2>
+            </div>
+            <span class="status-pill" id="mistakeNotebookStatus">自动记录错题</span>
+          </div>
+          <div class="mistake-filter-bar">
+            <label>
+              科目
+              <select id="mistakeSubjectFilter"></select>
+            </label>
+            <label>
+              技能点
+              <select id="mistakeSkillFilter"></select>
+            </label>
+            <label>
+              错误类型
+              <select id="mistakeTypeFilter">
+                <option value="all">全部</option>
+                <option value="concept">概念不清</option>
+                <option value="careless">粗心/猜测</option>
+                <option value="calculation">计算或步骤</option>
+                <option value="reading">阅读理解</option>
+                <option value="logic">逻辑推理</option>
+                <option value="unknown">未分类</option>
+              </select>
+            </label>
+          </div>
+          <div class="mistake-notebook-list" id="mistakeNotebookList"></div>
+        </section>
+
         <section class="view" id="reportView">
           <div class="view-header">
             <div>
@@ -401,13 +479,19 @@
           <div class="view-header">
             <div>
               <p class="eyebrow">Parent Digest</p>
-              <h2>家长计划与日报</h2>
+              <h2>家长 Dashboard</h2>
             </div>
             <div class="header-actions">
               <span class="status-pill" id="cloudStatus">云端未同步</span>
               <button id="copyDigest" class="secondary-button">复制日报内容</button>
             </div>
           </div>
+          <section class="parent-dashboard-grid" id="parentDashboardSummary">
+            <article><span>今日学习</span><strong id="parentTodayTime">--</strong><small>按计划与完成度估算</small></article>
+            <article><span>完成任务</span><strong id="parentCompletedTasks">--</strong><small>今日任务进度</small></article>
+            <article><span>错题数量</span><strong id="parentMistakeCount">--</strong><small>需要复习</small></article>
+            <article><span>下一步建议</span><strong id="parentRecommendation">--</strong><small>根据薄弱点生成</small></article>
+          </section>
           <form class="parent-plan-form report-panel" id="parentPlanForm">
             <h3>调整学习计划</h3>
             <div class="form-grid">

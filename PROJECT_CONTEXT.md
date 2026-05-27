@@ -22,6 +22,13 @@ Build a long-term custom web learning platform for the family. Students should r
 
 The student side is now the priority. Current behavior:
 
+- A Codex execution plan for the requirements document is saved at `docs/superpowers/plans/2026-05-27-learning-system-completion.md`.
+- Student home is now a dashboard/mission-control page, with today's mission, current level, streak, XP, weak-skill count, progress, next training, and direct continue-learning action.
+- Student navigation now includes dedicated Learning Path, Practice, Mistake Notebook, Mastery Report, and AI Coach areas.
+- Learning Path shows Math, Reading, Writing, Vocabulary, and SAT/PSAT Foundation subject groups, each with module cards, mastery percentage, and status such as Not Started, Learning, Needs Review, or Mastered.
+- Practice now shows current subject, skill, difficulty, task progress, and hint/explain/similar-question actions around the current question.
+- Mistake Notebook now has its own page with subject, skill, and mistake-type filters, review date, AI review focus, and a one-click practice action.
+- Parent Dashboard now includes summary cards for today's study time, completed tasks, mistake count, and the recommended next step before the detailed plan/report controls.
 - Login and registration are separate from the learning app.
 - The signed-out home page is intentionally minimal: username/email, password, login, and a register entry only.
 - Registration details appear only after clicking Register, where the user chooses parent/student account type and, for students, MIA or EVA.
@@ -92,7 +99,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 105 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content.
+Latest result: 110 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content. The new system pages were verified through local preview file checks because the in-app browser automation pane was unavailable in this run.
 
 ## Next Recommended Work
 
@@ -139,7 +146,8 @@ Student-side v4.1 is the current usable baseline:
 - v6.5: AI guidance now shows "unlock next question" conditions, so students can see exactly which mastery gate is waiting, active, or done.
 - v6.6: the wrong-answer restatement input now adapts its example placeholder to the current skill, making it easier for students to start writing.
 - v6.7: when a student replies "不知道/不会/没思路", the guidance button becomes "帮我开头" and starts a rescue reteach instead of leaving the student stuck behind the completeness gate.
-- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, single current-task guidance card, next-question unlock conditions, restatement scaffold, skill-adaptive restatement placeholder, stuck-reply rescue submit, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit for incomplete non-help replies, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, reteach escape path, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
+- v7.0: requirements-plan rebuild started. Student side now has mission-control dashboard, Learning Path page, Practice context/tool actions, dedicated Mistake Notebook with filters, and Parent Dashboard summary cards.
+- QA baseline: account-scoped local progress, independent-first answering, student dashboard, daily mission, learning path modules, practice context actions, dedicated mistake notebook, parent summary dashboard, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, single current-task guidance card, next-question unlock conditions, restatement scaffold, skill-adaptive restatement placeholder, stuck-reply rescue submit, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit for incomplete non-help replies, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, reteach escape path, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

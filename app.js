@@ -25,6 +25,14 @@ const difficultyLevels = ["基础", "中等", "进阶", "挑战"];
 const COACH_RESPONSE_TIMEOUT_MS = 4500;
 const MASTERY_RESPONSE_TIMEOUT_MS = 5500;
 
+const learningPathCatalog = {
+  math: ["Number Sense", "Fractions", "Ratios & Proportions", "Linear Equations", "Geometry", "Functions", "Algebra I Foundation"],
+  reading: ["Main Idea", "Supporting Details", "Inference", "Vocabulary in Context", "Author's Purpose", "Evidence-Based Questions"],
+  writing: ["Sentence Structure", "Grammar", "Paragraph Writing", "Essay Structure", "Evidence Explanation", "Revision Strategy"],
+  vocabulary: ["Academic Words", "Context Clues", "Word Parts", "Precise Language", "Multiple Meaning Words", "SAT Word Foundations"],
+  sat: ["PSAT Reading Foundation", "PSAT Math Foundation", "Evidence Questions", "Linear Models", "Grammar in Context", "Short Response"],
+};
+
 const subjects = {
   "7": [
     { id: "math7", label: "7th Grade Math", standard: "TEKS Grade 7 Math" },
@@ -1336,6 +1344,7 @@ let state = {
   cloudStudents: {},
   adaptiveLevels: {},
   adaptiveStats: {},
+  learningPathSubject: "math",
   planSettings: {
     older: { minutes: 30, questionTarget: 8, difficultyMode: "adaptive", focusSubject: "english1" },
     younger: { minutes: 30, questionTarget: 8, difficultyMode: "adaptive", focusSubject: "math8" },
@@ -1352,7 +1361,7 @@ const supabaseConfig = {
 const supabaseClient = window.supabase?.createClient(supabaseConfig.url, supabaseConfig.key);
 const roleAllowedViews = {
   parent: ["parent", "roadmap"],
-  student: ["today", "diagnostic", "report", "coach"],
+  student: ["today", "learningPath", "diagnostic", "mistakes", "report", "coach"],
 };
 
 function accountDataStorageKey() {
@@ -1397,6 +1406,7 @@ function loadSavedData(key = storageKey, options = {}) {
     if (saved?.studentId) state.studentId = saved.studentId;
     if (saved?.grade) state.grade = saved.grade;
     if (saved?.subject) state.subject = saved.subject;
+    if (saved?.learningPathSubject) state.learningPathSubject = saved.learningPathSubject;
     if (saved?.planSettings) {
       state.planSettings = {
         ...state.planSettings,
@@ -1428,6 +1438,7 @@ function saveData(key = accountDataStorageKey()) {
       studentId: state.studentId,
       grade: state.grade,
       subject: state.subject,
+      learningPathSubject: state.learningPathSubject,
       planSettings: state.planSettings,
       adaptiveLevels: state.adaptiveLevels,
       adaptiveStats: state.adaptiveStats,
@@ -3062,6 +3073,77 @@ function todayCompletionState(tasks = buildDailyTasks()) {
   };
 }
 
+function subjectPathCategory(subjectId = state.subject) {
+  if (/math|algebra|geometry|preAlgebra/i.test(subjectId)) return "math";
+  if (/rla|english/i.test(subjectId)) return "reading";
+  if (/biology|science/i.test(subjectId)) return "vocabulary";
+  return "math";
+}
+
+function moduleStatusFromScore(score, hasMistake = false) {
+  if (hasMistake) return "Needs Review";
+  if (score >= 80) return "Mastered";
+  if (score >= 45) return "Learning";
+  return "Not Started";
+}
+
+function learningPathModulesFor(category = state.learningPathSubject) {
+  const base = learningPathCatalog[category] || learningPathCatalog.math;
+  const diagnosticSkills = Object.values(diagnostics)
+    .flatMap((diagnostic) => diagnostic.skills || [])
+    .map(([skill, score]) => ({ skill, score }));
+  return base.map((moduleName, index) => {
+    const related = diagnosticSkills.find((item) => {
+      const moduleLower = moduleName.toLowerCase();
+      const skillLower = item.skill.toLowerCase();
+      return moduleLower.split(/\s|&/).some((token) => token.length > 3 && skillLower.includes(token))
+        || skillLower.split(/\s|与|和|、/).some((token) => token.length > 2 && moduleLower.includes(token));
+    });
+    const mistake = mistakesForStudent().find((item) => item.skill === related?.skill || item.skill?.includes(moduleName));
+    const fallbackScore = Math.max(25, 72 - index * 6);
+    const mastery = Math.max(0, Math.min(100, related?.score ?? fallbackScore));
+    return {
+      title: moduleName,
+      skill: related?.skill || moduleName,
+      mastery: mistake ? Math.max(25, mastery - 18) : mastery,
+      status: moduleStatusFromScore(mistake ? mastery - 18 : mastery, Boolean(mistake)),
+      subjectId: preferredSubjectForPathCategory(category),
+    };
+  });
+}
+
+function preferredSubjectForPathCategory(category) {
+  const gradeSubjects = subjects[state.grade] || subjects[activeStudent().grade] || subjects["9"];
+  const preferred = {
+    math: gradeSubjects.find((subject) => /math|algebra|geometry|preAlgebra/i.test(subject.id)),
+    reading: gradeSubjects.find((subject) => /rla|english/i.test(subject.id)),
+    writing: gradeSubjects.find((subject) => /english|rla/i.test(subject.id)),
+    vocabulary: gradeSubjects.find((subject) => /english|rla|science|biology/i.test(subject.id)),
+    sat: gradeSubjects.find((subject) => /algebra|english|math/i.test(subject.id)),
+  }[category];
+  return (preferred || gradeSubjects[0]).id;
+}
+
+function dashboardStats(student = activeStudent(), tasks = buildDailyTasks(student)) {
+  const completion = todayCompletionState(tasks);
+  const mistakes = mistakesForStudent(student.id);
+  const answered = Object.keys(state.selectedAnswers).length;
+  const guided = guidedMasteryCount(student.id);
+  const reportDays = new Set(state.records.filter((record) => record.student === student.name).map((record) => record.date)).size;
+  const masteryScores = activeDiagnostic().skills.map(([, score]) => score);
+  const averageMastery = masteryScores.length
+    ? Math.round(masteryScores.reduce((sum, score) => sum + score, 0) / masteryScores.length)
+    : 0;
+  const xp = completion.completed * 10 + guided * 20 + Math.max(0, answered - mistakes.length) * 5;
+  return {
+    averageMastery,
+    level: averageMastery >= 80 ? "Level 4" : averageMastery >= 65 ? "Level 3" : averageMastery >= 50 ? "Level 2" : "Level 1",
+    streak: Math.max(reportDays, answered ? 1 : 0),
+    xp,
+    weakSkills: topMistakeSkills(mistakes).map(([skill]) => skill).concat(activeDiagnostic().skills.filter(([, score]) => score < 60).map(([skill]) => skill)).slice(0, 3),
+  };
+}
+
 function nextStudentAction(tasks = buildDailyTasks()) {
   const current = todayCompletionState(tasks);
   if (current.complete) return "今日学习已完成。可以休息，或做 1 道挑战题保持手感。";
@@ -3358,8 +3440,17 @@ function renderTodayPlan() {
   const focusSubject = subjectById(plan.focusSubject) || activeSubject();
   const tasks = buildDailyTasks(student);
   const completion = todayCompletionState(tasks);
+  const stats = dashboardStats(student, tasks);
 
   $("todayTitle").textContent = `${student.name} 今日学习课`;
+  $("dashboardGreeting").textContent = `Good morning, ${student.name}.`;
+  $("dashboardMissionText").textContent = `Today Mission：${focusSubject.label} ${plan.minutes} 分钟，完成 ${plan.questionTarget || dailyQuestionLimit(plan)} 题，并把错题变成复习任务。`;
+  $("dashboardLevel").textContent = stats.level;
+  $("dashboardLevelNote").textContent = `综合掌握度约 ${stats.averageMastery}%`;
+  $("dashboardStreak").textContent = `${stats.streak} 天`;
+  $("dashboardXp").textContent = `${stats.xp} XP`;
+  $("dashboardWeakCount").textContent = `${stats.weakSkills.length} 个`;
+  $("dashboardWeakNote").textContent = stats.weakSkills.length ? stats.weakSkills.join("、") : "暂无高频薄弱点";
   $("todayMinutes").textContent = `${plan.minutes} 分钟`;
   $("todayFocus").textContent = plan.minutes >= 90 || (plan.questionTarget || 8) >= 18
     ? `重点：${focusSubject.label} · 2 小时结构 · ${plan.questionTarget || 24} 题`
@@ -3385,6 +3476,42 @@ function renderTodayPlan() {
   renderStudentWrapup(completion);
   renderStudentActionBar();
   renderMistakeReview();
+  $("dashboardNextTraining").innerHTML = [
+    `先完成 ${focusSubject.label} 的当前练习，不确定时标记“猜的”。`,
+    stats.weakSkills.length ? `优先复习：${stats.weakSkills[0]}。` : "完成 1 组基础题后再进入挑战题。",
+    "答错后必须通过 AI 引导和变式验证，再进入下一题。",
+  ].map((item) => `<li>${item}</li>`).join("");
+}
+
+function renderLearningPath() {
+  const categories = [
+    ["math", "Math"],
+    ["reading", "Reading"],
+    ["writing", "Writing"],
+    ["vocabulary", "Vocabulary"],
+    ["sat", "SAT / PSAT Foundation"],
+  ];
+  $("learningPathSubjects").innerHTML = categories
+    .map(([id, label]) => `<button class="path-subject-button ${state.learningPathSubject === id ? "active" : ""}" type="button" data-path-subject="${id}">${label}</button>`)
+    .join("");
+  const modules = learningPathModulesFor(state.learningPathSubject);
+  $("learningPathStatus").textContent = `${modules.length} 个模块 · ${activeStudent().name}`;
+  $("learningPathModules").innerHTML = modules
+    .map(
+      (module) => `
+        <article class="path-module-card ${module.status.toLowerCase().replace(/\s+/g, "-")}">
+          <div>
+            <span>${module.status}</span>
+            <strong>${module.title}</strong>
+          </div>
+          <p>${module.skill}</p>
+          <div class="progress"><span style="width:${module.mastery}%"></span></div>
+          <small>${module.mastery}% mastery</small>
+          <button class="secondary-button small-button" type="button" data-practice-module="${module.subjectId}" data-practice-skill="${module.skill}">练这个模块</button>
+        </article>
+      `
+    )
+    .join("");
 }
 
 function renderStudentWrapup(completion = todayCompletionState()) {
@@ -3431,6 +3558,70 @@ function renderMistakeReview() {
       `
     )
     .join("");
+}
+
+function mistakeTypeFor(item = {}) {
+  const text = `${item.reason || ""} ${item.skill || ""} ${item.prompt || ""}`.toLowerCase();
+  if (/猜|confidence|不确定|careless/.test(text)) return "careless";
+  if (/计算|方程|斜率|equation|slope|rate|除|乘/.test(text)) return "calculation";
+  if (/阅读|文本|证据|作者|中心|reading|evidence|claim/.test(text)) return "reading";
+  if (/逻辑|推理|证明|because|why|reason/.test(text)) return "logic";
+  if (/概念|知识点|不清/.test(text)) return "concept";
+  return "unknown";
+}
+
+function nextReviewDateForMistake(item = {}) {
+  const last = item.lastMissedIso ? new Date(item.lastMissedIso) : new Date();
+  const days = Math.min(7, Math.max(1, item.attempts || 1));
+  last.setDate(last.getDate() + days);
+  return last.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function renderMistakeNotebook() {
+  const mistakes = mistakesForStudent();
+  const subjectFilter = $("mistakeSubjectFilter");
+  const skillFilter = $("mistakeSkillFilter");
+  const typeFilter = $("mistakeTypeFilter");
+  const subjectOptions = [["all", "全部科目"], ...subjects[state.grade].map((subject) => [subject.id, subject.label])];
+  const selectedSubject = subjectFilter.value || "all";
+  subjectFilter.innerHTML = subjectOptions
+    .map(([value, label]) => `<option value="${value}" ${value === selectedSubject ? "selected" : ""}>${label}</option>`)
+    .join("");
+  const skills = [...new Set(mistakes.map((item) => item.skill).filter(Boolean))];
+  const selectedSkill = skillFilter.value || "all";
+  skillFilter.innerHTML = [["all", "全部技能点"], ...skills.map((skill) => [skill, skill])]
+    .map(([value, label]) => `<option value="${value}" ${value === selectedSkill ? "selected" : ""}>${label}</option>`)
+    .join("");
+  const selectedType = typeFilter.value || "all";
+  const filtered = mistakes.filter((item) => {
+    const subjectMatch = selectedSubject === "all" || item.subjectId === selectedSubject;
+    const skillMatch = selectedSkill === "all" || item.skill === selectedSkill;
+    const typeMatch = selectedType === "all" || mistakeTypeFor(item) === selectedType;
+    return subjectMatch && skillMatch && typeMatch;
+  });
+  $("mistakeNotebookStatus").textContent = `${filtered.length} 条待复习`;
+  $("mistakeNotebookList").innerHTML = filtered.length
+    ? filtered
+        .map(
+          (item) => `
+            <article class="mistake-note-card">
+              <div>
+                <span>${item.subjectLabel || subjectById(item.subjectId)?.label || "学习科目"}</span>
+                <strong>${item.skill}</strong>
+              </div>
+              <p>${item.prompt}</p>
+              <ul>
+                <li>错误类型：${mistakeTypeFor(item)}</li>
+                <li>错题次数：${item.attempts || 1}</li>
+                <li>下次复习：${nextReviewDateForMistake(item)}</li>
+              </ul>
+              <p class="form-note">AI 复习重点：先解释为什么错，再做 3 道同类题，不直接背答案。</p>
+              <button class="primary-button small-button" type="button" data-review-mistake="${item.key}">重新练习</button>
+            </article>
+          `
+        )
+        .join("")
+    : `<article class="mistake-note-card empty-state"><strong>暂无符合条件的错题</strong><p>答错或选择“不确定/猜的”后，题目会自动进入这里。</p></article>`;
 }
 
 function openMistakeReviewLesson(mistakeKeyValue) {
@@ -3504,6 +3695,10 @@ function renderDiagnostic() {
   const lesson = conceptMiniLesson(question);
 
   $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 今日学习课`;
+  $("practiceSubject").textContent = subject.label;
+  $("practiceSkill").textContent = question.skill || diagnostic.skills[0][0];
+  $("practiceDifficulty").textContent = `${question.difficulty} / ${adaptiveLabel}`;
+  $("practiceProgress").textContent = `${state.currentQuestion + 1}/${questions.length}`;
   $("standardTag").textContent = question.standard;
   $("difficultyTag").textContent = `${question.difficulty} · 当前目标：${adaptiveLabel} · 当前环节：${learningBlock.label}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
@@ -4137,6 +4332,20 @@ function renderWeeklyTrend() {
   $("weeklyNextPlan").textContent = trend.nextPlan;
 }
 
+function renderParentDashboardSummary() {
+  const student = activeStudent();
+  const plan = planForStudent(student.id);
+  const tasks = buildDailyTasks(student);
+  const completion = todayCompletionState(tasks);
+  const mistakes = mistakesForStudent(student.id);
+  const weakSkills = topMistakeSkills(mistakes).map(([skill]) => skill);
+  const estimatedMinutes = Math.round((plan.minutes || 30) * (completion.percent / 100));
+  $("parentTodayTime").textContent = `${estimatedMinutes}/${plan.minutes} 分钟`;
+  $("parentCompletedTasks").textContent = `${completion.completed}/${completion.total}`;
+  $("parentMistakeCount").textContent = `${mistakes.length}`;
+  $("parentRecommendation").textContent = weakSkills.length ? `复习 ${weakSkills[0]}` : "保持今日计划";
+}
+
 function renderQuestionQualityAudit() {
   const audit = buildQuestionQualityAudit();
   const totalSubjects = audit.coverage.length;
@@ -4231,8 +4440,11 @@ function switchView(viewName) {
 
 function refreshViewData(viewName) {
   if (viewName === "today") renderTodayPlan();
+  if (viewName === "learningPath") renderLearningPath();
   if (viewName === "diagnostic") renderDiagnostic();
+  if (viewName === "mistakes") renderMistakeNotebook();
   if (viewName === "coach") renderCoach();
+  if (viewName === "parent") renderParentDashboardSummary();
 }
 
 function bindEvents() {
@@ -4333,9 +4545,11 @@ function bindEvents() {
   });
 
   $("startDiagnosticButton").addEventListener("click", () => switchView("diagnostic"));
+  $("continueLearningButton").addEventListener("click", () => switchView("diagnostic"));
   $("reviewMistakesButton").addEventListener("click", () => {
     const firstMistake = mistakesForStudent()[0];
     if (firstMistake?.key) openMistakeReviewLesson(firstMistake.key);
+    else switchView("mistakes");
   });
   $("mistakeReviewList").addEventListener("click", (event) => {
     const button = event.target.closest("[data-review-mistake]");
@@ -4343,6 +4557,55 @@ function bindEvents() {
     openMistakeReviewLesson(button.dataset.reviewMistake);
   });
   $("askCoachButton").addEventListener("click", () => switchView("coach"));
+  $("learningPathSubjects").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-path-subject]");
+    if (!button) return;
+    state.learningPathSubject = button.dataset.pathSubject;
+    saveData();
+    renderLearningPath();
+  });
+  $("learningPathModules").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-practice-module]");
+    if (!button) return;
+    state.subject = button.dataset.practiceModule;
+    state.grade = activeStudent().grade;
+    resetDiagnosticProgress();
+    saveData();
+    renderSelectors();
+    renderDiagnostic();
+    switchView("diagnostic");
+    $("answerFeedback").textContent = `现在练习：${button.dataset.practiceSkill}。先独立作答，答错后再进入 AI 引导。`;
+  });
+  ["mistakeSubjectFilter", "mistakeSkillFilter", "mistakeTypeFilter"].forEach((id) => {
+    $(id).addEventListener("change", renderMistakeNotebook);
+  });
+  $("mistakeNotebookList").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-review-mistake]");
+    if (!button) return;
+    openMistakeReviewLesson(button.dataset.reviewMistake);
+  });
+  $("practiceHintButton").addEventListener("click", () => {
+    const question = activeQuestions()[state.currentQuestion];
+    $("answerFeedback").textContent = question.coachHints?.[0] || "先说题目真正问什么，再圈关键词。";
+  });
+  $("practiceExplainButton").addEventListener("click", () => {
+    if (!state.selectedAnswers[state.currentQuestion] && state.selectedAnswers[state.currentQuestion] !== 0) {
+      $("answerFeedback").textContent = "先独立选择一次。讲解会在答错、不确定或提交后出现。";
+      return;
+    }
+    const question = activeQuestions()[state.currentQuestion];
+    $("answerFeedback").textContent = question.explanation || "先判断题目类型，再写第一步和原因。";
+  });
+  $("practiceSimilarButton").addEventListener("click", () => {
+    const question = activeQuestions()[state.currentQuestion];
+    const similarIndex = activeQuestions().findIndex((item, index) => index !== state.currentQuestion && item.skill === question.skill);
+    if (similarIndex >= 0) {
+      state.currentQuestion = similarIndex;
+      renderDiagnostic();
+    } else {
+      $("answerFeedback").textContent = "当前题库里同技能题较少，先完成这题后系统会安排变式验证。";
+    }
+  });
 
   $("runDiagnostic").addEventListener("click", buildReport);
   $("finishTodayButton").addEventListener("click", buildReport);
@@ -4524,6 +4787,7 @@ function bindEvents() {
     applyDifficultyMode(state.studentId, state.subject);
     renderSelectors();
     renderParentPlanControls();
+    renderParentDashboardSummary();
     renderTodayPlan();
   });
 
@@ -4540,10 +4804,13 @@ function renderAll() {
   renderStudents();
   renderSelectors();
   renderTodayPlan();
+  renderLearningPath();
   renderDiagnostic();
+  renderMistakeNotebook();
   renderEmail();
   renderCoach();
   renderParentPlanControls();
+  renderParentDashboardSummary();
   renderWeeklyTrend();
   renderQuestionQualityAudit();
   applyRoleVisibility();

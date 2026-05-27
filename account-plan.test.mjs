@@ -21,6 +21,65 @@ test("student daily task view exists", () => {
   assert.match(js, /renderTodayPlan/);
 });
 
+test("student dashboard is a mission control page, not only a chat entry", () => {
+  assert.match(html, /id="studentDashboardStats"/);
+  assert.match(html, /id="dashboardGreeting"/);
+  assert.match(html, /id="dashboardLevel"/);
+  assert.match(html, /id="dashboardStreak"/);
+  assert.match(html, /id="dashboardXp"/);
+  assert.match(html, /id="dashboardNextTraining"/);
+  assert.match(js, /function dashboardStats/);
+  assert.match(js, /Today Mission/);
+  assert.match(css, /student-dashboard-hero/);
+  assert.match(css, /student-dashboard-grid/);
+});
+
+test("student learning path page has subject modules and mastery status", () => {
+  assert.match(html, /data-view="learningPath"/);
+  assert.match(html, /id="learningPathView"/);
+  assert.match(html, /id="learningPathSubjects"/);
+  assert.match(html, /id="learningPathModules"/);
+  assert.match(js, /const learningPathCatalog/);
+  assert.match(js, /Math/);
+  assert.match(js, /Reading/);
+  assert.match(js, /Writing/);
+  assert.match(js, /Vocabulary/);
+  assert.match(js, /SAT \/ PSAT Foundation/);
+  assert.match(js, /function learningPathModulesFor/);
+  assert.match(js, /Not Started/);
+  assert.match(js, /Needs Review/);
+  assert.match(js, /Mastered/);
+  assert.match(css, /path-module-grid/);
+});
+
+test("student mistake notebook is filterable and opens review practice", () => {
+  assert.match(html, /data-view="mistakes"/);
+  assert.match(html, /id="mistakesView"/);
+  assert.match(html, /id="mistakeSubjectFilter"/);
+  assert.match(html, /id="mistakeSkillFilter"/);
+  assert.match(html, /id="mistakeTypeFilter"/);
+  assert.match(html, /id="mistakeNotebookList"/);
+  assert.match(js, /function renderMistakeNotebook/);
+  assert.match(js, /function mistakeTypeFor/);
+  assert.match(js, /function nextReviewDateForMistake/);
+  assert.match(js, /data-review-mistake/);
+  assert.match(css, /mistake-filter-bar/);
+});
+
+test("practice page shows current subject skill difficulty and tool actions", () => {
+  assert.match(html, /id="practiceContextPanel"/);
+  assert.match(html, /id="practiceSubject"/);
+  assert.match(html, /id="practiceSkill"/);
+  assert.match(html, /id="practiceDifficulty"/);
+  assert.match(html, /id="practiceProgress"/);
+  assert.match(html, /id="practiceHintButton"/);
+  assert.match(html, /id="practiceExplainButton"/);
+  assert.match(html, /id="practiceSimilarButton"/);
+  assert.match(js, /practiceSubject"\)\.textContent = subject\.label/);
+  assert.match(js, /practiceSimilarButton"\)\.addEventListener/);
+  assert.match(css, /practice-context-panel/);
+});
+
 test("student home has clear action buttons", () => {
   assert.match(html, /id="studentActionBar"/);
   assert.match(html, /id="startDiagnosticButton"/);
@@ -85,6 +144,17 @@ test("parent dashboard shows a weekly learning trend", () => {
   assert.match(js, /renderWeeklyTrend/);
   assert.match(js, /本周学习趋势/);
   assert.match(js, /高频错题知识点/);
+});
+
+test("parent dashboard includes clear summary cards and recommendation", () => {
+  assert.match(html, /id="parentDashboardSummary"/);
+  assert.match(html, /id="parentTodayTime"/);
+  assert.match(html, /id="parentCompletedTasks"/);
+  assert.match(html, /id="parentMistakeCount"/);
+  assert.match(html, /id="parentRecommendation"/);
+  assert.match(js, /function renderParentDashboardSummary/);
+  assert.match(js, /复习 \$\{weakSkills\[0\]\}/);
+  assert.match(css, /parent-dashboard-grid/);
 });
 
 test("parent can adjust study plan settings", () => {

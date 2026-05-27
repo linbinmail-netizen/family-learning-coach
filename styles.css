@@ -1199,6 +1199,206 @@ textarea {
   gap: 16px;
 }
 
+.student-dashboard-hero {
+  grid-column: 1 / -1;
+  align-items: center;
+  background: linear-gradient(135deg, #f6fbf7, #eef5fb);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+}
+
+.student-dashboard-hero h3 {
+  font-size: 28px;
+  margin: 0 0 8px;
+}
+
+.student-dashboard-hero p {
+  margin: 0;
+  color: var(--soft-ink);
+}
+
+.student-dashboard-grid,
+.parent-dashboard-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.student-dashboard-grid article,
+.parent-dashboard-grid article {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.student-dashboard-grid span,
+.parent-dashboard-grid span,
+.practice-context-panel span {
+  color: var(--soft-ink);
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.student-dashboard-grid strong,
+.parent-dashboard-grid strong {
+  color: var(--green-dark);
+  display: block;
+  font-size: 30px;
+  line-height: 1.1;
+  margin: 8px 0;
+}
+
+.student-dashboard-grid small,
+.parent-dashboard-grid small {
+  color: var(--soft-ink);
+  display: block;
+  line-height: 1.4;
+}
+
+.learning-path-layout {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.path-subject-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.path-subject-button {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 13px 14px;
+  text-align: left;
+}
+
+.path-subject-button.active {
+  background: #eaf5ed;
+  border-color: rgba(40, 121, 92, 0.35);
+  color: var(--green-dark);
+}
+
+.path-module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.path-module-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.path-module-card div:first-child {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.path-module-card span {
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.path-module-card.needs-review span {
+  color: #ad6513;
+}
+
+.path-module-card strong {
+  display: block;
+  font-size: 17px;
+}
+
+.path-module-card p,
+.path-module-card small {
+  color: var(--soft-ink);
+}
+
+.practice-context-panel {
+  background: #f7faf8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.practice-context-panel strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.practice-tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mistake-filter-bar {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 16px;
+}
+
+.mistake-notebook-list {
+  display: grid;
+  gap: 12px;
+}
+
+.mistake-note-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.mistake-note-card div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mistake-note-card span {
+  color: var(--soft-ink);
+  font-weight: 800;
+}
+
+.mistake-note-card strong {
+  color: var(--green-dark);
+}
+
+.mistake-note-card.empty-state {
+  background: #f8faf8;
+}
+
 .today-progress-bar {
   margin: 12px 0;
 }
@@ -1500,6 +1700,12 @@ li {
   .form-grid,
   .weekly-stats,
   .quality-subject-grid,
+  .student-dashboard-grid,
+  .parent-dashboard-grid,
+  .learning-path-layout,
+  .path-module-grid,
+  .practice-context-panel,
+  .mistake-filter-bar,
   .student-action-bar,
   .wrapup-stats,
   .roadmap {
@@ -1545,6 +1751,11 @@ li {
   .chat-form,
   .auth-actions {
     grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .student-dashboard-hero {
+    align-items: stretch;
     display: grid;
   }
 

@@ -2616,6 +2616,43 @@ function guidanceInsightForLock(lock = state.guidanceLock, question = activeQues
   };
 }
 
+function guidanceCurrentTaskForLock(lock = state.guidanceLock) {
+  if (!lock) {
+    return {
+      badge: "当前任务",
+      title: "先独立作答",
+      body: "先自己读题和选择答案；答错或不确定后，系统才会开始引导。",
+    };
+  }
+  if (lock.status === "variant") {
+    return {
+      badge: "第 3 步 / 变式验证",
+      title: "写方法，不写选项",
+      body: "先判断题目类型，再写第一步和原因。卡住时可以补下一句，还是不懂就换种讲法。",
+    };
+  }
+  const hasStudentReply = state.inlineCoachHistory.some((message) => message.role === "student");
+  if (hasStudentReply) {
+    return {
+      badge: "第 2 步 / 复述方法",
+      title: "把方法补完整",
+      body: "只要写清三件事：题目问什么、第一步看什么、为什么这样做。写完整后才能继续。",
+    };
+  }
+  return {
+    badge: "第 1 步 / 先听讲解",
+    title: "先说题目真正问什么",
+    body: "不要猜答案，也不要只写选项。先用一句话说明题目目标和第一步。",
+  };
+}
+
+function renderGuidanceTask(lock = state.guidanceLock) {
+  const task = guidanceCurrentTaskForLock(lock);
+  $("guidanceTaskBadge").textContent = task.badge;
+  $("guidanceTaskTitle").textContent = task.title;
+  $("guidanceTaskBody").textContent = task.body;
+}
+
 function renderGuidanceInsight(lock = state.guidanceLock) {
   if (!lock) return;
   const question = activeQuestions()[lock.questionIndex] || activeQuestions()[state.currentQuestion];
@@ -3557,6 +3594,7 @@ function renderInlineCoachPanel() {
   if (!lock) return;
 
   $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
+  renderGuidanceTask(lock);
   renderGuidanceInsight(lock);
   renderGuidanceScaffold(lock);
   renderReplyQuality();

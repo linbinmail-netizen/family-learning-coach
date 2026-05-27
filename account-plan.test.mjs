@@ -197,6 +197,20 @@ test("student guidance starts with a structured mistake insight card", () => {
   assert.match(css, /guidance-insight-card/);
 });
 
+test("student guidance shows a single current task card", () => {
+  assert.match(html, /id="guidanceTaskCard"/);
+  assert.match(html, /id="guidanceTaskBadge"/);
+  assert.match(html, /id="guidanceTaskTitle"/);
+  assert.match(html, /id="guidanceTaskBody"/);
+  assert.match(js, /function guidanceCurrentTaskForLock/);
+  assert.match(js, /function renderGuidanceTask/);
+  assert.match(html, /现在只做这一步/);
+  assert.match(js, /第 3 步 \/ 变式验证/);
+  assert.match(js, /卡住时可以补下一句/);
+  assert.match(js, /renderGuidanceTask\(lock\)/);
+  assert.match(css, /guidance-task-card/);
+});
+
 test("student guidance includes a three-part method restatement scaffold", () => {
   assert.match(html, /id="guidanceScaffoldCard"/);
   assert.match(html, /id="scaffoldQuestionFocus"/);

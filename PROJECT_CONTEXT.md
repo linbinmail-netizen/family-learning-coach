@@ -36,6 +36,7 @@ The student side is now the priority. Current behavior:
 - Questions adapt difficulty based on performance.
 - If a student answers wrong or marks an answer as guessed/uncertain, the current question is locked.
 - After a wrong or uncertain answer, the guidance panel starts with a structured mistake insight card: issue type, skill gap, and next repair action.
+- The AI guidance panel now shows a single current task card above the details, so the student always knows the exact next action for the current stage.
 - The guidance panel now includes a three-part method restatement scaffold: what the question asks, what to inspect first, and why that step helps. The scaffold prefers Chinese lesson steps over raw English answer hints.
 - While the student types a restatement, the app now gives immediate local quality feedback for three parts: question goal, method step, and reason why. Short keyword-only replies are rejected with a request for more complete explanation.
 - The inline AI guidance submit button stays disabled until the restatement is complete enough; direct submit attempts are also blocked with a clear reminder.
@@ -88,7 +89,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 101 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content.
+Latest result: 102 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content.
 
 ## Next Recommended Work
 
@@ -131,7 +132,8 @@ Student-side v4.1 is the current usable baseline:
 - v6.1: wrong-answer guidance now includes a teacher model sentence button for stuck students; it teaches a complete method sentence without showing the answer and then lets the student continue into variant verification.
 - v6.2: variant verification now includes a "补下一句" helper that inserts only the next missing method sentence starter; starter-only responses still cannot pass.
 - v6.3: variant verification now includes a "换种讲法" escape path that moves a stuck student back to reteaching with a simpler same-skill example and a one-sentence fill prompt.
-- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, reteach escape path, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
+- v6.4: AI guidance now shows a single "current task" card for each stage, telling the student exactly what to do next before the detailed scaffold.
+- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, single current-task guidance card, restatement scaffold, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, reteach escape path, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

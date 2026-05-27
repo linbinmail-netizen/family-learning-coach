@@ -195,6 +195,15 @@ test("parent dashboard includes clear summary cards and recommendation", () => {
   assert.match(css, /parent-dashboard-grid/);
 });
 
+test("parent can send the daily digest as an email draft", () => {
+  assert.match(html, /id="emailDigestButton"/);
+  assert.match(html, /发送日报邮件/);
+  assert.match(js, /function parentDigestMailtoUrl/);
+  assert.match(js, /mailto:/);
+  assert.match(js, /parentDigestEmailAddress/);
+  assert.match(js, /linbinmail@gmail\.com/);
+});
+
 test("parent can adjust study plan settings", () => {
   assert.match(html, /id="parentPlanForm"/);
   assert.match(html, /id="planMinutes"/);

@@ -4679,6 +4679,18 @@ function renderEmail(average = "--", weak = [], plan = [], insights = null, mist
   `;
 }
 
+function parentDigestEmailAddress() {
+  if (state.authProfile?.role === "parent" && state.authSession?.user?.email) return state.authSession.user.email;
+  return "linbinmail@gmail.com";
+}
+
+function parentDigestMailtoUrl() {
+  const student = activeStudent();
+  const subject = `${student.name} 今日学习报告`;
+  const body = $("emailPreview")?.innerText || "请先生成今日总结。";
+  return `mailto:${encodeURIComponent(parentDigestEmailAddress())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function recordTimestamp(record) {
   if (record.createdAt) return Date.parse(record.createdAt);
   if (record.date) {
@@ -5225,6 +5237,14 @@ function bindEvents() {
     await navigator.clipboard.writeText(text);
     $("copyDigest").textContent = "已复制";
     setTimeout(() => ($("copyDigest").textContent = "复制日报内容"), 1200);
+  });
+
+  $("emailDigestButton").addEventListener("click", () => {
+    if (!$("emailPreview").innerText.trim()) {
+      $("cloudStatus").textContent = "请先生成日报";
+      return;
+    }
+    window.location.href = parentDigestMailtoUrl();
   });
 
   $("planStudent").addEventListener("change", (event) => {

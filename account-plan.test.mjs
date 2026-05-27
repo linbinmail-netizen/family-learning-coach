@@ -821,6 +821,12 @@ test("today page refreshes progress when students return from a lesson", () => {
   assert.match(js, /refreshViewData\(viewName\)/);
 });
 
+test("daily mission progress can recover from synced practice sessions", () => {
+  assert.match(js, /const session = todayPracticeSessionSummary\(student\.id\)/);
+  assert.match(js, /Math\.max\(Object\.keys\(state\.selectedAnswers\)\.length, session\.answered \|\| 0\)/);
+  assert.match(js, /loadPracticeSessionsFromCloud/);
+});
+
 test("parent plan settings can sync to Supabase after login", () => {
   assert.match(js, /cloudStudents/);
   assert.match(js, /loadPlanSettingsFromCloud/);

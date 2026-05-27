@@ -3335,7 +3335,8 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
 function buildDailyTasks(student = activeStudent()) {
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subjects[student.grade][0];
-  const answeredCount = Object.keys(state.selectedAnswers).length;
+  const session = todayPracticeSessionSummary(student.id);
+  const answeredCount = Math.max(Object.keys(state.selectedAnswers).length, session.answered || 0);
   const guidedCount = guidedMasteryCount(student.id);
   const report = todayRecordForStudent(student.name);
   const openMistakes = mistakesForStudent(student.id);

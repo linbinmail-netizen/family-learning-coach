@@ -5100,6 +5100,13 @@ async function renderProductionReadiness() {
       note: "包含今日计划、错题本、掌握记录、家长报告等正式表结构",
     },
     {
+      title: "标准学习 API",
+      ready: systemStatus.learningApiConfigured,
+      note: systemStatus.learningApiConfigured
+        ? "今日计划、答题提交、错题复习、掌握报告接口已启用"
+        : "需要检查 Vercel API 部署",
+    },
+    {
       title: "自动日报邮件",
       ready: systemStatus.emailConfigured,
       note: systemStatus.emailConfigured ? "已配置自动发送" : "未配置 RESEND_API_KEY，会打开邮件草稿",
@@ -5116,6 +5123,11 @@ async function renderProductionReadiness() {
         ? "Vercel Cron 可自动发送日报"
         : "配置 RESEND_API_KEY、SUPABASE_SERVICE_ROLE_KEY 和 PARENT_DIGEST_EMAIL 后启用",
     },
+    ...((systemStatus.launchChecklist || []).map((item) => ({
+      title: `上线验收 · ${item.label}`,
+      ready: item.ready,
+      note: item.action,
+    }))),
   ];
 
   const readyCount = items.filter((item) => item.ready).length;

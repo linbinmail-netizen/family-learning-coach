@@ -251,6 +251,9 @@ test("parent dashboard shows production readiness status", () => {
   assert.match(js, /checkCloudTable\("practice_sessions"\)/);
   assert.match(js, /000_run_all_learning_platform\.sql/);
   assert.match(js, /完整学习闭环表/);
+  assert.match(js, /标准学习 API/);
+  assert.match(js, /launchChecklist/);
+  assert.match(js, /上线验收/);
   assert.match(js, /每日自动日报/);
   assert.match(js, /scheduledDigestConfigured/);
   assert.match(css, /readiness-grid/);

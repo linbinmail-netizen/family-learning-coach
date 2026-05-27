@@ -27,6 +27,13 @@ test("system status reports production readiness flags", () => {
   assert.equal(typeof body.scheduledDigestConfigured, "boolean");
   assert.equal(typeof body.supabaseServiceConfigured, "boolean");
   assert.equal(typeof body.parentDigestEmailConfigured, "boolean");
+  assert.equal(body.learningApiConfigured, true);
+  assert.equal(body.databaseSetupReady, true);
+  assert.equal(Array.isArray(body.launchChecklist), true);
+  assert.deepEqual(
+    body.launchChecklist.map((item) => item.id),
+    ["database", "learning-api", "email"]
+  );
   assert.deepEqual(body.requiredSupabaseScripts, [
     "000_run_all_learning_platform.sql",
     "001_base_learning_schema.sql",

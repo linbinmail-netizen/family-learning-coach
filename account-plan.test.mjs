@@ -245,6 +245,19 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
   assert.match(css, /reply-helper-card/);
 });
 
+test("student can request a teacher model sentence without seeing the answer", () => {
+  assert.match(html, /id="applyTeacherModelButton"/);
+  assert.match(html, /看老师示范句/);
+  assert.match(js, /function guidanceTeacherModelForLock/);
+  assert.match(js, /题目要我判断/);
+  assert.match(js, /第一步我先/);
+  assert.match(js, /applyTeacherModelButton"\)\.addEventListener\("click"/);
+  assert.match(js, /input\.value = guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.match(js, /renderReplyQuality\(input\.value\)/);
+  assert.doesNotMatch(js, /guidanceTeacherModelForLock[\s\S]*正确答案是/);
+  assert.match(css, /reply-helper-actions/);
+});
+
 test("student guidance starter placeholders do not pass the quality gate", () => {
   assert.match(js, /const hasPlaceholder = .*\\\[.*\\\]/);
   assert.match(js, /ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && !asksForHelp && !hasPlaceholder/);

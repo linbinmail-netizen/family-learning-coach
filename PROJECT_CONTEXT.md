@@ -39,6 +39,7 @@ The student side is now the priority. Current behavior:
 - The guidance panel now includes a three-part method restatement scaffold: what the question asks, what to inspect first, and why that step helps. The scaffold prefers Chinese lesson steps over raw English answer hints.
 - While the student types a restatement, the app now gives immediate local quality feedback for three parts: question goal, method step, and reason why. Short keyword-only replies are rejected with a request for more complete explanation.
 - The inline AI guidance submit button stays disabled until the restatement is complete enough; direct submit attempts are also blocked with a clear reminder.
+- If a student is stuck during the restatement, the helper now offers a teacher model sentence that explains the method without revealing the answer; using it enables the student to continue into variant verification.
 - After a complete restatement, the coach now gives one guided teaching move and immediately opens variant verification, so students do not get stuck in repeated AI back-and-forth.
 - The locked question requires a mastery loop: teach, restate, variant explanation.
 - Variant verification is open-ended, not multiple choice, to reduce guessing.
@@ -85,7 +86,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 98 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was also browser-checked as a background under the platform title without adding a separate card.
+Latest result: 99 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification.
 
 ## Next Recommended Work
 
@@ -125,7 +126,8 @@ Student-side v4.1 is the current usable baseline:
 - v5.8: if a student writes “不知道/不会/写什么” in the wrong-answer restatement box, the app now shows a concrete rescue sentence starter and a one-click fill button; placeholder text inside brackets cannot pass the quality gate.
 - v5.9: correct, confident answers and completed guided mastery now move the student to the next question automatically instead of leaving them on the same card.
 - v6.0: family illustration moved from a standalone workspace card to a subtle title-area background on the login card and app sidebar, preserving the original learning page layout.
-- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, stuck-reply rescue starter, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
+- v6.1: wrong-answer guidance now includes a teacher model sentence button for stuck students; it teaches a complete method sentence without showing the answer and then lets the student continue into variant verification.
+- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

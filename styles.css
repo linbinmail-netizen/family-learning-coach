@@ -887,6 +887,11 @@ textarea {
   align-items: start;
 }
 
+.reply-helper-actions {
+  display: grid;
+  gap: 8px;
+}
+
 .reply-starter-row span {
   min-height: 40px;
   padding: 10px 12px;

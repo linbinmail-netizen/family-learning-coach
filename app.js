@@ -2594,6 +2594,19 @@ function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activ
   return `这题要我[写题目目标]。我第一步先看[${firstStep}]，因为[说明这一步为什么有用]。`;
 }
 
+function guidanceTeacherModelForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const lesson = conceptMiniLesson(question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstStep = (lesson.steps?.[0] || question?.coachHints?.[0] || "看题目关键词和已知条件")
+    .replace(/^先/, "")
+    .replace(/[。.!！]$/, "");
+  const reason =
+    lock?.issue === "confidence"
+      ? "这样可以证明我不是猜的，而是真的知道方法为什么能用"
+      : "这一步能帮我把题目要求和解题方法连起来";
+  return `题目要我判断 ${skill}。第一步我先${firstStep}，因为${reason}。`;
+}
+
 function evaluateGuidanceReplyQuality(reply = "") {
   const text = reply.trim().toLowerCase();
   const compactText = text.replace(/\s+/g, "");
@@ -2617,10 +2630,10 @@ function evaluateGuidanceReplyQuality(reply = "") {
 
 function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQuality(reply)) {
   if (quality.asksForHelp) {
-    return "没关系，先照这句填空。先不用写答案，只写你会怎么想。";
+    return "没关系，先照这句填空；还是不会就点“看老师示范句”。先不用写答案，只写你会怎么想。";
   }
   if (quality.hasPlaceholder) {
-    return "把方括号里的内容换成自己的话，再提交。";
+    return "把方括号里的内容换成自己的话；如果不知道怎么换，可以先看老师示范句。";
   }
   const missing = [
     !quality.enoughDetail && "把解释写完整一点",
@@ -4246,6 +4259,12 @@ function bindEvents() {
   $("applyReplyStarterButton").addEventListener("click", () => {
     const input = $("inlineCoachReply");
     input.value = guidanceReplyStarterForLock(state.guidanceLock);
+    input.focus();
+    renderReplyQuality(input.value);
+  });
+  $("applyTeacherModelButton").addEventListener("click", () => {
+    const input = $("inlineCoachReply");
+    input.value = guidanceTeacherModelForLock(state.guidanceLock);
     input.focus();
     renderReplyQuality(input.value);
   });

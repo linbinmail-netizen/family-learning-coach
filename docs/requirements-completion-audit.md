@@ -31,10 +31,12 @@ Daily Mission -> Practice -> AI Guided Feedback -> Mistake Notebook -> Skill Mas
 ## Data And Cloud
 
 - Supabase auth roles: completed for parent and student accounts.
+- Learning closure schema: completed in `supabase/012_learning_closure_tables.sql`, adding daily plans, plan items, mistake notebook, mastery records, parent reports, learning settings, and execution-plan metadata on questions/answers.
 - Mistake reviews: completed with cloud table and sync.
 - Skill mastery: completed with cloud table and sync.
 - Practice sessions: completed with cloud table, upload, load, and merge.
 - Local fallback: completed so learning continues if a cloud table has not been created yet.
+- Standard API foundation: completed for `/api/coach-feedback` and `/api/generate-parent-report`, so AI mistake diagnosis and parent reports have stable production endpoints.
 
 ## Content And Quality
 
@@ -47,7 +49,7 @@ Daily Mission -> Practice -> AI Guided Feedback -> Mistake Notebook -> Skill Mas
 
 These are not blockers for the requested learning loop, but are the next production-grade improvements:
 
-- Run `supabase/010_skill_mastery.sql` and `supabase/011_practice_sessions.sql` in Supabase SQL Editor.
+- Run `supabase/010_skill_mastery.sql`, `supabase/011_practice_sessions.sql`, and `supabase/012_learning_closure_tables.sql` in Supabase SQL Editor.
 - Configure `RESEND_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `PARENT_DIGEST_EMAIL` in Vercel to activate automatic scheduled email delivery.
 - Continue expanding original question content beyond the current 30+ per priority subject.
 - Add deeper Frisco ISD / Liberty High School course sequence details after collecting exact teacher/course expectations.

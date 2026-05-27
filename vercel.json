@@ -3,6 +3,12 @@
     "api/coach.js": {
       "maxDuration": 30
     },
+    "api/coach-feedback.js": {
+      "maxDuration": 30
+    },
+    "api/generate-parent-report.js": {
+      "maxDuration": 15
+    },
     "api/digest-email.js": {
       "maxDuration": 15
     },

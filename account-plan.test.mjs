@@ -792,6 +792,14 @@ test("practice sessions track time hints accuracy and learning behavior", () => 
   assert.match(js, /recordPracticeAttempt\(question, selectedIndex, confidence, adaptiveResult\)/);
 });
 
+test("practice sessions can sync with Supabase without blocking student answers", () => {
+  assert.match(js, /savePracticeSessionToCloud/);
+  assert.match(js, /syncPracticeSessionsToCloud/);
+  assert.match(js, /practice_sessions/);
+  assert.match(js, /savePracticeSessionToCloud\(session\)\.catch/);
+  assert.match(js, /Practice session cloud save skipped/);
+});
+
 test("student learning data is isolated per signed-in account", () => {
   assert.match(js, /function accountDataStorageKey/);
   assert.match(js, /function clearLearningStateForAccount/);

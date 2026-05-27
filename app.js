@@ -1973,6 +1973,52 @@ async function loadSkillMasteryFromCloud() {
   }
 }
 
+function cloudPracticeSessionPayload(session, cloudSubjectId) {
+  return {
+    local_session_id: session.id,
+    student_id: state.cloudStudents[session.studentId],
+    subject_id: cloudSubjectId,
+    skill: session.skill || "",
+    started_at: session.startedAt || new Date().toISOString(),
+    ended_at: session.endedAt || null,
+    questions_answered: session.questionsAnswered || 0,
+    correct_count: session.correctCount || 0,
+    hints_used: session.hintsUsed || 0,
+    difficulty_start: session.difficultyStart || 0,
+    difficulty_end: session.difficultyEnd || 0,
+    slow_count: session.slowCount || 0,
+    guessing_count: session.guessingCount || 0,
+    updated_by: state.authProfile?.id || state.authSession?.user?.id || null,
+  };
+}
+
+async function savePracticeSessionToCloud(session) {
+  if (!state.authSession || !session?.id) return;
+  const cloudStudentId = state.cloudStudents[session.studentId];
+  if (!cloudStudentId) return;
+  const cloudSubjectId = await findCloudSubjectId(session.subject);
+  if (!cloudSubjectId) return;
+
+  await supabaseRequest("practice_sessions?on_conflict=student_id,local_session_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify(cloudPracticeSessionPayload(session, cloudSubjectId)),
+  });
+}
+
+async function syncPracticeSessionsToCloud() {
+  if (!state.authSession) return;
+  const pending = state.practiceSessions.filter((session) => state.cloudStudents[session.studentId]);
+  for (const session of pending) {
+    try {
+      await savePracticeSessionToCloud(session);
+    } catch (error) {
+      console.warn("Practice session cloud sync skipped.", error);
+      return;
+    }
+  }
+}
+
 async function loadAuthProfile() {
   if (!state.authSession?.user?.id) return;
   await supabaseRpc("ensure_my_profile");
@@ -1999,6 +2045,7 @@ async function loadAuthProfile() {
   await loadMistakesFromCloud();
   await syncSkillMasteryToCloud();
   await loadSkillMasteryFromCloud();
+  await syncPracticeSessionsToCloud();
   applyProfileToLocalState(data, { persist: false });
   saveData(accountDataStorageKey());
   setAuthStatus(`已登录：${currentAuthUserLabel()}`);
@@ -3517,6 +3564,7 @@ function recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResu
   session.guessingCount += !correct && seconds <= 12 ? 1 : 0;
   session.endedAt = event.answeredAt;
   session.events = [event, ...(session.events || [])].slice(0, 80);
+  savePracticeSessionToCloud(session).catch((error) => console.warn("Practice session cloud save skipped.", error));
   return event;
 }
 

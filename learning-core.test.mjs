@@ -7,7 +7,7 @@ import {
   reviewMistakeRecord,
   submitAnswerRecord,
   updateLearningSettings,
-} from "./learning-core.js";
+} from "./lib/learning-core.js";
 
 test("daily plan prioritizes weak skills and creates usable tasks", () => {
   const plan = generateDailyPlan({

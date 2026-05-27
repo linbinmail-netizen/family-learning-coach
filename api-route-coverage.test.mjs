@@ -3,27 +3,36 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 
 const requiredRoutes = [
-  "api/student/[id]/dashboard.js",
-  "api/student/[id]/daily-plan.js",
-  "api/student/[id]/generate-plan.js",
-  "api/answer/submit.js",
+  "student/:id/dashboard",
+  "student/:id/daily-plan",
+  "student/:id/generate-plan",
+  "answer/submit",
   "api/coach-feedback.js",
-  "api/mistake/review.js",
-  "api/student/[id]/mistakes.js",
-  "api/student/[id]/mastery-report.js",
+  "mistake/review",
+  "student/:id/mistakes",
+  "student/:id/mastery-report",
   "api/generate-parent-report.js",
-  "api/learning-settings/update.js",
+  "learning-settings/update",
 ];
 
-test("execution plan API route checklist is present", () => {
-  for (const route of requiredRoutes) {
-    assert.equal(existsSync(route), true, `${route} should exist`);
-  }
+test("execution plan API route checklist is covered without exceeding Vercel Hobby function limits", () => {
+  assert.equal(existsSync("api/[...path].js"), true);
+  assert.equal(existsSync("api/coach-feedback.js"), true);
+  assert.equal(existsSync("api/generate-parent-report.js"), true);
+  assert.equal(existsSync(".vercelignore"), true);
 });
 
-test("new API routes use shared learning logic instead of fixed page text", () => {
-  for (const route of requiredRoutes.filter((route) => !route.includes("coach-feedback") && !route.includes("generate-parent-report"))) {
-    const content = readFileSync(route, "utf8");
-    assert.match(content, /learning-core|buildStudentDashboard|generateDailyPlan|submitAnswerRecord|reviewMistakeRecord|buildMasteryReport|updateLearningSettings/);
+test("unified learning API maps every execution-plan route to shared learning logic", () => {
+  const content = readFileSync("api/[...path].js", "utf8");
+  for (const route of requiredRoutes.filter((route) => !route.startsWith("api/"))) {
+    for (const part of route.split("/").filter((part) => !part.startsWith(":"))) {
+      assert.match(content, new RegExp(part.replace("-", "\\-")), `${route} should be routed`);
+    }
   }
+  assert.match(content, /buildStudentDashboard/);
+  assert.match(content, /generateDailyPlan/);
+  assert.match(content, /submitAnswerRecord/);
+  assert.match(content, /reviewMistakeRecord/);
+  assert.match(content, /buildMasteryReport/);
+  assert.match(content, /updateLearningSettings/);
 });

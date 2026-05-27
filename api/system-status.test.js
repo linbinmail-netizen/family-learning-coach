@@ -27,5 +27,9 @@ test("system status reports production readiness flags", () => {
   assert.equal(typeof body.scheduledDigestConfigured, "boolean");
   assert.equal(typeof body.supabaseServiceConfigured, "boolean");
   assert.equal(typeof body.parentDigestEmailConfigured, "boolean");
-  assert.deepEqual(body.requiredSupabaseScripts, ["010_skill_mastery.sql", "011_practice_sessions.sql"]);
+  assert.deepEqual(body.requiredSupabaseScripts, [
+    "010_skill_mastery.sql",
+    "011_practice_sessions.sql",
+    "012_learning_closure_tables.sql",
+  ]);
 });

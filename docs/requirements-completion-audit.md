@@ -37,6 +37,7 @@ Daily Mission -> Practice -> AI Guided Feedback -> Mistake Notebook -> Skill Mas
 - Practice sessions: completed with cloud table, upload, load, and merge.
 - Local fallback: completed so learning continues if a cloud table has not been created yet.
 - Standard API foundation: completed for `/api/coach-feedback` and `/api/generate-parent-report`, so AI mistake diagnosis and parent reports have stable production endpoints.
+- Execution-plan API checklist: completed for student dashboard, daily plan, plan generation, answer submit, mistake review, student mistakes, mastery report, parent report, and learning-settings update endpoints.
 
 ## Content And Quality
 

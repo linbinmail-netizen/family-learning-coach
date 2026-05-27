@@ -219,6 +219,8 @@ test("parent dashboard shows production readiness status", () => {
   assert.match(js, /\/api\/system-status/);
   assert.match(js, /checkCloudTable\("skill_mastery"\)/);
   assert.match(js, /checkCloudTable\("practice_sessions"\)/);
+  assert.match(js, /每日自动日报/);
+  assert.match(js, /scheduledDigestConfigured/);
   assert.match(css, /readiness-grid/);
 });
 

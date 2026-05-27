@@ -4947,6 +4947,13 @@ async function renderProductionReadiness() {
       ready: systemStatus.digestEmailFromConfigured,
       note: systemStatus.digestEmailFromConfigured ? "已配置发件人" : "可先测试，正式发送建议配置 DIGEST_EMAIL_FROM",
     },
+    {
+      title: "每日自动日报",
+      ready: systemStatus.scheduledDigestConfigured,
+      note: systemStatus.scheduledDigestConfigured
+        ? "Vercel Cron 可自动发送日报"
+        : "配置 RESEND_API_KEY、SUPABASE_SERVICE_ROLE_KEY 和 PARENT_DIGEST_EMAIL 后启用",
+    },
   ];
 
   const readyCount = items.filter((item) => item.ready).length;

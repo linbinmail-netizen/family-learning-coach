@@ -22,8 +22,20 @@ Optional Vercel environment variables:
 
 - `RESEND_API_KEY`: Resend server API key.
 - `DIGEST_EMAIL_FROM`: verified sender, for example `Family Learning Coach <reports@yourdomain.com>`.
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key for scheduled daily digest reads.
+- `PARENT_DIGEST_EMAIL`: parent recipient email; default fallback is `linbinmail@gmail.com`.
+- `CRON_SECRET`: optional secret for protecting manual cron calls.
 
 Without a verified sending domain, Resend's default onboarding sender can be used for testing only.
+
+## Scheduled Daily Digest
+
+The app includes a Vercel Cron route:
+
+- Path: `/api/daily-digest-cron`
+- Schedule: `0 2 * * *`
+
+When `RESEND_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are configured, the cron route summarizes today's practice sessions, open mistakes, and weak mastery skills, then emails the parent digest.
 
 ## Current Production URL
 

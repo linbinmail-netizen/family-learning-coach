@@ -5,6 +5,15 @@
     },
     "api/digest-email.js": {
       "maxDuration": 15
+    },
+    "api/daily-digest-cron.js": {
+      "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/daily-digest-cron",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }

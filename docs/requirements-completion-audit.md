@@ -23,7 +23,7 @@ Daily Mission -> Practice -> AI Guided Feedback -> Mistake Notebook -> Skill Mas
 - Parent Dashboard: completed, with study time, completed tasks, mistakes, and next recommendation.
 - Weekly Report: completed, using records plus practice-session metrics for accuracy, hints, slow mastery, and possible guessing.
 - Plan Controls: completed, with time, question target, difficulty mode, focus subject, and two-hour preset.
-- Daily Digest: completed as an email draft action without requiring a paid email provider.
+- Daily Digest: completed as an email draft action, automatic email API, and scheduled Vercel Cron route. Automatic sending requires production environment variables.
 
 ## Data And Cloud
 
@@ -45,6 +45,6 @@ Daily Mission -> Practice -> AI Guided Feedback -> Mistake Notebook -> Skill Mas
 These are not blockers for the requested learning loop, but are the next production-grade improvements:
 
 - Run `supabase/010_skill_mastery.sql` and `supabase/011_practice_sessions.sql` in Supabase SQL Editor.
-- Add a paid email provider such as Resend if fully automatic scheduled email delivery is required.
+- Configure `RESEND_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `PARENT_DIGEST_EMAIL` in Vercel to activate automatic scheduled email delivery.
 - Continue expanding original question content beyond the current 30+ per priority subject.
 - Add deeper Frisco ISD / Liberty High School localization after collecting exact course sequences.

@@ -8,6 +8,9 @@ export default function handler(_request, response) {
   sendJson(response, 200, {
     emailConfigured: Boolean(process.env.RESEND_API_KEY),
     digestEmailFromConfigured: Boolean(process.env.DIGEST_EMAIL_FROM),
+    scheduledDigestConfigured: Boolean(process.env.RESEND_API_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY),
+    supabaseServiceConfigured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    parentDigestEmailConfigured: Boolean(process.env.PARENT_DIGEST_EMAIL),
     requiredSupabaseScripts: ["010_skill_mastery.sql", "011_practice_sessions.sql"],
   });
 }

@@ -28,6 +28,12 @@ test("system status reports production readiness flags", () => {
   assert.equal(typeof body.supabaseServiceConfigured, "boolean");
   assert.equal(typeof body.parentDigestEmailConfigured, "boolean");
   assert.deepEqual(body.requiredSupabaseScripts, [
+    "000_run_all_learning_platform.sql",
+    "001_base_learning_schema.sql",
+    "003_seed_starter_questions.sql",
+    "004_auth_and_plans.sql",
+    "005_family_auth_helpers.sql",
+    "009_mistake_reviews.sql",
     "010_skill_mastery.sql",
     "011_practice_sessions.sql",
     "012_learning_closure_tables.sql",

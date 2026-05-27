@@ -4,12 +4,24 @@ Updated: 2026-05-27
 
 ## Supabase SQL
 
-Run these scripts in Supabase SQL Editor in order if they have not already been run:
+Recommended: run this single combined script in Supabase SQL Editor:
 
-1. `supabase/010_skill_mastery.sql`
-2. `supabase/011_practice_sessions.sql`
+- `supabase/000_run_all_learning_platform.sql`
 
-The app has local fallback, so students can continue learning before these are run. Running them enables long-term cloud storage for mastery and practice-session behavior.
+It creates the base student/subject tables, starter question tables, parent/student auth helpers, mistake reviews, skill mastery, practice sessions, and the learning-closure tables required by the execution plan.
+
+If you prefer to run the files separately, use this order:
+
+1. `supabase/001_base_learning_schema.sql`
+2. `supabase/003_seed_starter_questions.sql`
+3. `supabase/004_auth_and_plans.sql`
+4. `supabase/005_family_auth_helpers.sql`
+5. `supabase/009_mistake_reviews.sql`
+6. `supabase/010_skill_mastery.sql`
+7. `supabase/011_practice_sessions.sql`
+8. `supabase/012_learning_closure_tables.sql`
+
+The app has local fallback, so students can continue learning before these are run. Running them enables long-term cloud storage for accounts, plans, mistakes, mastery, reports, and practice-session behavior.
 
 ## Email Sending
 

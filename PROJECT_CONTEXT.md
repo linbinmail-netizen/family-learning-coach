@@ -108,7 +108,7 @@ Latest result: 131 tests passed and syntax checks passed. Correct, confident ans
 
 The planned application features are covered in code. The remaining work is production setup and content expansion:
 
-1. Run the latest Supabase SQL scripts for long-term cloud storage, including `012_learning_closure_tables.sql`.
+1. Run `supabase/000_run_all_learning_platform.sql` for long-term cloud storage.
 2. Configure Vercel email and service-role environment variables for automatic parent digest emails.
 3. Continue expanding 8th/9th grade question volume and local Frisco/Liberty course alignment.
 4. Collect real student usage feedback and tune AI coaching prompts from actual stuck points.
@@ -165,6 +165,7 @@ Student-side v4.1 is the current usable baseline:
 - v8.4: P2 gaps closed with optional browser voice input for coach replies and a Frisco ISD / Liberty High School localized learning path panel for MIA/EVA.
 - v8.5: Execution-plan backend foundation added with `supabase/012_learning_closure_tables.sql`, `/api/coach-feedback`, and `/api/generate-parent-report`.
 - v8.6: Execution-plan API checklist completed with student dashboard, daily plan, generate plan, answer submit, mistake review, mistakes list, mastery report, and learning-settings update routes using shared learning logic.
+- v8.7: Production Supabase setup consolidated into `supabase/000_run_all_learning_platform.sql`, including a new base learning schema and starter question table setup.
 - QA baseline: account-scoped local progress, production readiness panel, scheduled daily digest route, student mastery badges, weekly challenge, optional voice coach input, Frisco/Liberty localized path, execution-plan learning closure schema, full execution-plan API route checklist, AI mistake diagnosis API, parent report API, cloud-ready skill mastery, cloud-ready bidirectional practice-session behavior tracking, cloud-recoverable daily mission progress, parent digest email API with draft fallback, similar-practice mistake packs, independent-first answering, student dashboard, daily mission states, skill mastery tracking, learning path modules, practice context actions, dedicated mistake notebook, parent summary dashboard, 30+ structured expansion questions per priority subject, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, single current-task guidance card, next-question unlock conditions, restatement scaffold, skill-adaptive restatement placeholder, stuck-reply rescue submit, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit for incomplete non-help replies, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, reteach escape path, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes

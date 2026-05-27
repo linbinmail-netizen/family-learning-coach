@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { handleLearningApi } from "./api/[...path].js";
+import { handleLearningApi } from "./api/learning.js";
 
 function mockResponse() {
   return {
@@ -18,7 +18,7 @@ function mockResponse() {
 
 test("catchall API serves student daily plan route", () => {
   const response = mockResponse();
-  handleLearningApi({ method: "POST", query: { path: ["student", "mia", "daily-plan"] }, body: {} }, response);
+  handleLearningApi({ method: "POST", query: { action: "student-daily-plan", id: "mia" }, body: {} }, response);
   const body = JSON.parse(response.body);
 
   assert.equal(response.statusCode, 200);
@@ -30,7 +30,7 @@ test("catchall API serves answer submit route", () => {
   const response = mockResponse();
   handleLearningApi({
     method: "POST",
-    query: { path: ["answer", "submit"] },
+    query: { action: "answer-submit" },
     body: {
       studentId: "mia",
       studentAnswer: "B",

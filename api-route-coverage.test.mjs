@@ -16,17 +16,18 @@ const requiredRoutes = [
 ];
 
 test("execution plan API route checklist is covered without exceeding Vercel Hobby function limits", () => {
-  assert.equal(existsSync("api/[...path].js"), true);
+  assert.equal(existsSync("api/learning.js"), true);
   assert.equal(existsSync("api/coach-feedback.js"), true);
   assert.equal(existsSync("api/generate-parent-report.js"), true);
   assert.equal(existsSync(".vercelignore"), true);
 });
 
 test("unified learning API maps every execution-plan route to shared learning logic", () => {
-  const content = readFileSync("api/[...path].js", "utf8");
+  const content = readFileSync("api/learning.js", "utf8");
+  const vercelConfig = readFileSync("vercel.json", "utf8");
   for (const route of requiredRoutes.filter((route) => !route.startsWith("api/"))) {
     for (const part of route.split("/").filter((part) => !part.startsWith(":"))) {
-      assert.match(content, new RegExp(part.replace("-", "\\-")), `${route} should be routed`);
+      assert.match(vercelConfig, new RegExp(part.replace("-", "\\-")), `${route} should be rewritten`);
     }
   }
   assert.match(content, /buildStudentDashboard/);

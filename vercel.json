@@ -9,6 +9,9 @@
     "api/generate-parent-report.js": {
       "maxDuration": 15
     },
+    "api/learning.js": {
+      "maxDuration": 15
+    },
     "api/digest-email.js": {
       "maxDuration": 15
     },
@@ -16,6 +19,40 @@
       "maxDuration": 30
     }
   },
+  "rewrites": [
+    {
+      "source": "/api/student/:id/dashboard",
+      "destination": "/api/learning?action=student-dashboard&id=:id"
+    },
+    {
+      "source": "/api/student/:id/daily-plan",
+      "destination": "/api/learning?action=student-daily-plan&id=:id"
+    },
+    {
+      "source": "/api/student/:id/generate-plan",
+      "destination": "/api/learning?action=student-generate-plan&id=:id"
+    },
+    {
+      "source": "/api/student/:id/mistakes",
+      "destination": "/api/learning?action=student-mistakes&id=:id"
+    },
+    {
+      "source": "/api/student/:id/mastery-report",
+      "destination": "/api/learning?action=student-mastery-report&id=:id"
+    },
+    {
+      "source": "/api/answer/submit",
+      "destination": "/api/learning?action=answer-submit"
+    },
+    {
+      "source": "/api/mistake/review",
+      "destination": "/api/learning?action=mistake-review"
+    },
+    {
+      "source": "/api/learning-settings/update",
+      "destination": "/api/learning?action=learning-settings-update"
+    }
+  ],
   "crons": [
     {
       "path": "/api/daily-digest-cron",

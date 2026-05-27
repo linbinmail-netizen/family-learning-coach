@@ -1,0 +1,50 @@
+# Family Learning Coach Requirements Completion Audit
+
+Updated: 2026-05-27
+
+## Completed Core Loop
+
+The platform now supports the intended learning loop:
+
+Daily Mission -> Practice -> AI Guided Feedback -> Mistake Notebook -> Skill Mastery -> Parent Report
+
+## Student Side
+
+- Student Dashboard: completed.
+- Daily Mission: completed, with task states and progress recovery from synced practice sessions.
+- Learning Path: completed, with Math, Reading, Writing, Vocabulary, and SAT/PSAT Foundation modules.
+- Practice Flow: completed, with independent first attempt, adaptive difficulty, context panel, hints, explain, and similar question tools.
+- AI Guided Feedback: completed, with no direct answer reveal, coaching scaffold, rescue prompts, teacher model sentence, variant verification, and rubric-gated mastery.
+- Mistake Notebook: completed, with filters, review dates, one-click review, and same-skill practice packs.
+- Skill Mastery: completed, with mastery, accuracy, attempts, review count, status, and Supabase sync.
+
+## Parent Side
+
+- Parent Dashboard: completed, with study time, completed tasks, mistakes, and next recommendation.
+- Weekly Report: completed, using records plus practice-session metrics for accuracy, hints, slow mastery, and possible guessing.
+- Plan Controls: completed, with time, question target, difficulty mode, focus subject, and two-hour preset.
+- Daily Digest: completed as an email draft action without requiring a paid email provider.
+
+## Data And Cloud
+
+- Supabase auth roles: completed for parent and student accounts.
+- Mistake reviews: completed with cloud table and sync.
+- Skill mastery: completed with cloud table and sync.
+- Practice sessions: completed with cloud table, upload, load, and merge.
+- Local fallback: completed so learning continues if a cloud table has not been created yet.
+
+## Content And Quality
+
+- Structured question bank: completed for priority grade 8 and grade 9 subjects.
+- Each priority core subject reaches at least 30 structured runtime questions.
+- Questions include skill, difficulty, explanation, common mistakes, and AI hint levels.
+- Quality audit appears in Parent Dashboard.
+
+## Remaining Production Enhancements
+
+These are not blockers for the requested learning loop, but are the next production-grade improvements:
+
+- Run `supabase/010_skill_mastery.sql` and `supabase/011_practice_sessions.sql` in Supabase SQL Editor.
+- Add a paid email provider such as Resend if fully automatic scheduled email delivery is required.
+- Continue expanding original question content beyond the current 30+ per priority subject.
+- Add deeper Frisco ISD / Liberty High School localization after collecting exact course sequences.

@@ -77,6 +77,15 @@ test("skill mastery tracking updates learning path and reports", () => {
   assert.match(js, /tracked\?\.mastery/);
 });
 
+test("skill mastery can sync with Supabase without blocking local progress", () => {
+  assert.match(js, /loadSkillMasteryFromCloud/);
+  assert.match(js, /saveSkillMasteryToCloud/);
+  assert.match(js, /syncSkillMasteryToCloud/);
+  assert.match(js, /skill_mastery/);
+  assert.match(js, /saveSkillMasteryToCloud\(state\.skillMastery\[key\]\)\.catch/);
+  assert.match(js, /Skill mastery cloud load skipped/);
+});
+
 test("student mistake notebook is filterable and opens review practice", () => {
   assert.match(html, /data-view="mistakes"/);
   assert.match(html, /id="mistakesView"/);

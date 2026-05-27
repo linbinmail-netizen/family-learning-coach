@@ -86,23 +86,23 @@ The student side is now the priority. Current behavior:
 - `account-plan.test.mjs`: main behavior tests for auth, student flow, parent flow
 - `content-bank.test.mjs`: question bank and adaptive difficulty tests
 - `api/coach.test.js`: AI coach prompt and fallback tests
-- `supabase/*.sql`: database/auth/mistake review setup scripts
+- `supabase/*.sql`: database/auth/mistake review/skill mastery setup scripts
 
 ## Verification Command
 
 Run from the local sync folder:
 
 ```powershell
-node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js
+node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node cloud-skill-mastery-schema.test.mjs; node --check app.js
 ```
 
 Latest fuller local verification command:
 
 ```powershell
-node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
+node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node cloud-skill-mastery-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 113 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content. The new system pages were verified through local preview file checks because the in-app browser automation pane was unavailable in this run.
+Latest result: 116 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content. The new system pages were verified through local preview file checks because the in-app browser automation pane was unavailable in this run.
 
 ## Next Recommended Work
 
@@ -152,7 +152,8 @@ Student-side v4.1 is the current usable baseline:
 - v7.0: requirements-plan rebuild started. Student side now has mission-control dashboard, Learning Path page, Practice context/tool actions, dedicated Mistake Notebook with filters, and Parent Dashboard summary cards.
 - v7.1: priority structured question bank now reaches at least 30 runtime expansion questions per core subject, with explanation, common mistakes, and three AI hint levels on the systematic expansion batch.
 - v7.2: daily mission cards now show explicit task states, and SkillMastery tracking records attempts, accuracy, mastery, status, review count, and last practiced time from answer outcomes and mistake reviews.
-- QA baseline: account-scoped local progress, independent-first answering, student dashboard, daily mission states, skill mastery tracking, learning path modules, practice context actions, dedicated mistake notebook, parent summary dashboard, 30+ structured expansion questions per priority subject, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, single current-task guidance card, next-question unlock conditions, restatement scaffold, skill-adaptive restatement placeholder, stuck-reply rescue submit, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit for incomplete non-help replies, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, reteach escape path, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
+- v7.3: SkillMastery now has a Supabase cloud table and sync path with local fallback, so mastery, attempts, accuracy, review count, and last practiced time can persist across devices after the SQL script is run.
+- QA baseline: account-scoped local progress, cloud-ready skill mastery, independent-first answering, student dashboard, daily mission states, skill mastery tracking, learning path modules, practice context actions, dedicated mistake notebook, parent summary dashboard, 30+ structured expansion questions per priority subject, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, single current-task guidance card, next-question unlock conditions, restatement scaffold, skill-adaptive restatement placeholder, stuck-reply rescue submit, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit for incomplete non-help replies, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, reteach escape path, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

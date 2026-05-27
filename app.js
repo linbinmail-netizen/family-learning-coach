@@ -1863,6 +1863,96 @@ async function loadMistakesFromCloud() {
   saveData();
 }
 
+function cloudSkillMasteryPayload(item, cloudSubjectId) {
+  return {
+    student_id: state.cloudStudents[item.studentId],
+    subject_id: cloudSubjectId,
+    skill: item.skill,
+    mastery: item.mastery || 45,
+    attempts: item.attempts || 0,
+    correct_count: item.correctCount || 0,
+    review_count: item.reviewCount || 0,
+    accuracy: item.accuracy || 0,
+    average_time: item.averageTime || 0,
+    status: item.status || "not_started",
+    last_practiced_at: item.lastPracticedAt || null,
+    updated_by: state.authProfile?.id || state.authSession?.user?.id || null,
+  };
+}
+
+async function saveSkillMasteryToCloud(item) {
+  if (!state.authSession || !item || !item.skill) return;
+  const cloudStudentId = state.cloudStudents[item.studentId];
+  if (!cloudStudentId) return;
+  const cloudSubjectId = await findCloudSubjectId(item.subject);
+  if (!cloudSubjectId) return;
+
+  await supabaseRequest("skill_mastery?on_conflict=student_id,subject_id,skill", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify(cloudSkillMasteryPayload(item, cloudSubjectId)),
+  });
+}
+
+async function syncSkillMasteryToCloud() {
+  if (!state.authSession) return;
+  const pending = Object.values(state.skillMastery).filter((item) => state.cloudStudents[item.studentId]);
+  for (const item of pending) {
+    try {
+      await saveSkillMasteryToCloud(item);
+    } catch (error) {
+      console.warn("Skill mastery cloud sync skipped.", error);
+      return;
+    }
+  }
+}
+
+async function cloudSkillMasteryToLocal(row) {
+  const localStudentId = Object.keys(state.cloudStudents).find((key) => state.cloudStudents[key] === row.student_id);
+  const localSubject = await findLocalSubjectByCloudId(row.subject_id);
+  if (!localStudentId || !localSubject || !row.skill) return null;
+
+  return {
+    studentId: localStudentId,
+    subject: localSubject.id,
+    skill: row.skill,
+    mastery: row.mastery || 45,
+    attempts: row.attempts || 0,
+    correctCount: row.correct_count || 0,
+    reviewCount: row.review_count || 0,
+    accuracy: row.accuracy || 0,
+    averageTime: row.average_time || 0,
+    lastPracticedAt: row.last_practiced_at || "",
+    status: row.status || skillMasteryStatus(row.mastery, row.accuracy, row.attempts),
+  };
+}
+
+async function loadSkillMasteryFromCloud() {
+  if (!state.authSession) return;
+  const cloudStudentIds = Object.values(state.cloudStudents).filter(Boolean);
+  if (!cloudStudentIds.length) return;
+
+  try {
+    const data = await supabaseRequest(
+      `skill_mastery?${new URLSearchParams({
+        select: "student_id,subject_id,skill,mastery,attempts,correct_count,review_count,accuracy,average_time,status,last_practiced_at",
+        student_id: `in.(${cloudStudentIds.join(",")})`,
+        order: "updated_at.desc",
+      }).toString()}`,
+      { headers: { Prefer: "" } }
+    );
+
+    for (const row of data || []) {
+      const localItem = await cloudSkillMasteryToLocal(row);
+      if (!localItem) continue;
+      state.skillMastery[skillMasteryKey(localItem.studentId, localItem.subject, localItem.skill)] = localItem;
+    }
+    saveData();
+  } catch (error) {
+    console.warn("Skill mastery cloud load skipped.", error);
+  }
+}
+
 async function loadAuthProfile() {
   if (!state.authSession?.user?.id) return;
   await supabaseRpc("ensure_my_profile");
@@ -1887,6 +1977,8 @@ async function loadAuthProfile() {
   await loadPlanSettingsFromCloud();
   await syncMistakeLogToCloud();
   await loadMistakesFromCloud();
+  await syncSkillMasteryToCloud();
+  await loadSkillMasteryFromCloud();
   applyProfileToLocalState(data, { persist: false });
   saveData(accountDataStorageKey());
   setAuthStatus(`已登录：${currentAuthUserLabel()}`);
@@ -2204,6 +2296,7 @@ function updateSkillMastery(question, outcome = {}) {
     lastPracticedAt: new Date().toISOString(),
     status: skillMasteryStatus(mastery, accuracy, attempts),
   };
+  saveSkillMasteryToCloud(state.skillMastery[key]).catch((error) => console.warn("Skill mastery cloud save skipped.", error));
   return state.skillMastery[key];
 }
 

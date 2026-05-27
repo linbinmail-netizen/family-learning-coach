@@ -763,6 +763,83 @@ textarea {
   line-height: 1.45;
 }
 
+.guidance-unlock-card {
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid rgba(32, 111, 87, 0.2);
+  border-radius: 8px;
+  background: #f7fbf8;
+}
+
+.guidance-unlock-card > strong {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--green-dark);
+  font-size: 13px;
+}
+
+.guidance-unlock-card ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guidance-unlock-card li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 8px;
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid rgba(30, 45, 57, 0.08);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.guidance-unlock-card li span {
+  grid-row: span 2;
+  min-width: 52px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #f2f5f7;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.guidance-unlock-card li strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.guidance-unlock-card li small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.guidance-unlock-card li.active {
+  border-color: rgba(196, 132, 43, 0.4);
+  background: #fffaf1;
+}
+
+.guidance-unlock-card li.active span {
+  background: #fff1d6;
+  color: var(--ink);
+}
+
+.guidance-unlock-card li.done {
+  border-color: rgba(32, 111, 87, 0.32);
+  background: #f2faf5;
+}
+
+.guidance-unlock-card li.done span {
+  background: var(--green);
+  color: #fff;
+}
+
 .guidance-insight-card {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

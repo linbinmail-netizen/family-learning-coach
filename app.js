@@ -2553,6 +2553,7 @@ function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", var
   $("variantFeedback").textContent = variantNextActionText(reply, variant);
   $("variantSubmit").disabled = !ready;
   renderVariantNextHelp(reply, variant);
+  renderGuidanceUnlockProgress();
   return feedback;
 }
 
@@ -2651,6 +2652,51 @@ function renderGuidanceTask(lock = state.guidanceLock) {
   $("guidanceTaskBadge").textContent = task.badge;
   $("guidanceTaskTitle").textContent = task.title;
   $("guidanceTaskBody").textContent = task.body;
+}
+
+function guidanceUnlockItemsForLock(lock = state.guidanceLock) {
+  const reply = $("inlineCoachReply")?.value || "";
+  const variantReply = $("variantReply")?.value || "";
+  const hasStudentReply = state.inlineCoachHistory.some((message) => message.role === "student");
+  const inVariant = lock?.status === "variant";
+  const restatementReady = inVariant || evaluateGuidanceReplyQuality(reply).ready;
+  const variantReady = inVariant && isVariantRubricReady(variantReply, lock?.variant);
+  return [
+    {
+      label: "听懂错因和方法",
+      detail: "已经进入讲解区，先看错因和方法提示。",
+      done: Boolean(lock),
+      active: Boolean(lock) && !hasStudentReply && !inVariant,
+    },
+    {
+      label: "用自己的话复述方法",
+      detail: "写清题目目标、第一步和原因。",
+      done: restatementReady,
+      active: Boolean(lock) && !inVariant,
+    },
+    {
+      label: "通过一道变式验证",
+      detail: "写方法解释，不靠选择题猜答案。",
+      done: variantReady,
+      active: inVariant,
+    },
+  ];
+}
+
+function renderGuidanceUnlockProgress(lock = state.guidanceLock) {
+  const list = $("guidanceUnlockList");
+  if (!list || !lock) return;
+  list.innerHTML = guidanceUnlockItemsForLock(lock)
+    .map(
+      (item) => `
+        <li class="${item.done ? "done" : item.active ? "active" : ""}">
+          <span>${item.done ? "完成" : item.active ? "正在做" : "等待"}</span>
+          <strong>${item.label}</strong>
+          <small>${item.detail}</small>
+        </li>
+      `
+    )
+    .join("");
 }
 
 function renderGuidanceInsight(lock = state.guidanceLock) {
@@ -2771,6 +2817,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     $("replyStarterText").textContent = starter;
   }
   $("inlineCoachSubmit").disabled = !quality.ready;
+  renderGuidanceUnlockProgress();
 }
 
 function teachingMiniExampleForSkill(skill = "") {
@@ -3595,6 +3642,7 @@ function renderInlineCoachPanel() {
 
   $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
   renderGuidanceTask(lock);
+  renderGuidanceUnlockProgress(lock);
   renderGuidanceInsight(lock);
   renderGuidanceScaffold(lock);
   renderReplyQuality();

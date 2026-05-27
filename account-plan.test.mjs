@@ -211,6 +211,20 @@ test("student guidance shows a single current task card", () => {
   assert.match(css, /guidance-task-card/);
 });
 
+test("student guidance shows next-question unlock conditions", () => {
+  assert.match(html, /id="guidanceUnlockCard"/);
+  assert.match(html, /id="guidanceUnlockList"/);
+  assert.match(html, /解锁下一题需要完成/);
+  assert.match(html, /通过一道变式验证/);
+  assert.match(js, /function guidanceUnlockItemsForLock/);
+  assert.match(js, /function renderGuidanceUnlockProgress/);
+  assert.match(js, /听懂错因和方法/);
+  assert.match(js, /用自己的话复述方法/);
+  assert.match(js, /renderGuidanceUnlockProgress\(lock\)/);
+  assert.match(js, /renderGuidanceUnlockProgress\(\)/);
+  assert.match(css, /guidance-unlock-card/);
+});
+
 test("student guidance includes a three-part method restatement scaffold", () => {
   assert.match(html, /id="guidanceScaffoldCard"/);
   assert.match(html, /id="scaffoldQuestionFocus"/);

@@ -18,6 +18,8 @@ Daily Mission -> Practice -> AI Guided Feedback -> Mistake Notebook -> Skill Mas
 - Mistake Notebook: completed, with filters, review dates, one-click review, and same-skill practice packs.
 - Skill Mastery: completed, with mastery, accuracy, attempts, review count, status, and Supabase sync.
 - Learning Motivation: completed, with behavior-based badges and a weekly challenge tied to mastery, review, accuracy, and hint usage.
+- Voice Coach: completed as optional browser speech-to-text for the AI Coach and guided mastery reply fields.
+- Localized Path: completed with Frisco ISD / Liberty High School and 8th grade bridge guidance inside Learning Path.
 
 ## Parent Side
 
@@ -48,4 +50,4 @@ These are not blockers for the requested learning loop, but are the next product
 - Run `supabase/010_skill_mastery.sql` and `supabase/011_practice_sessions.sql` in Supabase SQL Editor.
 - Configure `RESEND_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `PARENT_DIGEST_EMAIL` in Vercel to activate automatic scheduled email delivery.
 - Continue expanding original question content beyond the current 30+ per priority subject.
-- Add deeper Frisco ISD / Liberty High School localization after collecting exact course sequences.
+- Add deeper Frisco ISD / Liberty High School course sequence details after collecting exact teacher/course expectations.

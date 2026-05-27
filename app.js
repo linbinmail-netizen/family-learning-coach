@@ -3427,6 +3427,21 @@ function learningPathModulesFor(category = state.learningPathSubject) {
   });
 }
 
+function localSchoolPathForStudent(student = activeStudent()) {
+  if (student.id === "older") {
+    return {
+      label: "Frisco ISD / Liberty High School",
+      focus: "9th Grade / English I + Algebra I readiness",
+      plan: "MIA 的本地化路径：优先稳住 English I 的 evidence-based reading/writing，再把 Algebra I 的 linear functions、equations 和 word problems 做成每日练习。",
+    };
+  }
+  return {
+    label: "Frisco ISD / 8th Grade Bridge",
+    focus: "8th Grade Math + Reading evidence",
+    plan: "EVA 的本地化路径：先加强 8th Grade Math 的比例、斜率、方程准备，同时保持 RLA 的 inference、central idea 和 text evidence。",
+  };
+}
+
 function preferredSubjectForPathCategory(category) {
   const gradeSubjects = subjects[state.grade] || subjects[activeStudent().grade] || subjects["9"];
   const preferred = {
@@ -3915,6 +3930,10 @@ function renderLearningPath() {
   $("learningPathSubjects").innerHTML = categories
     .map(([id, label]) => `<button class="path-subject-button ${state.learningPathSubject === id ? "active" : ""}" type="button" data-path-subject="${id}">${label}</button>`)
     .join("");
+  const localPath = localSchoolPathForStudent(activeStudent());
+  $("localSchoolLabel").textContent = localPath.label;
+  $("localSchoolFocus").textContent = localPath.focus;
+  $("localSchoolPlan").textContent = localPath.plan;
   const modules = learningPathModulesFor(state.learningPathSubject);
   $("learningPathStatus").textContent = `${modules.length} 个模块 · ${activeStudent().name}`;
   $("learningPathModules").innerHTML = modules
@@ -4981,6 +5000,38 @@ function renderStudentAchievements() {
   $("weeklyChallengeProgress").style.width = `${challenge.progress}%`;
 }
 
+function speechRecognitionFactory() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function startVoiceInput(targetId, statusId) {
+  const Recognition = speechRecognitionFactory();
+  const target = $(targetId);
+  const status = $(statusId);
+  if (!Recognition || !target) {
+    if (status) status.textContent = "当前浏览器不支持语音输入，请继续打字。";
+    return;
+  }
+  const recognition = new Recognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  if (status) status.textContent = "正在听，请说出你的思路...";
+  recognition.onresult = (event) => {
+    const transcript = event.results?.[0]?.[0]?.transcript || "";
+    target.value = [target.value, transcript].filter(Boolean).join(" ").trim();
+    target.dispatchEvent(new Event("input", { bubbles: true }));
+    if (status) status.textContent = "已填入语音内容，可以继续修改后提交。";
+  };
+  recognition.onerror = () => {
+    if (status) status.textContent = "语音没有识别成功，请再试一次或打字。";
+  };
+  recognition.onend = () => {
+    if (status?.textContent.includes("正在听")) status.textContent = "语音已结束，可以检查文字。";
+  };
+  recognition.start();
+}
+
 async function renderProductionReadiness() {
   const list = $("productionReadinessList");
   const status = $("productionReadinessStatus");
@@ -5189,6 +5240,8 @@ function bindEvents() {
     openMistakeReviewLesson(button.dataset.reviewMistake);
   });
   $("askCoachButton").addEventListener("click", () => switchView("coach"));
+  $("inlineVoiceButton").addEventListener("click", () => startVoiceInput("inlineCoachReply", "inlineVoiceStatus"));
+  $("coachVoiceButton").addEventListener("click", () => startVoiceInput("studentReply", "coachVoiceStatus"));
   $("learningPathSubjects").addEventListener("click", (event) => {
     const button = event.target.closest("[data-path-subject]");
     if (!button) return;

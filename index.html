@@ -202,7 +202,16 @@
           </div>
           <div class="learning-path-layout">
             <aside class="path-subject-list" id="learningPathSubjects"></aside>
-            <section class="path-module-grid" id="learningPathModules"></section>
+            <section>
+              <section class="local-school-path" id="localSchoolPathPanel">
+                <div>
+                  <span id="localSchoolLabel">Frisco ISD / Liberty Path</span>
+                  <strong id="localSchoolFocus">本地化学习重点</strong>
+                </div>
+                <p id="localSchoolPlan">系统会按 MIA / EVA 的年级和目标显示本地化预习重点。</p>
+              </section>
+              <section class="path-module-grid" id="learningPathModules"></section>
+            </section>
           </div>
         </section>
 
@@ -324,7 +333,9 @@
               <div class="chat-window inline-chat-window" id="inlineCoachWindow"></div>
               <form class="chat-form" id="inlineCoachForm">
                 <input id="inlineCoachReply" placeholder="用自己的话写：这题真正问什么？下一步该怎么做？" />
+                <button class="secondary-button" id="inlineVoiceButton" type="button">语音输入</button>
                 <button class="primary-button" id="inlineCoachSubmit" type="submit" disabled>继续引导</button>
+                <span class="voice-status" id="inlineVoiceStatus">可选：用语音说出思路</span>
                 <div class="reply-quality-card" id="replyQualityCard" aria-live="polite">
                   <strong id="replyQualityStatus">写一句完整方法，系统会帮你检查是否够清楚。</strong>
                   <div class="reply-quality-list">
@@ -481,7 +492,9 @@
             <div class="chat-window" id="chatWindow"></div>
             <form class="chat-form" id="chatForm">
               <input id="studentReply" placeholder="让孩子先写自己的想法，例如：我觉得题目在问..." />
+              <button class="secondary-button" id="coachVoiceButton" type="button">语音输入</button>
               <button class="primary-button" type="submit">继续引导</button>
+              <span class="voice-status" id="coachVoiceStatus">可选：用语音说出想法</span>
             </form>
           </div>
         </section>

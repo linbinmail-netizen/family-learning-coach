@@ -1299,6 +1299,34 @@ textarea {
   gap: 12px;
 }
 
+.local-school-path {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #cfe0d4;
+  border-radius: 8px;
+  background: #f6fbf7;
+}
+
+.local-school-path div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.local-school-path span {
+  color: var(--soft-ink);
+  font-weight: 800;
+}
+
+.local-school-path strong {
+  color: var(--green-dark);
+}
+
+.local-school-path p {
+  margin: 8px 0 0;
+  color: var(--ink);
+}
+
 .path-module-card {
   background: #fff;
   border: 1px solid var(--line);
@@ -1779,8 +1807,14 @@ li {
 
 .chat-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 140px;
+  grid-template-columns: minmax(0, 1fr) auto 140px;
   gap: 10px;
+}
+
+.voice-status {
+  grid-column: 1 / -1;
+  color: var(--soft-ink);
+  font-size: 0.9rem;
 }
 
 .email-preview {

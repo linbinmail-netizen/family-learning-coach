@@ -62,7 +62,11 @@ test("student learning path page has subject modules and mastery status", () => 
   assert.match(html, /id="learningPathView"/);
   assert.match(html, /id="learningPathSubjects"/);
   assert.match(html, /id="learningPathModules"/);
+  assert.match(html, /id="localSchoolPathPanel"/);
+  assert.match(html, /id="localSchoolPlan"/);
   assert.match(js, /const learningPathCatalog/);
+  assert.match(js, /function localSchoolPathForStudent/);
+  assert.match(js, /Frisco ISD \/ Liberty High School/);
   assert.match(js, /Math/);
   assert.match(js, /Reading/);
   assert.match(js, /Writing/);
@@ -73,6 +77,7 @@ test("student learning path page has subject modules and mastery status", () => 
   assert.match(js, /Needs Review/);
   assert.match(js, /Mastered/);
   assert.match(css, /path-module-grid/);
+  assert.match(css, /local-school-path/);
 });
 
 test("skill mastery tracking updates learning path and reports", () => {
@@ -125,6 +130,18 @@ test("practice page shows current subject skill difficulty and tool actions", ()
   assert.match(js, /practiceSubject"\)\.textContent = subject\.label/);
   assert.match(js, /practiceSimilarButton"\)\.addEventListener/);
   assert.match(css, /practice-context-panel/);
+});
+
+test("voice coach input is available as an optional browser feature", () => {
+  assert.match(html, /id="coachVoiceButton"/);
+  assert.match(html, /id="inlineVoiceButton"/);
+  assert.match(html, /id="coachVoiceStatus"/);
+  assert.match(html, /id="inlineVoiceStatus"/);
+  assert.match(js, /function startVoiceInput/);
+  assert.match(js, /SpeechRecognition \|\| window\.webkitSpeechRecognition/);
+  assert.match(js, /startVoiceInput\("studentReply", "coachVoiceStatus"\)/);
+  assert.match(js, /startVoiceInput\("inlineCoachReply", "inlineVoiceStatus"\)/);
+  assert.match(css, /voice-status/);
 });
 
 test("student home has clear action buttons", () => {

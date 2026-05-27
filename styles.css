@@ -974,6 +974,13 @@ textarea {
   line-height: 1.45;
 }
 
+.variant-next-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .starter-chip {
   min-height: 32px;
   padding: 6px 10px;
@@ -1423,6 +1430,7 @@ li {
   .knowledge-grid,
   .route-steps,
   .student-next-step-card,
+  .variant-next-help,
   .guidance-insight-card,
   .guidance-scaffold-card ol,
   .reply-quality-list,
@@ -1431,6 +1439,14 @@ li {
   .auth-actions {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .variant-next-actions {
+    justify-content: stretch;
+  }
+
+  .variant-next-actions .small-button {
+    width: 100%;
   }
 
   .login-card::before,

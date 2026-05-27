@@ -528,6 +528,19 @@ test("variant verification can insert the next missing method sentence", () => {
   assert.match(css, /variant-next-help/);
 });
 
+test("variant verification lets a stuck student return to reteaching", () => {
+  assert.match(html, /id="variantReteachButton"/);
+  assert.match(html, /换种讲法/);
+  assert.match(js, /function variantReteachMessageFor/);
+  assert.match(js, /function requestVariantReteach/);
+  assert.match(js, /variantReteachButton"\)\.addEventListener\("click", requestVariantReteach\)/);
+  assert.match(js, /state\.guidanceLock\.status = "coaching"/);
+  assert.match(js, /我第一步先____，因为____/);
+  assert.match(js, /现在先不提交变式/);
+  assert.doesNotMatch(js, /variantReteachMessageFor[\s\S]*正确答案是/);
+  assert.match(css, /variant-next-actions/);
+});
+
 test("student cannot submit variant explanation until rubric is complete", () => {
   assert.match(html, /id="variantSubmit"/);
   assert.match(js, /function isVariantRubricReady/);

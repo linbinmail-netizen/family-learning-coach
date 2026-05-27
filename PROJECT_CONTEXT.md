@@ -6,7 +6,7 @@ Last updated: 2026-05-26
 
 - Live site: https://family-learning-coach.vercel.app/
 - GitHub repo: https://github.com/linbinmail-netizen/family-learning-coach
-- Latest deployed version checked: `c1f1cd5`
+- Latest deployed version checked: Vercel production after latest `main` push
 - Local sync folder: `C:\Users\oscar\OneDrive\Documents\高中学习\family-learning-coach-github-sync`
 
 ## Students
@@ -49,6 +49,7 @@ The student side is now the priority. Current behavior:
 - Variant submit is now disabled until all three rubric checks are ready; incomplete direct submit attempts show a clear reminder.
 - Variant explanation now includes non-answer sentence starter chips so students can begin a method explanation without receiving the solution.
 - Variant verification now has a "next missing sentence" helper: when students are stuck, it inserts only the next sentence starter and keeps submit locked until they add concrete content.
+- Variant verification now also has a "change explanation" exit: if the student still does not understand, the app returns to coaching with a simpler same-skill reteach message instead of keeping the child stuck in the open response box.
 - Sentence starters alone do not complete mastery; the rubric also requires student-added concrete content after the starter text.
 - Variant verification no longer reveals the expected method before the student writes; it only shows a generic method checklist and non-answer starters.
 - Variant verification now adapts the method checklist by skill, such as slope/change rate, equations, text evidence, experiments, geometry, and biology.
@@ -87,7 +88,7 @@ Latest fuller local verification command:
 node account-plan.test.mjs; node content-bank.test.mjs; node api/coach.test.js; node auth-helper-schema.test.mjs; node auth-plan-schema.test.mjs; node cloud-mistakes-schema.test.mjs; node --check app.js; node --check content/question-bank.js; node --check api/coach.js
 ```
 
-Latest result: 100 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content.
+Latest result: 101 tests passed and syntax checks passed. Correct, confident answers now advance to the next question automatically; completed guided mastery also advances automatically, with a final-question notice when there is no next question. The family illustration placement was browser-checked as a background under the platform title. The stuck-student helper was browser-checked from wrong answer to teacher model sentence to variant verification. The variant "next sentence" helper was browser-checked and still keeps submit locked until the student adds concrete content.
 
 ## Next Recommended Work
 
@@ -129,7 +130,8 @@ Student-side v4.1 is the current usable baseline:
 - v6.0: family illustration moved from a standalone workspace card to a subtle title-area background on the login card and app sidebar, preserving the original learning page layout.
 - v6.1: wrong-answer guidance now includes a teacher model sentence button for stuck students; it teaches a complete method sentence without showing the answer and then lets the student continue into variant verification.
 - v6.2: variant verification now includes a "补下一句" helper that inserts only the next missing method sentence starter; starter-only responses still cannot pass.
-- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
+- v6.3: variant verification now includes a "换种讲法" escape path that moves a stuck student back to reteaching with a simpler same-skill example and a one-sentence fill prompt.
+- QA baseline: account-scoped local progress, independent-first answering, auto-advance after correct answers, refreshed daily progress, structured mistake insight card, restatement scaffold, live reply-quality feedback with detail gate, stuck-reply rescue starter, teacher model sentence without answer reveal, locked guidance submit, guided teaching move with direct variant progression, structured variant verification, teacher-style live variant rubric feedback, rubric-gated variant submit, non-answer sentence starters, next-missing-sentence helper, reteach escape path, starter-only guard, hidden expected-method prompt, skill-adaptive method checklist, title-area family background image, live next-step variant feedback, and less-strict Chinese/mixed-language mastery checks.
 
 ## Operating Notes
 

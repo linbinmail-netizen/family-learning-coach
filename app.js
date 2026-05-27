@@ -2564,8 +2564,35 @@ function renderVariantNextHelp(reply = $("variantReply")?.value || "", variant =
   help.classList.toggle("hidden", ready);
   $("variantNextHelpText").textContent = ready
     ? "说明已经完整，可以提交给 AI 教练检查。"
-    : `${variantNextActionText(reply, variant)} 卡住时点“补下一句”，系统只给句式，不给答案。`;
+    : `${variantNextActionText(reply, variant)} 卡住时点“补下一句”；完全不懂就点“换种讲法”。`;
   $("applyVariantNextStepButton").disabled = ready || !starter;
+  $("variantReteachButton").disabled = ready;
+}
+
+function variantReteachMessageFor(lock = state.guidanceLock) {
+  const question = activeQuestions()[lock?.questionIndex || state.currentQuestion];
+  const lesson = conceptMiniLesson(question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstStep = lesson.steps?.[0] || "先看题目真正问什么";
+  return `我们先退一步。这个知识点是 ${skill}：${lesson.concept} 先记一个方法：${firstStep}。同类小例子：${teachingMiniExampleForSkill(skill)} 现在先不提交变式，你只要补一句：我第一步先____，因为____。`;
+}
+
+function requestVariantReteach() {
+  if (!hasActiveGuidanceLock()) return;
+  const reply = $("variantReply")?.value.trim();
+  state.guidanceLock.status = "coaching";
+  state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+  state.inlineCoachHistory.push({
+    role: "student",
+    text: reply ? `我在变式题这里卡住了：${reply}` : "我在变式题这里卡住了，想换一种讲法。",
+  });
+  state.inlineCoachHistory.push({
+    role: "coach",
+    text: variantReteachMessageFor(state.guidanceLock),
+  });
+  saveData();
+  renderDiagnostic();
+  focusGuidancePanel();
 }
 
 function guidanceIssueText(issue) {
@@ -4310,6 +4337,7 @@ function bindEvents() {
   $("applyVariantNextStepButton").addEventListener("click", () => {
     applyVariantStarter(variantNextStepStarterFor($("variantReply").value, state.guidanceLock?.variant));
   });
+  $("variantReteachButton").addEventListener("click", requestVariantReteach);
 
   $("variantForm").addEventListener("submit", (event) => {
     event.preventDefault();

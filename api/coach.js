@@ -178,13 +178,17 @@ function coachHistoryContains(body = {}, pattern) {
   return (body.history || []).some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
 }
 
+function needsImmediateConceptTeaching(studentReply = "") {
+  return /不知道|不懂|看不懂|打不出来|写不出来|说不出来|没吃透|不清楚|完全不会|什么意思|概念没接上|概念没懂|don't understand|do not understand|dont understand|idk|confused/i.test(String(studentReply || ""));
+}
+
 export function needsSmallerTaskAfterRepeatedStuck(body = {}) {
   const studentMessages = (body.history || [])
     .filter((message) => message.role === "student")
     .map((message) => String(message.text || ""));
   const currentReply = String(body.studentReply || "");
   const currentIsStuck = detectNeedsTeaching(currentReply);
-  const currentCannotProduceWords = /不知道|不懂|看不懂|打不出来|写不出来|说不出来|没吃透|不清楚|完全不会/.test(currentReply);
+  const currentCannotProduceWords = needsImmediateConceptTeaching(currentReply);
   const stuckTurnCount = [body.studentReply, ...studentMessages.slice(-4)].filter((reply) => detectNeedsTeaching(reply)).length;
   return currentIsStuck && currentCannotProduceWords && (studentMessages.length >= 2 || stuckTurnCount >= 2);
 }
@@ -207,6 +211,18 @@ function teachingMiniExampleForApi(skill = "", subject = "") {
     return "小例子：证明题先标出已知边角，再判断这些条件能支持哪一步。";
   }
   return "小例子：先把题目目标和第一步拆开，再解释这一步为什么有用。";
+}
+
+function studentFriendlyConceptLineForApi(skill = "", subject = "", explanation = "") {
+  const text = `${skill} ${subject} ${explanation}`.toLowerCase();
+  const hasChineseExplanation = /[\u4e00-\u9fff]/.test(explanation || "");
+  if (hasChineseExplanation && String(explanation).length <= 42) return explanation;
+  if (/slope|rate|linear|斜率|变化率|函数|比例/.test(text)) return "斜率就是看 y 相对 x 怎么变，不能只看数字大小。";
+  if (/evidence|claim|central|reading|english|rla|证据|主张|中心|作者/.test(text)) return "证据要支持观点，先找观点，再看证据是否直接相关。";
+  if (/equation|algebra|方程|代数|表达式|逆运算/.test(text)) return "方程题先看未知数被做了什么运算，再用相反运算解开。";
+  if (/experiment|variable|science|biology|实验|变量|数据|科学|生物/.test(text)) return "科学题先分清改变什么、测量什么，再看数据支持什么结论。";
+  if (/geometry|triangle|proof|几何|三角形|证明|角/.test(text)) return "几何题先找已知边角关系，再判断能支持哪一步证明。";
+  return `${skill || "这个知识点"} 要先分清题目目标和第一步线索。`;
 }
 
 export function buildTutorRequest(body = {}) {
@@ -249,6 +265,7 @@ export function buildTutorRequest(body = {}) {
       "卡住时固定顺序：卡点判断 → 小讲解 → 现在只做一小步。不要连续追问“题目问什么”。",
       "If the student cannot say what the question asks, do not keep asking the same meta-question. First teach the target concept in one sentence, give one tiny example, then provide a fill-in sentence.",
       "If the student says the knowledge point is not solid or they cannot type an answer, use teach-then-micro-step: 先讲清概念 → 小例子 → 二选一或填空. Do not demand a full restatement first.",
+      "Do not quote long English teacher explanations to the student. Rewrite them into short student-friendly Chinese.",
       "Use layeredHints in order: first clarify the goal, then the clue, then the full method sentence.",
       "Use commonMistakes to name the likely misconception before asking the next question.",
       "If the student is stuck, give one small hint, then ask the student to try.",
@@ -324,12 +341,10 @@ export function buildFallbackReply(body = {}) {
     return `${mistakePrefix}${nextHint ? `${nextHint} ` : ""}${oneStepFallbackPrompt(body)}`;
   }
 
-  if (needsTeaching) {
+  if (needsTeaching && (needsImmediateConceptTeaching(body.studentReply || "") || !hints.length)) {
     const skill = body.skill || "这个知识点";
-    const shortExplanation =
-      body.explanation ||
-      `${skill} 是这类题里帮助你判断方向的核心概念，不是让你先猜答案。`;
-    return `${mistakePrefix}${diagnosedGapLine(body)}你不是不努力，是这个知识点还没接上。小讲解：${shortExplanation} ${teachingMiniExampleForApi(skill, body.subject)} ${commonMistake ? `常见误区：${commonMistake}` : ""} 先照这句改写，现在只做一小步：${gapSentenceFrame({ gap: "stuck" }, body)}`;
+    const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
+    return `${mistakePrefix}${diagnosedGapLine(body)}你不是不努力，是概念没接上。小讲解：${shortExplanation} ${teachingMiniExampleForApi(skill, body.subject)} 先照这句改写，现在只做一小步：这题要我判断____。`;
   }
 
   if (step.id === "understand" && hints[0]) {
@@ -341,7 +356,7 @@ export function buildFallbackReply(body = {}) {
   }
 
   if (step.id === "eliminate" && hints[1]) {
-    return `${mistakePrefix}${hints[1]} 先排除一个不合理选项，并说出理由。`;
+    return `${mistakePrefix}${hints[1]} ${commonMistake ? `常见误区：${commonMistake} ` : ""}先排除一个不合理想法，并说出理由。`;
   }
 
   return `${mistakePrefix}${step.fallback}`;

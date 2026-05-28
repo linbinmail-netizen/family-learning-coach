@@ -64,6 +64,22 @@ test("coach fallback names the diagnosed gap before giving a micro task", () => 
   assert.doesNotMatch(reply, /再说题目问什么|正确答案|答案是|选项\s*[A-D]/);
 });
 
+test("coach fallback rewrites English explanations into a short student-friendly Chinese note", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    subject: "English I",
+    skill: "claim and evidence",
+    studentReply: "我不懂这个知识点，打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /卡点判断/);
+  assert.match(reply, /小讲解：证据要支持观点/);
+  assert.match(reply, /现在只做一小步/);
+  assert.ok(reply.length <= 170, `reply should stay short, got ${reply.length}`);
+  assert.doesNotMatch(reply, /Evidence should support|central idea, so identify|correct answer|答案是/);
+});
+
 test("coach fallback uses subject-specific mini examples when reteaching", () => {
   const mathReply = buildFallbackReply({
     ...baseBody,

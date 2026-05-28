@@ -3860,7 +3860,11 @@ function buildGuidanceRescueMove(lock = state.guidanceLock) {
 
 function guidanceNeedsLowerStep(lock = state.guidanceLock) {
   const teachingTurns = lock?.teachingTurns || 0;
-  return teachingTurns >= 3;
+  return teachingTurns >= 2;
+}
+
+function repeatedStuckCoachNotice() {
+  return "第二次卡住时，不用继续打字；点“帮我拼完整方法句”或“小台阶”，系统先帮你接上方法。";
 }
 
 function shouldUseTeachFirstLadder(reply = "", lock = state.guidanceLock) {
@@ -3890,7 +3894,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
           ? "原因"
           : "具体内容";
   if (guidanceNeedsLowerStep(lock)) {
-    return `你已经卡了几次，这说明任务太大，不是你不努力。我们不用再打完整句，先点下面的小台阶按钮，只完成一个空：题目问什么。系统会帮你把后面的第一步和原因慢慢接上。`;
+    return `你已经第二次卡住，这说明任务太大，不是你不努力。我们不用再打完整句，先点下面的小台阶按钮，只完成一个空：题目问什么。系统会帮你把后面的第一步和原因慢慢接上。`;
   }
   if (guidanceCannotProduceThought(reply)) {
     return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，我们先帮你拆题和补概念。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 我先帮你写好第一小句，接下来你只需要点“第一步”或从两个小选择里选一个：${guidanceStepBuilderSentence("goal", lock, question)}`;
@@ -3907,6 +3911,7 @@ function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")
   state.guidanceLock.forceStepBuilder = shouldUseTeachFirstLadder(reply, state.guidanceLock);
   if (state.guidanceLock.forceStepBuilder) {
     state.guidanceLock.forceStepBuilder = true;
+    state.guidanceLock.microChoiceNote = repeatedStuckCoachNotice();
     state.guidanceLock.stepBuilderParts = { goal: guidanceStepBuilderSentence("goal", state.guidanceLock) };
   }
   state.guidanceLock.replyDraft = teachFirstLadderDraft(reply, state.guidanceLock);

@@ -754,7 +754,7 @@ test("student guidance unpacks the question goal before asking the child to expl
 
 test("repeated stuck guidance lowers the task instead of asking for a full sentence again", () => {
   assert.match(js, /function guidanceNeedsLowerStep/);
-  assert.match(js, /teachingTurns >= 3/);
+  assert.match(js, /teachingTurns >= 2/);
   assert.match(js, /不用再打完整句/);
   assert.match(js, /先点下面的小台阶按钮/);
   assert.match(js, /state\.guidanceLock\.forceStepBuilder = true/);
@@ -762,6 +762,16 @@ test("repeated stuck guidance lowers the task instead of asking for a full sente
   assert.match(js, /guidanceStepBuilderSentence\("goal"/);
   assert.match(js, /只完成一个空/);
   assert.doesNotMatch(js, /guidanceNeedsLowerStep[\s\S]*正确答案是/);
+});
+
+test("second stuck reply switches to no-typing micro support", () => {
+  assert.match(js, /function repeatedStuckCoachNotice/);
+  assert.match(js, /第二次卡住/);
+  assert.match(js, /不用继续打字/);
+  assert.match(js, /点“帮我拼完整方法句”/);
+  assert.match(js, /state\.guidanceLock\.microChoiceNote = repeatedStuckCoachNotice\(\)/);
+  assert.match(js, /renderGuidanceNextAction\(reply, quality\)/);
+  assert.doesNotMatch(js, /repeatedStuckCoachNotice[\s\S]*正确答案是/);
 });
 
 test("student guidance keeps the suggested rescue draft after re-render", () => {

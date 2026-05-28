@@ -791,6 +791,15 @@ test("student who cannot describe the question gets concept support before writi
   assert.doesNotMatch(cannotProduceBlock, /正确答案是/);
 });
 
+test("cannot-produce replies auto-fill a teacher model instead of asking for more typing", () => {
+  assert.match(js, /guidanceCannotProduceThought\(reply\)/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.match(js, /state\.guidanceLock\.microChoiceReady = true/);
+  assert.match(js, /先把老师示范句读一遍/);
+  assert.match(js, /不用再写完整解释/);
+  assert.doesNotMatch(js, /guidanceCannotProduceThought\(reply\)[\s\S]*正确答案是/);
+});
+
 test("student guidance unpacks the question goal before asking the child to explain it", () => {
   assert.match(html, /id="questionUnpackText"/);
   assert.match(html, /id="applyQuestionGoalButton"/);

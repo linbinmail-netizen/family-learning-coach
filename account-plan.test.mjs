@@ -760,6 +760,10 @@ test("easy fast correct answers trigger school-level explanation verification", 
   assert.match(js, /学校考试式验证/);
   assert.match(js, /题目偏简单，需要升级到解释型验证/);
   assert.match(js, /issue !== "school_verification"/);
+  assert.match(js, /const startsWithVariant = issue === "school_verification"/);
+  assert.match(js, /status: startsWithVariant \? "variant" : "coaching"/);
+  assert.match(js, /直接写出这类题的解题方法和原因/);
+  assert.match(js, /答对后深度验证掌握/);
 });
 
 test("variant verification gives a structured method checklist", () => {

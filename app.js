@@ -2893,7 +2893,12 @@ function guidedMasteryCount(studentId = state.studentId) {
 }
 
 function masteryOutcome(lock, variantReply = "") {
-  const issue = lock?.issue === "confidence" ? "猜对后验证掌握" : "答错后引导掌握";
+  const issue =
+    lock?.issue === "confidence"
+      ? "猜对后验证掌握"
+      : lock?.issue === "school_verification"
+        ? "答对后深度验证掌握"
+        : "答错后引导掌握";
   return {
     studentId: state.studentId,
     subjectId: state.subject,
@@ -3424,6 +3429,7 @@ function shouldMoveToVariantAfterReply(reply = "") {
 
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
   const variant = buildVariantQuestion(question);
+  const startsWithVariant = issue === "school_verification";
   state.guidanceLock = {
     questionIndex: state.currentQuestion,
     questionKey: questionProgressKey(),
@@ -3432,20 +3438,27 @@ function startGuidedMastery(question, selectedIndex, reason, confidence, issue) 
     confidence,
     issue,
     variant,
-    status: "coaching",
+    status: startsWithVariant ? "variant" : "coaching",
     teachingTurns: 0,
     complete: false,
   };
-  state.inlineCoachHistory = [
-    {
-      role: "coach",
-      text: `${guidanceIssueText(issue)} 我不会直接告诉你答案。先用自己的话说：题目真正问什么？`,
-    },
-    {
-      role: "coach",
-      text: question.coachHints?.[0] || "先找题干里的关键词，再看哪个选项直接回应它。",
-    },
-  ];
+  state.inlineCoachHistory = startsWithVariant
+    ? [
+        {
+          role: "coach",
+          text: `${guidanceIssueText(issue)} 你刚才已经选对了，现在不需要重复选项，直接写出这类题的解题方法和原因。`,
+        },
+      ]
+    : [
+        {
+          role: "coach",
+          text: `${guidanceIssueText(issue)} 我不会直接告诉你答案。先用自己的话说：题目真正问什么？`,
+        },
+        {
+          role: "coach",
+          text: question.coachHints?.[0] || "先找题干里的关键词，再看哪个选项直接回应它。",
+        },
+      ];
 }
 
 function completeGuidedMastery(variantReply = "") {

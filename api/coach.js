@@ -307,6 +307,7 @@ export function buildTutorRequest(body = {}) {
       "If the student cannot say what the question asks, do not keep asking the same meta-question. First teach the target concept in one sentence, give one tiny example, then provide a fill-in sentence.",
       "If the student says the knowledge point is not solid or they cannot type an answer, use teach-then-micro-step: 先讲清概念 → 小例子 → 二选一或填空. Do not demand a full restatement first.",
       "不要把“打不出来”当成懒得写；这是前置概念没接上。先补前置概念，再给半句填空，不能继续要求学生先说“问题问什么”。",
+      "不要只让学生自己打出题目问什么；如果概念没接上，给两个可选小句或一个半句填空，学生只需要选择或补一个空，再过渡到完整方法句。",
       "Do not quote long English teacher explanations to the student. Rewrite them into short student-friendly Chinese.",
       "Use layeredHints in order: first clarify the goal, then the clue, then the full method sentence.",
       "Use commonMistakes to name the likely misconception before asking the next question.",

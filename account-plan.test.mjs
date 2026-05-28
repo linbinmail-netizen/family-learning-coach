@@ -577,6 +577,22 @@ test("student guidance offers a two-choice micro task when writing is hard", () 
   assert.match(css, /micro-choice-card/);
 });
 
+test("knowledge gap guidance offers tappable concept bridge choices instead of relying on typing", () => {
+  assert.match(html, /id="conceptBridgeCard"/);
+  assert.match(html, /AI 先搭脚手架/);
+  assert.match(html, /data-concept-bridge="goal"/);
+  assert.match(html, /data-concept-bridge="method"/);
+  assert.match(js, /function renderConceptBridgeChoices/);
+  assert.match(js, /function applyConceptBridgeChoice/);
+  assert.match(js, /guidanceCannotProduceThought\(reply\) \|\| quality\.asksForHelp/);
+  assert.match(js, /conceptBridgeCard"\)\.classList\.toggle\("hidden", !showBridge\)/);
+  assert.match(js, /button\.dataset\.conceptBridge/);
+  assert.match(js, /state\.guidanceLock\.conceptBridgeReady = true/);
+  assert.match(js, /input\.value = sentence/);
+  assert.match(css, /concept-bridge-card/);
+  assert.doesNotMatch(js, /applyConceptBridgeChoice[\s\S]*正确答案是/);
+});
+
 test("student can build a method sentence by tapping smaller guidance steps", () => {
   assert.match(html, /id="replyStepBuilderCard"/);
   assert.match(html, /data-reply-step="goal"/);

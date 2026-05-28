@@ -3413,6 +3413,46 @@ function applyGuidanceMicroChoice(choiceIndex = 0, input = $("inlineCoachReply")
   $("inlineCoachSubmit").focus();
 }
 
+function conceptBridgeChoicesForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstStep = guidanceStepBuilderSentence("method", lock, question).replace(/[。.!！]$/, "");
+  return {
+    goal: `这题要我判断 ${skill}。我先不用猜答案。`,
+    method: `这题要我判断 ${skill}。${firstStep}，因为这一步能帮我把知识点接回题目。`,
+  };
+}
+
+function renderConceptBridgeChoices(reply = $("inlineCoachReply")?.value || "", quality = evaluateGuidanceReplyQuality(reply), lock = state.guidanceLock) {
+  const card = $("conceptBridgeCard");
+  if (!card || !lock) return;
+  const showBridge = guidanceCannotProduceThought(reply) || quality.asksForHelp;
+  $("conceptBridgeCard").classList.toggle("hidden", !showBridge);
+  if (!showBridge) return;
+  const choices = conceptBridgeChoicesForLock(lock);
+  $("conceptBridgePrompt").textContent = "知识点没吃透时，不要硬打完整思路。先点一个小句子，系统会帮你接上。";
+  card.querySelectorAll("[data-concept-bridge]").forEach((button) => {
+    const key = button.dataset.conceptBridge;
+    button.textContent = key === "goal" ? "先接上题目目标" : "先接上第一步";
+    button.setAttribute("aria-label", choices[key] || choices.goal);
+  });
+}
+
+function applyConceptBridgeChoice(choiceKey = "goal", input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock() || !input) return;
+  const choices = conceptBridgeChoicesForLock(state.guidanceLock);
+  const sentence = choices[choiceKey] || choices.goal;
+  input.value = sentence;
+  state.guidanceLock.replyDraft = sentence;
+  state.guidanceLock.conceptBridgeReady = true;
+  state.guidanceLock.microChoiceReady = false;
+  state.guidanceLock.stepBuilderParts = {
+    ...(state.guidanceLock.stepBuilderParts || {}),
+    [choiceKey === "method" ? "method" : "goal"]: sentence.replace(/[。.!！]$/, ""),
+  };
+  renderReplyQuality(input.value);
+  input.focus();
+}
+
 function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const scaffold = guidanceScaffoldForLock(lock, question);
   const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || "关键词或条件";
@@ -3595,6 +3635,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     $("replyStarterText").textContent = starter;
     $("replyNextSentenceText").textContent = `建议下一句：${guidanceNextMissingSentence(reply, state.guidanceLock)}`;
     renderGuidanceMicroChoice(state.guidanceLock, quality);
+    renderConceptBridgeChoices(reply, quality, state.guidanceLock);
   }
   $("inlineCoachSubmit").disabled = !quality.ready && !canAskForHelp;
   $("inlineCoachSubmit").textContent = guidanceSubmitButtonText(quality);
@@ -6477,6 +6518,7 @@ function bindEvents() {
     appendInlineCoach("student", reply);
     state.guidanceLock.replyDraft = "";
     state.guidanceLock.microChoiceReady = false;
+    state.guidanceLock.conceptBridgeReady = false;
     state.guidanceLock.microChoiceNote = "";
     input.value = "";
     renderReplyQuality("");
@@ -6558,6 +6600,11 @@ function bindEvents() {
     const button = event.target.closest("[data-micro-choice]");
     if (!button) return;
     applyGuidanceMicroChoice(button.dataset.microChoice, $("inlineCoachReply"));
+  });
+  $("conceptBridgeCard").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-concept-bridge]");
+    if (!button) return;
+    applyConceptBridgeChoice(button.dataset.conceptBridge, $("inlineCoachReply"));
   });
   $("replyStepBuilderCard").addEventListener("click", (event) => {
     const button = event.target.closest("[data-reply-step]");

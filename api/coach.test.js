@@ -249,6 +249,20 @@ test("AI coach treats cannot-produce replies as a teaching problem, not a writin
   assert.match(text, /不能继续要求学生先说“问题问什么”/);
 });
 
+test("AI coach offers choice or fill-in scaffolds when students cannot type the idea", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "这些如果是别人知识点没吃透人家也打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /不要只让学生自己打出题目问什么/);
+  assert.match(text, /给两个可选小句/);
+  assert.match(text, /学生只需要选择或补一个空/);
+  assert.match(text, /再过渡到完整方法句/);
+});
+
 test("fallback teaches briefly when the student is conceptually stuck", () => {
   const reply = buildFallbackReply({
     ...baseBody,

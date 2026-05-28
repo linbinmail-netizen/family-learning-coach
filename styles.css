@@ -1065,6 +1065,13 @@ textarea {
   line-height: 1.45;
 }
 
+.reply-helper-card small {
+  color: var(--soft-ink);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .reply-starter-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

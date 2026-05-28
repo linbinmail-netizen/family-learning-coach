@@ -449,8 +449,10 @@ test("student guidance reply gives immediate quality feedback while typing", () 
   assert.match(html, /id="qualityQuestionGoal"/);
   assert.match(html, /id="qualityMethodStep"/);
   assert.match(html, /id="qualityReasonWhy"/);
+  assert.match(html, /id="replyNextSentenceText"/);
   assert.match(js, /function evaluateGuidanceReplyQuality/);
   assert.match(js, /function renderReplyQuality/);
+  assert.match(js, /function guidanceNextMissingSentence/);
   assert.match(js, /inlineCoachReply"\)\.addEventListener\("input"/);
   assert.match(css, /reply-quality-card/);
 });
@@ -476,6 +478,9 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
   assert.match(js, /coachingHintForTurn/);
   assert.match(js, /把方括号里的内容换成自己的话/);
   assert.match(js, /applyReplyStarterButton"\)\.addEventListener\("click"/);
+  assert.match(html, /id="applyNextSentenceButton"/);
+  assert.match(js, /applyNextSentenceButton"\)\.addEventListener\("click"/);
+  assert.match(js, /建议下一句/);
   assert.match(css, /reply-helper-card/);
 });
 

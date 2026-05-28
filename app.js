@@ -3200,6 +3200,18 @@ function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activ
   return `这题要我[写题目目标]。我第一步先看[${firstStep}]，因为[说明这一步为什么有用]。`;
 }
 
+function guidanceNextMissingSentence(reply = "", lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const quality = evaluateGuidanceReplyQuality(reply);
+  const scaffold = guidanceScaffoldForLock(lock, question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || question?.coachHints?.[0] || "题目关键词和已知条件";
+  if (!quality.questionGoal) return `这题要我判断 ${skill}。`;
+  if (!quality.methodStep) return `我第一步先看 ${firstStep}。`;
+  if (!quality.reasonWhy) return "因为这一步能帮我把题目要求和解题方法连起来。";
+  if (!quality.enoughDetail) return "我还要把题目目标、第一步和原因连成一句完整方法。";
+  return "现在把这句话用自己的话再说清楚一点。";
+}
+
 function guidanceReplyPlaceholderForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   if (/斜率|变化率|slope|rate|线性|函数/.test(skill)) {
@@ -3299,6 +3311,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     helperCard.classList.toggle("hidden", quality.ready);
     $("replyHelperText").textContent = guidanceReplyHelpText(reply, quality);
     $("replyStarterText").textContent = starter;
+    $("replyNextSentenceText").textContent = `建议下一句：${guidanceNextMissingSentence(reply, state.guidanceLock)}`;
   }
   $("inlineCoachSubmit").disabled = !quality.ready && !canAskForHelp;
   $("inlineCoachSubmit").textContent = canAskForHelp ? "帮我开头" : "继续引导";
@@ -5666,6 +5679,13 @@ function bindEvents() {
   $("applyReplyStarterButton").addEventListener("click", () => {
     const input = $("inlineCoachReply");
     input.value = guidanceReplyStarterForLock(state.guidanceLock);
+    input.focus();
+    renderReplyQuality(input.value);
+  });
+  $("applyNextSentenceButton").addEventListener("click", () => {
+    const input = $("inlineCoachReply");
+    const nextSentence = guidanceNextMissingSentence(input.value, state.guidanceLock);
+    input.value = `${input.value.trim()} ${nextSentence}`.trim();
     input.focus();
     renderReplyQuality(input.value);
   });

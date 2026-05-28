@@ -2559,6 +2559,8 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
   if (!unanswered.length) return -1;
 
   const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
+  const challengeQueue = state.adaptiveStats[state.subject]?.challengeQueue || [];
+  const missionCandidate = challengeMissionPreferredQuestion(unanswered, challengeQueue, targetLevel);
   const explanationChallengeCandidate = unanswered
     .filter(({ question }) => isExplanationFirstChallenge(question))
     .sort(
@@ -2579,10 +2581,33 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .filter(({ question }) => difficultyScore(question.difficulty) <= Math.max(1, targetLevel))
     .sort((a, b) => difficultyScore(a.question.difficulty) - difficultyScore(b.question.difficulty))[0];
 
+  if (adaptiveResult.challengeMode && missionCandidate) return missionCandidate.index;
   if (highPerformance && explanationChallengeCandidate) return explanationChallengeCandidate.index;
   if (adaptiveResult.isCorrect && targetLevel >= 2 && challengeCandidate) return challengeCandidate.index;
   if (adaptiveResult.isCorrect === false && supportCandidate) return supportCandidate.index;
   return unanswered.find(({ index }) => index > answeredIndex)?.index ?? unanswered[0].index;
+}
+
+function challengeMissionPreferredQuestion(unanswered = [], challengeQueue = [], targetLevel = adaptiveLevelForSubject()) {
+  const queueHead = challengeQueue[0] || {};
+  const ranked = [...unanswered].sort(
+    (a, b) =>
+      questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
+      || questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
+      || difficultyScore(b.question.difficulty) - difficultyScore(a.question.difficulty)
+      || Math.abs(difficultyScore(a.question.difficulty) - targetLevel) - Math.abs(difficultyScore(b.question.difficulty) - targetLevel)
+  );
+  if (queueHead.label === "解释型题") {
+    return ranked.find(({ question }) => question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning);
+  }
+  if (queueHead.label === "学校考试深度题") {
+    return ranked.find(({ question }) => question.schoolExamDepth);
+  }
+  if (queueHead.label === "同技能变式题") {
+    const currentSkill = activeQuestions()[state.currentQuestion]?.skill || "";
+    return ranked.find(({ question }) => question.skill === currentSkill && isDepthPracticeQuestion(question));
+  }
+  return ranked.find(({ question }) => isExplanationFirstChallenge(question));
 }
 
 function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuestion, mode = "correct", preferredIndex = -1) {

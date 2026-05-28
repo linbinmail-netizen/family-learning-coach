@@ -1032,6 +1032,16 @@ test("easy streaks create a visible challenge mission queue", () => {
   assert.match(css, /challenge-mission-queue/);
 });
 
+test("challenge mission queue directly steers the next question type", () => {
+  assert.match(js, /function challengeMissionPreferredQuestion/);
+  assert.match(js, /const challengeQueue = state\.adaptiveStats\[state\.subject\]\?\.challengeQueue \|\| \[\]/);
+  assert.match(js, /challengeMissionPreferredQuestion\(unanswered, challengeQueue, targetLevel\)/);
+  assert.match(js, /queueHead\.label === "解释型题"/);
+  assert.match(js, /queueHead\.label === "学校考试深度题"/);
+  assert.match(js, /queueHead\.label === "同技能变式题"/);
+  assert.match(js, /if \(adaptiveResult\.challengeMode && missionCandidate\) return missionCandidate\.index/);
+});
+
 test("variant verification gives a structured method checklist", () => {
   assert.match(html, /id="variantMission"/);
   assert.match(html, /id="variantMethodChecklist"/);

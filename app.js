@@ -3162,6 +3162,24 @@ function renderGuidanceTask(lock = state.guidanceLock) {
   $("guidanceTaskBody").textContent = task.body;
 }
 
+function guidanceLadderForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstStep = guidanceStepBuilderSentence("method", lock, question).replace(/^我/, "你");
+  return {
+    teach: `小讲解：${localStudentFriendlyConceptLine(question)}`,
+    example: `小例子：${teachingMiniExampleForSkill(skill)}`,
+    tryStep: `你来一步：先不用完整作答，只做这一句：${firstStep}。`,
+  };
+}
+
+function renderGuidanceLadder(lock = state.guidanceLock) {
+  if (!$("guidanceLadderCard") || !lock) return;
+  const ladder = guidanceLadderForLock(lock);
+  $("guidanceLadderTeach").textContent = ladder.teach;
+  $("guidanceLadderExample").textContent = ladder.example;
+  $("guidanceLadderTry").textContent = ladder.tryStep;
+}
+
 function guidanceUnlockItemsForLock(lock = state.guidanceLock) {
   const reply = $("inlineCoachReply")?.value || "";
   const variantReply = $("variantReply")?.value || "";
@@ -5149,6 +5167,7 @@ function renderInlineCoachPanel() {
   replyInput.placeholder = guidanceReplyPlaceholderForLock(lock);
   if (lock.replyDraft && !replyInput.value.trim()) replyInput.value = lock.replyDraft;
   renderGuidanceTask(lock);
+  renderGuidanceLadder(lock);
   renderGuidanceUnlockProgress(lock);
   renderGuidanceInsight(lock);
   renderGuidanceScaffold(lock);

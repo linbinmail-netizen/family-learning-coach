@@ -868,6 +868,36 @@ textarea {
   line-height: 1.45;
 }
 
+.guidance-ladder-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.guidance-ladder-card article {
+  min-height: 94px;
+  padding: 12px;
+  border: 1px solid rgba(47, 111, 159, 0.2);
+  border-radius: 8px;
+  background: #f7fbfd;
+}
+
+.guidance-ladder-card span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--blue-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.guidance-ladder-card strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .pre-answer-card {
   display: grid;
   gap: 10px;
@@ -2118,6 +2148,7 @@ li {
   .route-steps,
   .student-next-step-card,
   .variant-next-help,
+  .guidance-ladder-card,
   .guidance-insight-card,
   .guidance-scaffold-card ol,
   .reply-quality-list,

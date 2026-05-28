@@ -409,6 +409,21 @@ test("student guidance shows a single current task card", () => {
   assert.match(css, /guidance-task-card/);
 });
 
+test("student guidance shows a visible teach-example-try ladder after mistakes", () => {
+  assert.match(html, /id="guidanceLadderCard"/);
+  assert.match(html, /id="guidanceLadderTeach"/);
+  assert.match(html, /id="guidanceLadderExample"/);
+  assert.match(html, /id="guidanceLadderTry"/);
+  assert.match(js, /function guidanceLadderForLock/);
+  assert.match(js, /function renderGuidanceLadder/);
+  assert.match(js, /renderGuidanceLadder\(lock\)/);
+  assert.match(js, /小讲解/);
+  assert.match(js, /小例子/);
+  assert.match(js, /你来一步/);
+  assert.match(css, /guidance-ladder-card/);
+  assert.doesNotMatch(js, /guidanceLadderForLock[\s\S]*正确答案是/);
+});
+
 test("student guidance shows next-question unlock conditions", () => {
   assert.match(html, /id="guidanceUnlockCard"/);
   assert.match(html, /id="guidanceUnlockList"/);

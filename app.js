@@ -4294,10 +4294,11 @@ function dashboardStats(student = activeStudent(), tasks = buildDailyTasks(stude
   };
 }
 
-function nextStudentAction(tasks = buildDailyTasks()) {
+function nextStudentAction(tasks = buildDailyTasks(), tooEasyEvidence = tooEasyEvidenceForSubject()) {
   const current = todayCompletionState(tasks);
   if (current.complete) return "今日学习已完成。可以休息，或做 1 道挑战题保持手感。";
   if (!current.nextTask) return "下一步：开始今日学习。";
+  if (tooEasyEvidence.active) return "下一步：今天题目偏容易，先做学校考试深度题，并写出方法再选答案。";
   if (current.nextTask.title.includes("总结")) return "下一步：生成今日总结。";
   if (current.nextTask.title.includes("变式")) return "下一步：完成变式验证。";
   if (current.nextTask.title.includes("AI")) return "下一步：完成 AI 引导。";
@@ -5058,6 +5059,7 @@ function renderTodayPlan() {
   const tasks = buildDailyTasks(student);
   const completion = todayCompletionState(tasks);
   const stats = dashboardStats(student, tasks);
+  const tooEasyEvidence = tooEasyEvidenceForSubject();
 
   $("todayTitle").textContent = `${student.name} 今日学习课`;
   $("dashboardGreeting").textContent = `Good morning, ${student.name}.`;
@@ -5076,7 +5078,7 @@ function renderTodayPlan() {
   $("todayProgressBar").style.width = `${completion.percent}%`;
   $("todayEncouragement").textContent =
     completion.complete ? "今日学习已完成，可以做错题复盘。" : `已完成 ${completion.percent}%，先学一点，再练几题，卡住时再找 AI。`;
-  $("todayNextAction").textContent = nextStudentAction(tasks);
+  $("todayNextAction").textContent = nextStudentAction(tasks, tooEasyEvidence);
   $("todayTaskList").innerHTML = tasks
     .map(
       (task, index) => {
@@ -5097,7 +5099,7 @@ function renderTodayPlan() {
   renderStudentWrapup(completion);
   renderStudentActionBar();
   renderMistakeReview();
-  $("dashboardNextTraining").innerHTML = studentCoachQueue({ focusSubject, stats, completion })
+  $("dashboardNextTraining").innerHTML = studentCoachQueue({ focusSubject, stats, completion, tooEasyEvidence })
     .map(
       (item) => `
         <li class="coach-queue-item ${item.active ? "active" : ""}">
@@ -5110,7 +5112,7 @@ function renderTodayPlan() {
     .join("");
 }
 
-function studentCoachQueue({ focusSubject, stats, completion }) {
+function studentCoachQueue({ focusSubject, stats, completion, tooEasyEvidence = tooEasyEvidenceForSubject() }) {
   const openMistakes = mistakesForStudent(state.studentId);
   const target = dailyQuestionLimit(planForStudent(state.studentId));
   const answered = Object.keys(state.selectedAnswers).length;
@@ -5122,10 +5124,16 @@ function studentCoachQueue({ focusSubject, stats, completion }) {
   return [
     {
       label: "现在",
-      title: needsPractice ? `完成 ${focusSubject.label} 当前练习` : "今日练习目标已达到",
-      detail: needsPractice
-        ? `还差 ${Math.max(0, target - answered)} 题。先独立作答，不确定就标记“猜的”。`
-        : "可以进入错题复盘或生成今日总结。",
+      title: tooEasyEvidence.active
+        ? `先做${focusSubject.label}学校考试深度题`
+        : needsPractice
+          ? `完成 ${focusSubject.label} 当前练习`
+          : "今日练习目标已达到",
+      detail: tooEasyEvidence.active
+        ? "今天题目偏容易，系统会减少基础选择题；先写方法，再选答案。"
+        : needsPractice
+          ? `还差 ${Math.max(0, target - answered)} 题。先独立作答，不确定就标记“猜的”。`
+          : "可以进入错题复盘或生成今日总结。",
       active: needsPractice,
     },
     {

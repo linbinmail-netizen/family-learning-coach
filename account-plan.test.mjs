@@ -701,6 +701,7 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(js, /preAnswerThoughts/);
   assert.match(js, /function requiresPreAnswerThought/);
   assert.match(js, /function isPreAnswerThoughtReady/);
+  assert.match(js, /function renderPreAnswerGate/);
   assert.match(js, /先写一句自己的解题思路/);
   assert.match(js, /locked-choice/);
   assert.match(js, /guidanceLock/);
@@ -729,6 +730,9 @@ test("deep questions require a thought before answer choices unlock", () => {
   assert.match(js, /aria-disabled=\\"true\\"/);
   assert.match(js, /preAnswerThought"\)\.addEventListener\("input"/);
   assert.match(js, /state\.preAnswerThoughts\[questionProgressKey\(\)\] = event\.target\.value/);
+  assert.match(js, /renderPreAnswerGate\(\)/);
+  const inputHandler = js.match(/\$\("preAnswerThought"\)\.addEventListener\("input", \(event\) => \{[\s\S]*?\n  \}\);/)?.[0] || "";
+  assert.doesNotMatch(inputHandler, /renderDiagnostic\(\)/);
   assert.match(js, /先写一句自己的解题思路，再选择答案/);
   assert.match(css, /pre-answer-card/);
   assert.match(css, /locked-choice/);

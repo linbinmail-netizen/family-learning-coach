@@ -3838,6 +3838,40 @@ function isPreAnswerThoughtReady(text = "") {
   return /题目|判断|比较|先|第一步|看|找|条件|关键词|证据|变化|关系|because|first|evidence|compare|change/.test(normalized);
 }
 
+function preAnswerGateState(question = activeQuestions()[state.currentQuestion], progressKey = questionProgressKey()) {
+  const selectedAnswer = state.selectedAnswers[state.currentQuestion];
+  const locked = hasActiveGuidanceLock();
+  const guidedComplete = Boolean(state.guidedMastery[progressKey]);
+  const thought = state.preAnswerThoughts[progressKey] || "";
+  const needsPreAnswer = requiresPreAnswerThought(question) && selectedAnswer === undefined && !locked && !guidedComplete;
+  const preAnswerReady = !needsPreAnswer || isPreAnswerThoughtReady(thought);
+  return { thought, needsPreAnswer, preAnswerReady };
+}
+
+function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion], progressKey = questionProgressKey()) {
+  const { thought, needsPreAnswer, preAnswerReady } = preAnswerGateState(question, progressKey);
+  const card = $("preAnswerCard");
+  if (!card) return { thought, needsPreAnswer, preAnswerReady };
+  const thoughtInput = $("preAnswerThought");
+  card.classList.toggle("hidden", !needsPreAnswer);
+  if (document.activeElement !== thoughtInput) thoughtInput.value = thought;
+  $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "先写一句思路，选项才会解锁。";
+  $("preAnswerHelp").textContent = preAnswerReady
+    ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
+    : "不要写答案字母。写清“题目要判断什么”或“第一步看什么”。";
+  document.querySelectorAll("#answerGrid [data-answer-index]").forEach((button) => {
+    button.classList.toggle("locked-choice", !preAnswerReady);
+    if (!preAnswerReady) button.setAttribute("aria-disabled", "true");
+    else button.removeAttribute("aria-disabled");
+  });
+  if (needsPreAnswer && !preAnswerReady) {
+    $("answerFeedback").textContent = "这是一道深度题。先写一句自己的解题思路，再选择答案。";
+  } else if (needsPreAnswer && preAnswerReady && state.selectedAnswers[state.currentQuestion] === undefined) {
+    $("answerFeedback").textContent = "思路已记录。现在可以选择答案；答错后系统会讲解并引导。";
+  }
+  return { thought, needsPreAnswer, preAnswerReady };
+}
+
 function questionTypeLabel(question = {}) {
   if (question.schoolExamDepth) return "学校考试深度";
   if (question.constructedResponse || question.openResponse) return "解释型题";
@@ -4575,9 +4609,7 @@ function renderDiagnostic() {
   const confidence = state.answerConfidence[progressKey] || "sure";
   const locked = hasActiveGuidanceLock();
   const guidedComplete = Boolean(state.guidedMastery[progressKey]);
-  const preAnswerThought = state.preAnswerThoughts[progressKey] || "";
-  const needsPreAnswer = requiresPreAnswerThought(question) && selectedAnswer === undefined && !locked && !guidedComplete;
-  const preAnswerReady = !needsPreAnswer || isPreAnswerThoughtReady(preAnswerThought);
+  const { needsPreAnswer, preAnswerReady } = preAnswerGateState(question, progressKey);
   const showLessonAfterAttempt = locked || guidedComplete;
   const lesson = conceptMiniLesson(question);
 
@@ -4598,12 +4630,6 @@ function renderDiagnostic() {
   $("miniLessonCard").classList.toggle("hidden", !showLessonAfterAttempt);
   $("questionPrompt").textContent = question.prompt;
   $("confidenceSelect").value = confidence;
-  $("preAnswerCard").classList.toggle("hidden", !needsPreAnswer);
-  $("preAnswerThought").value = preAnswerThought;
-  $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "先写一句思路，选项才会解锁。";
-  $("preAnswerHelp").textContent = preAnswerReady
-    ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
-    : "不要写答案字母。写清“题目要判断什么”或“第一步看什么”。";
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subject;
   $("dailySuggestion").textContent = `${student.name} 今天计划学习 ${plan.minutes} 分钟，重点完成 ${focusSubject.label}。当前目标难度：${adaptiveLabel}；系统会根据答题表现自动升降。`;
@@ -4636,6 +4662,7 @@ function renderDiagnostic() {
     $("answerFeedback").textContent = "这题需要完成引导后再进入下一题。";
   }
   renderStudentNextStep({ selectedAnswer, question, locked, guidedComplete, confidence });
+  renderPreAnswerGate(question, progressKey);
   renderInlineCoachPanel();
   renderLearningRouteMap();
 
@@ -5713,7 +5740,7 @@ function bindEvents() {
   $("preAnswerThought").addEventListener("input", (event) => {
     state.preAnswerThoughts[questionProgressKey()] = event.target.value;
     saveData();
-    renderDiagnostic();
+    renderPreAnswerGate();
   });
 
   $("answerGrid").addEventListener("click", (event) => {

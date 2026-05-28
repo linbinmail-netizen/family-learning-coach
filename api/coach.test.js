@@ -215,6 +215,19 @@ test("fallback teaches briefly when the student is conceptually stuck", () => {
   assert.doesNotMatch(reply, /The central idea or claim/);
 });
 
+test("fallback reteaching uses concrete subject examples", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    subject: "English I",
+    skill: "claim and evidence",
+    studentReply: "我不懂",
+  });
+
+  assert.match(reply, /小例子/);
+  assert.match(reply, /观点句|证据|作者观点/);
+  assert.doesNotMatch(reply, /The central idea or claim/);
+});
+
 test("fallback reply gives one next step without revealing the answer", () => {
   const reply = buildFallbackReply(baseBody);
 

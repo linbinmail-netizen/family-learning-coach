@@ -491,6 +491,17 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
   assert.match(css, /reply-helper-card/);
 });
 
+test("student can ask for another example without typing a perfect restatement", () => {
+  assert.match(html, /id="applyConceptExampleButton"/);
+  assert.match(html, /换个例子讲/);
+  assert.match(js, /function requestConceptExampleReteach/);
+  assert.match(js, /applyConceptExampleButton"\)\.addEventListener\("click"/);
+  assert.match(js, /buildConceptBridgeMove\(currentDraft, state\.guidanceLock\)/);
+  assert.match(js, /我还是没懂，换个例子讲/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = state\.guidanceLock\.microDrill\?\.starter \|\| guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.doesNotMatch(js, /requestConceptExampleReteach[\s\S]*正确答案是/);
+});
+
 test("student stuck replies can submit for rescue instead of staying blocked", () => {
   const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";

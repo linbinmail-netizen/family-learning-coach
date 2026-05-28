@@ -3476,6 +3476,21 @@ function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")
   focusGuidancePanel();
 }
 
+function requestConceptExampleReteach(input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock()) return;
+  state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+  state.guidanceLock.microDrill = guidanceMicroDrillForLock(state.guidanceLock);
+  const currentDraft = input?.value?.trim() || "我还是没懂，换个例子讲。";
+  state.inlineCoachHistory.push({ role: "student", text: currentDraft });
+  state.inlineCoachHistory.push({ role: "coach", text: buildConceptBridgeMove(currentDraft, state.guidanceLock) });
+  state.guidanceLock.replyDraft = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
+  input.value = state.guidanceLock.replyDraft;
+  renderReplyQuality(input.value);
+  saveData();
+  renderDiagnostic();
+  focusGuidancePanel();
+}
+
 function shouldMoveToVariantAfterReply(reply = "") {
   return evaluateGuidanceReplyQuality(reply).ready || (isReasonStrong(reply) && (state.guidanceLock?.teachingTurns || 0) >= 1);
 }
@@ -6081,6 +6096,9 @@ function bindEvents() {
     if (state.guidanceLock) state.guidanceLock.replyDraft = input.value;
     input.focus();
     renderReplyQuality(input.value);
+  });
+  $("applyConceptExampleButton").addEventListener("click", () => {
+    requestConceptExampleReteach($("inlineCoachReply"));
   });
   $("applyTeacherModelButton").addEventListener("click", () => {
     const input = $("inlineCoachReply");

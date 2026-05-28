@@ -167,6 +167,26 @@ function coachHistoryContains(body = {}, pattern) {
   return (body.history || []).some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
 }
 
+function teachingMiniExampleForApi(skill = "", subject = "") {
+  const text = `${skill} ${subject}`.toLowerCase();
+  if (/slope|rate|linear|斜率|变化率|函数|比例/.test(text)) {
+    return "小例子：如果 x 每多 1，y 都多 3，就先抓“每 1 个 x 变多少”。";
+  }
+  if (/equation|algebra|方程|代数|表达式|逆运算/.test(text)) {
+    return "小例子：3x+5=20 先看 x 外面最后加了 5，所以第一步先处理 +5。";
+  }
+  if (/evidence|claim|central|reading|english|rla|证据|主张|中心|作者/.test(text)) {
+    return "小例子：题目问作者观点时，先找观点句，再找能直接支持它的证据。";
+  }
+  if (/experiment|variable|science|biology|实验|变量|数据|科学|生物/.test(text)) {
+    return "小例子：实验题先分清改变什么、测量什么、哪些条件保持不变。";
+  }
+  if (/geometry|triangle|proof|几何|三角形|证明|角/.test(text)) {
+    return "小例子：证明题先标出已知边角，再判断这些条件能支持哪一步。";
+  }
+  return "小例子：先把题目目标和第一步拆开，再解释这一步为什么有用。";
+}
+
 export function buildTutorRequest(body = {}) {
   const {
     studentName,
@@ -280,7 +300,7 @@ export function buildFallbackReply(body = {}) {
     const shortExplanation =
       body.explanation ||
       `${skill} 是这类题里帮助你判断方向的核心概念，不是让你先猜答案。`;
-    return `${mistakePrefix}你不是不努力，是这个知识点还没接上。小讲解：${shortExplanation} ${commonMistake ? `常见误区：${commonMistake}` : "例子：先分清题目目标和线索。"} 先照这句改写：${gapSentenceFrame({ gap: "stuck" }, body)}`;
+    return `${mistakePrefix}你不是不努力，是这个知识点还没接上。小讲解：${shortExplanation} ${teachingMiniExampleForApi(skill, body.subject)} ${commonMistake ? `常见误区：${commonMistake}` : ""} 先照这句改写：${gapSentenceFrame({ gap: "stuck" }, body)}`;
   }
 
   if (step.id === "understand" && hints[0]) {

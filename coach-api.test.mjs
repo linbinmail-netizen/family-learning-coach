@@ -49,3 +49,21 @@ test("coach fallback teaches before asking when student cannot state the questio
   assert.doesNotMatch(reply, /题目要你找哪一类信息/);
   assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
 });
+
+test("coach fallback uses subject-specific mini examples when reteaching", () => {
+  const mathReply = buildFallbackReply({
+    ...baseBody,
+    skill: "linear slope",
+    subject: "Algebra I",
+    studentReply: "idk",
+  });
+  const readingReply = buildFallbackReply({
+    ...baseBody,
+    skill: "claim and evidence",
+    subject: "English I",
+    studentReply: "不知道",
+  });
+  assert.match(mathReply, /每多 1|每 1 个 x/);
+  assert.match(readingReply, /作者观点|观点句|证据/);
+  assert.doesNotMatch(`${mathReply} ${readingReply}`, /正确答案|答案是|选项\s*[A-D]/);
+});

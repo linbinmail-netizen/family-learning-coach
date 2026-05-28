@@ -3251,7 +3251,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
   const wordCount = text.split(/\s+/).filter(Boolean).length;
   const enoughDetail = compactText.length >= 18 || wordCount >= 8;
   const hasQuestionGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate/.test(text);
-  const hasMethodStep = /先|第一步|步骤|方法|看|找|用|变化|条件|证据|除以|比较|compare|divide|change|rate/.test(text);
+  const hasMethodStep = /先|第一步|步骤|方法|看|找|变化|条件|证据|除以|比较|compare|divide|change|rate/.test(text);
   const hasReasonWhy = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that/.test(text);
   const asksForHelp = /不知道|不会|不懂|写什么|怎么写|没思路|help|stuck|idk|not sure/.test(text);
   const hasPlaceholder = /\[.*?\]|_{2,}/.test(reply);
@@ -4829,6 +4829,22 @@ function sameSkillMistakeSummary(question = activeQuestions()[state.currentQuest
   }));
 }
 
+function coachingGapForReply(studentReply = "") {
+  const text = String(studentReply || "").trim().toLowerCase();
+  const quality = evaluateGuidanceReplyQuality(studentReply);
+  if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(text)) {
+    return { label: "只写了答案", next: "先不选答案，先说第一步看什么。" };
+  }
+  if (quality.asksForHelp || !text) {
+    return { label: "还没形成第一步", next: "先照老师示范句，说出题目真正问什么。" };
+  }
+  if (!quality.questionGoal) return { label: "题目目标不清楚", next: "补一句：这题要我判断什么。" };
+  if (!quality.methodStep) return { label: "方法步骤不清楚", next: "补一句：我第一步先看什么。" };
+  if (!quality.reasonWhy) return { label: "原因说明不完整", next: "补一句：为什么这一步有用。" };
+  if (!quality.enoughDetail) return { label: "表达太短", next: "把题目目标、第一步和原因连成一句完整方法。" };
+  return { label: "需要更精确", next: "把关键词、条件或证据说具体一点。" };
+}
+
 async function askAiCoach(studentReply, history = state.chatHistory) {
   const question = activeQuestions()[state.currentQuestion];
   const payload = {
@@ -4902,28 +4918,29 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
     ? `你之前在同类题上卡过 ${recentSkillMistakes[0].attempts || 1} 次，`
     : "";
   const lesson = conceptMiniLesson(question);
+  const gap = coachingGapForReply(rawReply);
 
   if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(rawReply)) {
     return {
-      reply: `${mistakePrefix}先不看答案字母。请写方法：第一步看什么？为什么这一步能帮你判断？`,
+      reply: `${mistakePrefix}我看到你现在缺的是：${gap.label}。${gap.next} 请写：第一步看____，因为____。`,
     };
   }
 
   if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
     return {
-      reply: `${mistakePrefix}小讲解：${commonMistakeForQuestion(question)} ${coachingHintForTurn(question, hintTurn)} 先不用选答案，请用自己的话说说题目真正问什么。`,
+      reply: `${mistakePrefix}我看到你现在缺的是：${gap.label}。小讲解：${commonMistakeForQuestion(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} ${gap.next}`,
     };
   }
 
   if (studentTurns <= 1) {
     return {
-      reply: `${mistakePrefix}${coachingHintForTurn(question, 1) || hints[0] || "方向不错。"} 下一步找一个关键词，并说明它为什么重要。`,
+      reply: `${mistakePrefix}我看到你现在缺的是：${gap.label}。${coachingHintForTurn(question, 1) || hints[0] || gap.next} 下一步只补这一句，不用选答案。`,
     };
   }
 
   if (studentTurns === 2) {
     return {
-      reply: `${coachingHintForTurn(question, 2) || hints[1] || "很好，继续缩小范围。"} 现在先排除一个不合理选项，并说出理由。`,
+      reply: `我看到你现在缺的是：${gap.label}。${coachingHintForTurn(question, 2) || hints[1] || gap.next} 现在先排除一个不合理想法，并说出理由。`,
     };
   }
 

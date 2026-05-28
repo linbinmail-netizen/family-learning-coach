@@ -864,13 +864,17 @@ test("student AI requests have fast timeout fallback", () => {
 
 test("local student coach handles answer letters and stuck replies directly", () => {
   assert.match(js, /function buildLocalCoachReply/);
+  assert.match(js, /function coachingGapForReply/);
   assert.match(js, /history = state\.chatHistory/);
   assert.match(js, /const hintTurn = Math\.max/);
-  assert.match(js, /先不看答案字母/);
+  assert.match(js, /缺的是/);
+  assert.match(js, /只写了答案/);
   assert.match(js, /第一步看什么/);
   assert.match(js, /小讲解/);
+  assert.match(js, /小例子/);
   assert.match(js, /commonMistakeForQuestion\(question\)/);
-  assert.match(js, /coachingHintForTurn\(question, hintTurn\)/);
+  assert.match(js, /coachingHintForTurn\(question, 1\)/);
+  assert.match(js, /coachingHintForTurn\(question, 2\)/);
   assert.match(js, /buildLocalCoachReply\(reply, state\.inlineCoachHistory\)/);
 });
 

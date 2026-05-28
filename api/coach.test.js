@@ -7,6 +7,7 @@ import {
   buildMasteryEvaluationRequest,
   buildFallbackReply,
   buildTutorRequest,
+  coachingGapAnalysis,
   detectNeedsTeaching,
   extractOpenAIText,
   fetchOpenAIWithTimeout,
@@ -76,6 +77,13 @@ test("student reply analysis detects low quality replies for smoother coaching",
   assert.equal(analyzeStudentReply("第一步先找关键词，因为证据要支持题目问的观点").type, "method_attempt");
 });
 
+test("coaching gap analysis names the missing piece", () => {
+  assert.equal(coachingGapAnalysis("B").gap, "answer_only");
+  assert.equal(coachingGapAnalysis("我先找证据，因为它有用").gap, "goal");
+  assert.equal(coachingGapAnalysis("这题要我判断中心观点，因为这样有用").gap, "method");
+  assert.equal(coachingGapAnalysis("这题要我判断中心观点，第一步先找证据").gap, "reason");
+});
+
 test("fallback reply adapts to answer-only and vague replies", () => {
   const context = {
     ...baseBody,
@@ -85,9 +93,9 @@ test("fallback reply adapts to answer-only and vague replies", () => {
   const answerOnly = buildFallbackReply({ ...context, studentReply: "B" });
   const vague = buildFallbackReply({ ...context, studentReply: "maybe this" });
 
-  assert.match(answerOnly, /答案字母|第一步/);
+  assert.match(answerOnly, /缺的是|只写了答案|第一步/);
   assert.match(answerOnly, /常见误区/);
-  assert.match(vague, /理由|我先看|直接线索/);
+  assert.match(vague, /缺的是|理由|我先看|直接线索/);
   assert.doesNotMatch(answerOnly, /The central idea or claim/);
 });
 

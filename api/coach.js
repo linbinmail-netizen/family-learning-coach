@@ -97,6 +97,23 @@ export function analyzeStudentReply(studentReply = "") {
   return { type: "method_attempt", quality: 4, action: "push_precision" };
 }
 
+export function coachingGapAnalysis(studentReply = "") {
+  const text = String(studentReply || "").trim().toLowerCase();
+  const answerOnly = /^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(text);
+  const stuck = detectNeedsTeaching(text);
+  const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate|identify/.test(text);
+  const hasMethod = /先|第一步|步骤|方法|看|找|变化|条件|证据|除以|比较|compare|divide|change|rate|evidence/.test(text);
+  const hasReason = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that|therefore/.test(text);
+  const enoughDetail = text.replace(/\s+/g, "").length >= 18 || text.split(/\s+/).filter(Boolean).length >= 8;
+  if (answerOnly) return { gap: "answer_only", label: "只写了答案", next: "不要先选答案，先写方法句。" };
+  if (stuck || !text) return { gap: "stuck", label: "还没形成第一步", next: "先照老师给的第一步说一遍。" };
+  if (!hasGoal) return { gap: "goal", label: "题目目标不清楚", next: "先说这题要你判断什么。" };
+  if (!hasMethod) return { gap: "method", label: "方法步骤不清楚", next: "补一句第一步看什么。" };
+  if (!hasReason) return { gap: "reason", label: "原因说明不完整", next: "补一句为什么这一步有用。" };
+  if (!enoughDetail) return { gap: "detail", label: "表达太短", next: "把目标、方法、原因连成完整句。" };
+  return { gap: "precision", label: "需要更精确", next: "把关键词或证据说具体一点。" };
+}
+
 function buildTeachingNote({ subject, skill, explanation }) {
   const concept = skill || "这个知识点";
   const base = explanation || `${concept} 是解这类题时要先弄清楚的核心概念。`;
@@ -145,6 +162,7 @@ export function buildTutorRequest(body = {}) {
   const step = getLearningStep(history);
   const needsTeaching = detectNeedsTeaching(studentReply);
   const replyAnalysis = analyzeStudentReply(studentReply);
+  const coachingGap = coachingGapAnalysis(studentReply);
   const allHints = [...layeredHints, ...coachHints].filter(Boolean);
   const mistakeNote = recentSkillMistakes.length
     ? "Use recent same-skill mistakes to personalize the next hint, but do not mention private report details or reveal answers."
@@ -192,10 +210,11 @@ export function buildTutorRequest(body = {}) {
               currentStep: step,
               needsTeaching,
               replyAnalysis,
+              coachingGap,
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. Use replyAnalysis to choose the next coaching move. If needsTeaching is true, give a short explanation plus a tiny example before asking one follow-up question. Do not reveal the correct answer.",
+                "Move the student one step forward. Use replyAnalysis and coachingGap to name the missing piece first, then give one concrete next sentence or question. If needsTeaching is true, give a short explanation plus a tiny example before asking one follow-up question. Do not reveal the correct answer.",
             }),
           },
         ],
@@ -209,6 +228,7 @@ export function buildFallbackReply(body = {}) {
   const hints = mergedCoachHints(body);
   const needsTeaching = detectNeedsTeaching(body.studentReply || "");
   const replyAnalysis = analyzeStudentReply(body.studentReply || "");
+  const coachingGap = coachingGapAnalysis(body.studentReply || "");
   const commonMistake = firstCommonMistake(body);
   const currentHint = coachingHintForHistory(body);
   const nextHint = coachingHintForHistory(body, 1);
@@ -217,11 +237,11 @@ export function buildFallbackReply(body = {}) {
     : "";
 
   if (replyAnalysis.type === "answer_only") {
-    return `${mistakePrefix}先不看答案字母。${commonMistake ? `常见误区：${commonMistake} ` : ""}请写方法：第一步看____，因为____。`;
+    return `${mistakePrefix}我看到你现在缺的是：${coachingGap.label}。${commonMistake ? `常见误区：${commonMistake} ` : ""}请写方法：第一步看____，因为____。`;
   }
 
   if (replyAnalysis.type === "thin" || replyAnalysis.type === "claim_without_reason") {
-    return `${mistakePrefix}你有方向了，但理由还不够。${nextHint || "先找能直接证明方法的线索。"} 用这句补完整：我先看____，因为它能说明____。`;
+    return `${mistakePrefix}我看到你现在缺的是：${coachingGap.label}。${nextHint || coachingGap.next} 用这句补完整：我先看____，因为它能说明____。`;
   }
 
   if (needsTeaching) {

@@ -3087,6 +3087,13 @@ function guidanceCurrentTaskForLock(lock = state.guidanceLock) {
       body: "先自己读题和选择答案；答错或不确定后，系统才会开始引导。",
     };
   }
+  if (lock.microDrill) {
+    return {
+      badge: "第 2 步 / 微练习",
+      title: "先完成一个小步骤",
+      body: `${lock.microDrill.prompt} 完成这句后，再回到原题做变式验证。`,
+    };
+  }
   if (lock.status === "variant") {
     return {
       badge: "第 3 步 / 变式验证",
@@ -3192,6 +3199,32 @@ function renderGuidanceScaffold(lock = state.guidanceLock) {
   $("scaffoldQuestionFocus").textContent = scaffold.questionFocus;
   $("scaffoldFirstStep").textContent = scaffold.firstStep;
   $("scaffoldReasonStarter").textContent = scaffold.reasonStarter;
+}
+
+function guidanceMicroDrillForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  if (/斜率|变化率|slope|rate|线性|函数/.test(skill)) {
+    return {
+      prompt: "微练习：先不看原题选项，只说 x 和 y 哪个在变、为什么要比较变化。",
+      starter: "这题要我判断变化关系。我第一步先看 x 和 y 怎么变，因为斜率表示每增加 1 个 x，y 变多少。",
+    };
+  }
+  if (/证据|中心观点|主张|作者|文本|claim|evidence|author|theme/.test(skill)) {
+    return {
+      prompt: "微练习：先不看选项，只说文章要判断的观点，再说证据要支持什么。",
+      starter: "这题要我判断中心观点或主张。我第一步先找中心句和直接证据，因为证据必须支持这个观点。",
+    };
+  }
+  if (/变量|实验|variable|experiment|数据|图表/.test(skill)) {
+    return {
+      prompt: "微练习：先不看答案，只分清谁被改变、谁被测量、谁要保持不变。",
+      starter: "这题要我判断实验关系。我第一步先分清改变的变量和测量的结果，因为结论要由数据支持。",
+    };
+  }
+  return {
+    prompt: "微练习：先不看答案，只完成一句方法句：题目要我判断什么，第一步看什么，为什么。",
+    starter: guidanceTeacherModelForLock(lock, question),
+  };
 }
 
 function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
@@ -3353,6 +3386,9 @@ function buildGuidanceRescueMove(lock = state.guidanceLock) {
   const firstStep = coachingHintForTurn(question, lock?.teachingTurns || 0);
   const mistake = commonMistakeForQuestion(question);
   const modelSentence = guidanceTeacherModelForLock(lock, question);
+  if (lock?.microDrill) {
+    return `我们先降一级做微练习。${lock.microDrill.prompt} 我已经把一条可改写的句子放到输入框里：${lock.microDrill.starter}`;
+  }
   return `可以，不会写时先不要硬猜。这个知识点是 ${skill}。先记住：${firstStep}。容易错在：${mistake}。我已经把一条老师示范句放到输入框里，你先改成自己的话再继续：${modelSentence}`;
 }
 
@@ -5639,8 +5675,11 @@ function bindEvents() {
     if (quality.asksForHelp) {
       appendInlineCoach("student", reply);
       state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+      if (state.guidanceLock.teachingTurns >= 2) {
+        state.guidanceLock.microDrill = guidanceMicroDrillForLock(state.guidanceLock);
+      }
       state.inlineCoachHistory.push({ role: "coach", text: buildGuidanceRescueMove(state.guidanceLock) });
-      input.value = guidanceTeacherModelForLock(state.guidanceLock);
+      input.value = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
       renderReplyQuality(input.value);
       saveData();
       renderDiagnostic();

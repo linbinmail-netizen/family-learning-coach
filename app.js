@@ -4214,6 +4214,27 @@ function shouldEnterChallengeBoost(question = {}, nextStats = {}, isCorrect = fa
   return plan.difficultyMode !== "steady" && isCorrect && easyChoice && (fastCorrect || effortlessStreak);
 }
 
+function buildChallengeMissionQueue(question = {}, nextStats = {}) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const streak = Math.max(2, Number(nextStats.correctStreak || 2));
+  return [
+    { label: "解释型题", detail: `用自己的话写出 ${skill} 的第一步和原因。` },
+    { label: "学校考试深度题", detail: `连续 ${streak} 题很顺，下一题优先选学校考试深度题。` },
+    { label: "同技能变式题", detail: "再做一道同技能变式，确认不是靠选项猜出来。" },
+  ];
+}
+
+function renderChallengeMissionQueue(question = activeQuestions()[state.currentQuestion]) {
+  const panel = $("challengeMissionQueue");
+  if (!panel) return;
+  const queue = state.adaptiveStats[state.subject]?.challengeQueue || [];
+  const active = challengeBoostForSubject(state.subject) > 0 && queue.length;
+  panel.classList.toggle("hidden", !active);
+  $("challengeMissionList").innerHTML = active
+    ? queue.map((item) => `<li><strong>${item.label}</strong><span>${item.detail}</span></li>`).join("")
+    : "";
+}
+
 function isTwoHourPlan(plan = planForStudent(state.studentId)) {
   return plan.minutes >= 90 || (plan.questionTarget || 8) >= 18;
 }
@@ -4510,6 +4531,8 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
   const raisedLevel = nextStats.correctStreak >= 2 && level < difficultyLevels.length - 1;
   if (shouldEnterChallengeBoost(question, nextStats, isCorrect)) {
     nextStats.challengeBoostRemaining = 3;
+    state.adaptiveStats[subjectId] = nextStats;
+    state.adaptiveStats[subjectId].challengeQueue = buildChallengeMissionQueue(question, nextStats);
     challengeMode = true;
     message = "这组题太轻松，接下来进入挑战模式：优先做解释型/学校考试深度题。";
   }
@@ -4524,7 +4547,7 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
   }
 
   state.adaptiveLevels[subjectId] = level;
-  state.adaptiveStats[subjectId] = nextStats;
+  state.adaptiveStats[subjectId] = { ...(state.adaptiveStats[subjectId] || {}), ...nextStats };
   return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, raisedLevel, challengeMode };
 }
 
@@ -4542,6 +4565,7 @@ function raiseDifficultyOnDemand() {
     correctStreak: 0,
     missedStreak: 0,
     challengeBoostRemaining: 3,
+    challengeQueue: buildChallengeMissionQueue(activeQuestions()[state.currentQuestion] || {}, { correctStreak: 2 }),
     lastManualBoostAt: new Date().toISOString(),
     lastManualBoostReason: "手动升难度",
   };
@@ -5061,6 +5085,7 @@ function renderDiagnostic() {
   $("standardTag").textContent = question.standard;
   $("difficultyTag").textContent = `${question.difficulty} · ${questionTypeLabel(question)} · 当前目标：${adaptiveLabel}${challengeModeLabel} · 当前环节：${learningBlock.label}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
+  renderChallengeMissionQueue(question);
   $("lessonConcept").textContent = lesson.concept;
   $("workedExample").textContent = lesson.example;
   $("methodHint").textContent = lesson.method;

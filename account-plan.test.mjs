@@ -1018,6 +1018,20 @@ test("easy streaks enter a short challenge mode with clear student feedback", ()
   assert.match(js, /当前目标难度：\$\{adaptiveLabel\}\$\{challengeModeLabel\}/);
 });
 
+test("easy streaks create a visible challenge mission queue", () => {
+  assert.match(html, /id="challengeMissionQueue"/);
+  assert.match(html, /id="challengeMissionList"/);
+  assert.match(html, /挑战任务/);
+  assert.match(js, /function buildChallengeMissionQueue/);
+  assert.match(js, /function renderChallengeMissionQueue/);
+  assert.match(js, /state\.adaptiveStats\[subjectId\]\.challengeQueue = buildChallengeMissionQueue\(question, nextStats\)/);
+  assert.match(js, /解释型题/);
+  assert.match(js, /学校考试深度题/);
+  assert.match(js, /同技能变式题/);
+  assert.match(js, /renderChallengeMissionQueue\(question\)/);
+  assert.match(css, /challenge-mission-queue/);
+});
+
 test("variant verification gives a structured method checklist", () => {
   assert.match(html, /id="variantMission"/);
   assert.match(html, /id="variantMethodChecklist"/);

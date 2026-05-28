@@ -593,6 +593,17 @@ test("knowledge gap guidance offers tappable concept bridge choices instead of r
   assert.doesNotMatch(js, /applyConceptBridgeChoice[\s\S]*正确答案是/);
 });
 
+test("concept bridge can continue by filling the next missing method sentence", () => {
+  const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  assert.match(js, /function continueConceptBridgeSentence/);
+  assert.match(js, /state\.guidanceLock\?\.conceptBridgeReady && !quality\.ready/);
+  assert.match(submitHandler, /continueConceptBridgeSentence\(input\)/);
+  assert.match(js, /state\.guidanceLock\.conceptBridgeReady = false/);
+  assert.match(js, /renderReplyQuality\(input\.value\)/);
+  assert.match(js, /if \(quality\.conceptBridgeReady\) return "继续补下一句"/);
+  assert.doesNotMatch(js, /continueConceptBridgeSentence[\s\S]*正确答案是/);
+});
+
 test("student can build a method sentence by tapping smaller guidance steps", () => {
   assert.match(html, /id="replyStepBuilderCard"/);
   assert.match(html, /data-reply-step="goal"/);

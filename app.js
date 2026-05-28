@@ -3453,6 +3453,25 @@ function applyConceptBridgeChoice(choiceKey = "goal", input = $("inlineCoachRepl
   input.focus();
 }
 
+function continueConceptBridgeSentence(input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock() || !input) return;
+  let draft = input.value.trim();
+  let quality = evaluateGuidanceReplyQuality(draft);
+  let guard = 0;
+  while (!quality.ready && guard < 3) {
+    const nextSentence = guidanceNextMissingSentence(draft, state.guidanceLock);
+    draft = `${draft} ${nextSentence}`.trim();
+    quality = evaluateGuidanceReplyQuality(draft);
+    guard += 1;
+  }
+  input.value = draft;
+  state.guidanceLock.replyDraft = input.value;
+  state.guidanceLock.conceptBridgeReady = false;
+  renderReplyQuality(input.value);
+  if (evaluateGuidanceReplyQuality(input.value).ready) $("inlineCoachSubmit").focus();
+  else input.focus();
+}
+
 function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const scaffold = guidanceScaffoldForLock(lock, question);
   const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || "关键词或条件";
@@ -3508,6 +3527,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
   const text = reply.trim().toLowerCase();
   const compactText = text.replace(/\s+/g, "");
   const wordCount = text.split(/\s+/).filter(Boolean).length;
+  const conceptBridgeReady = Boolean(state.guidanceLock?.conceptBridgeReady);
   const enoughDetail = compactText.length >= 18 || wordCount >= 8;
   const hasQuestionGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate/.test(text);
   const hasMethodStep = /先|第一步|步骤|方法|看|找|变化|条件|证据|除以|比较|compare|divide|change|rate/.test(text);
@@ -3523,6 +3543,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
     asksForHelp,
     hasPlaceholder,
     conceptNotReady,
+    conceptBridgeReady,
     ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && !asksForHelp && !hasPlaceholder,
   };
 }
@@ -3566,6 +3587,7 @@ function guidanceReplyProgressText(quality = evaluateGuidanceReplyQuality()) {
 }
 
 function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality()) {
+  if (quality.conceptBridgeReady) return "继续补下一句";
   if (quality.asksForHelp) return "帮我开头";
   if (quality.ready) return "提交给教练";
   if (quality.conceptNotReady) return "帮我拆题";
@@ -6507,6 +6529,10 @@ function bindEvents() {
     const reply = input.value.trim();
     if (!reply) return;
     const quality = evaluateGuidanceReplyQuality(reply);
+    if (state.guidanceLock?.conceptBridgeReady && !quality.ready) {
+      continueConceptBridgeSentence(input);
+      return;
+    }
     if (quality.asksForHelp) {
       rescueIncompleteGuidanceReply(reply, input);
       return;

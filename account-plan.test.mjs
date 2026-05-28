@@ -738,6 +738,17 @@ test("complete guidance restatement opens variant verification without a second 
   assert.match(js, /现在做一道变式验证/);
 });
 
+test("complete guidance restatement switches to variant immediately before remote AI returns", () => {
+  const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  assert.match(js, /function transitionGuidanceToVariantImmediately/);
+  assert.match(js, /本地已确认你的方法句够完整/);
+  assert.match(js, /state\.guidanceLock\.status = "variant"/);
+  assert.match(submitHandler, /const canMoveToVariant = shouldMoveToVariantAfterReply\(reply\)/);
+  assert.match(submitHandler, /if \(canMoveToVariant\) transitionGuidanceToVariantImmediately\(reply, immediateReply\)/);
+  assert.match(submitHandler, /transitionGuidanceToVariantImmediately\(reply, immediateReply\)[\s\S]*askAiCoach\(reply/);
+  assert.doesNotMatch(submitHandler, /askAiCoach\(reply[\s\S]*?const canMoveToVariant = shouldMoveToVariantAfterReply\(reply\)/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

@@ -3678,6 +3678,19 @@ function shouldMoveToVariantAfterReply(reply = "") {
   return evaluateGuidanceReplyQuality(reply).ready || (isReasonStrong(reply) && (state.guidanceLock?.teachingTurns || 0) >= 1);
 }
 
+function transitionGuidanceToVariantImmediately(reply = "", immediateReply = "") {
+  if (!state.guidanceLock) return false;
+  state.guidanceLock.status = "variant";
+  state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+  appendInlineCoach(
+    "coach",
+    `本地已确认你的方法句够完整，马上进入变式验证。${immediateReply} 现在做一道变式验证：不靠原题选项，用自己的话写出方法。`
+  );
+  saveData();
+  renderDiagnostic();
+  return true;
+}
+
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
   const variant = buildVariantQuestion(question);
   const startsWithVariant = issue === "school_verification";
@@ -6359,17 +6372,17 @@ function bindEvents() {
     input.value = "";
     renderReplyQuality("");
     const immediateReply = buildLocalCoachReply(reply, state.inlineCoachHistory).reply;
-    appendInlineCoach("coach", `AI 正在深度检查，我先给你一个提示：${immediateReply}`);
+    const canMoveToVariant = shouldMoveToVariantAfterReply(reply);
+    if (canMoveToVariant) transitionGuidanceToVariantImmediately(reply, immediateReply);
+    else appendInlineCoach("coach", `AI 正在深度检查，我先给你一个提示：${immediateReply}`);
 
     askAiCoach(reply, state.inlineCoachHistory.slice(0, -1))
       .then((data) => {
         if (!state.guidanceLock) return;
         const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
-        const canMoveToVariant = shouldMoveToVariantAfterReply(reply);
-        state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+        if (!canMoveToVariant) state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
         if (canMoveToVariant) {
-          appendCoachSupplement(state.inlineCoachHistory, `${data.reply} ${teachingMove} 现在做一道变式验证：不靠原题选项，用自己的话写出方法。`);
-          state.guidanceLock.status = "variant";
+          appendCoachSupplement(state.inlineCoachHistory, `${data.reply} ${teachingMove}`);
         } else {
           appendCoachSupplement(state.inlineCoachHistory, `${data.reply} ${teachingMove}`);
         }
@@ -6379,12 +6392,14 @@ function bindEvents() {
       .catch(() => {
         if (!state.guidanceLock) return;
         const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
-        const canMoveToVariant = shouldMoveToVariantAfterReply(reply);
-        state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
-        state.inlineCoachHistory[state.inlineCoachHistory.length - 1].text = canMoveToVariant
-          ? `先按这个提示继续：${immediateReply} ${teachingMove} 现在做一道变式验证，确认你不是靠猜。`
-          : `先按这个提示继续：${immediateReply} ${teachingMove}`;
-        if (canMoveToVariant) state.guidanceLock.status = "variant";
+        if (!canMoveToVariant) state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+        if (canMoveToVariant) {
+          appendCoachSupplement(state.inlineCoachHistory, `远端 AI 暂时没有返回，但你已经进入变式验证。${teachingMove}`);
+          saveData();
+          renderDiagnostic();
+          return;
+        }
+        state.inlineCoachHistory[state.inlineCoachHistory.length - 1].text = `先按这个提示继续：${immediateReply} ${teachingMove}`;
         saveData();
         renderDiagnostic();
       });

@@ -3315,6 +3315,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
   const hasReasonWhy = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that/.test(text);
   const asksForHelp = /不知道|不会|不懂|写什么|怎么写|没思路|help|stuck|idk|not sure/.test(text);
   const hasPlaceholder = /\[.*?\]|_{2,}/.test(reply);
+  const conceptNotReady = asksForHelp || (Boolean(text) && !hasQuestionGoal && !hasMethodStep);
   return {
     enoughDetail,
     questionGoal: hasQuestionGoal,
@@ -3322,6 +3323,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
     reasonWhy: hasReasonWhy,
     asksForHelp,
     hasPlaceholder,
+    conceptNotReady,
     ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && !asksForHelp && !hasPlaceholder,
   };
 }
@@ -3360,7 +3362,8 @@ function guidanceReplyProgressText(quality = evaluateGuidanceReplyQuality()) {
 function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality()) {
   if (quality.asksForHelp) return "帮我开头";
   if (quality.ready) return "提交给教练";
-  return "先补完整";
+  if (quality.conceptNotReady) return "帮我拆题";
+  return "让教练帮我补";
 }
 
 function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
@@ -3368,7 +3371,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   if (!card) return;
   const quality = evaluateGuidanceReplyQuality(reply);
   const helperCard = $("replyHelperCard");
-  const canAskForHelp = quality.asksForHelp;
+  const canAskForHelp = quality.asksForHelp || Boolean(String(reply || "").trim());
   [
     ["qualityQuestionGoal", quality.questionGoal],
     ["qualityMethodStep", quality.methodStep],
@@ -3441,8 +3444,40 @@ function buildGuidanceRescueMove(lock = state.guidanceLock) {
   return `可以，不会写时先不要硬猜。这个知识点是 ${skill}。先记住：${firstStep}。容易错在：${mistake}。我已经把一条老师示范句放到输入框里，你先改成自己的话再继续：${modelSentence}`;
 }
 
+function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
+  const question = activeQuestions()[lock?.questionIndex || state.currentQuestion];
+  const lesson = conceptMiniLesson(question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstStep = coachingHintForTurn(question, lock?.teachingTurns || 0) || lesson.steps?.[0] || "先找题目里的关键词";
+  const microDrill = lock?.microDrill || guidanceMicroDrillForLock(lock, question);
+  const quality = evaluateGuidanceReplyQuality(reply);
+  const missing =
+    !quality.questionGoal
+      ? "题目目标"
+      : !quality.methodStep
+        ? "第一步"
+        : !quality.reasonWhy
+          ? "原因"
+          : "具体内容";
+  return `你说得对，知识点没吃透时确实很难自己说题意。先不要求你完整解释。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
+}
+
+function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")) {
+  appendInlineCoach("student", reply);
+  state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+  state.guidanceLock.microDrill = guidanceMicroDrillForLock(state.guidanceLock);
+  const coachMove = buildConceptBridgeMove(reply, state.guidanceLock);
+  state.inlineCoachHistory.push({ role: "coach", text: coachMove });
+  state.guidanceLock.replyDraft = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
+  input.value = state.guidanceLock.replyDraft;
+  renderReplyQuality(input.value);
+  saveData();
+  renderDiagnostic();
+  focusGuidancePanel();
+}
+
 function shouldMoveToVariantAfterReply(reply = "") {
-  return evaluateGuidanceReplyQuality(reply).ready || isReasonStrong(reply);
+  return evaluateGuidanceReplyQuality(reply).ready || (isReasonStrong(reply) && (state.guidanceLock?.teachingTurns || 0) >= 1);
 }
 
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
@@ -3470,11 +3505,11 @@ function startGuidedMastery(question, selectedIndex, reason, confidence, issue) 
     : [
         {
           role: "coach",
-          text: `${guidanceIssueText(issue)} 我不会直接告诉你答案。先用自己的话说：题目真正问什么？`,
+          text: `${guidanceIssueText(issue)} 我不会直接告诉你答案，但会先帮你拆题。小讲解：${question.skill} 这类题先看题目要判断什么，再找第一步线索。`,
         },
         {
           role: "coach",
-          text: question.coachHints?.[0] || "先找题干里的关键词，再看哪个选项直接回应它。",
+          text: `${question.coachHints?.[0] || "先找题干里的关键词，再看哪个选项直接回应它。"} 如果说不出来，可以点“帮我拆题”或“看老师示范句”。`,
         },
       ];
 }
@@ -5911,24 +5946,11 @@ function bindEvents() {
     if (!reply) return;
     const quality = evaluateGuidanceReplyQuality(reply);
     if (quality.asksForHelp) {
-      appendInlineCoach("student", reply);
-      state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
-      if (state.guidanceLock.teachingTurns >= 2) {
-        state.guidanceLock.microDrill = guidanceMicroDrillForLock(state.guidanceLock);
-      }
-      state.inlineCoachHistory.push({ role: "coach", text: buildGuidanceRescueMove(state.guidanceLock) });
-      state.guidanceLock.replyDraft = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
-      input.value = state.guidanceLock.replyDraft;
-      renderReplyQuality(input.value);
-      saveData();
-      renderDiagnostic();
-      focusGuidancePanel();
+      rescueIncompleteGuidanceReply(reply, input);
       return;
     }
     if (!quality.ready) {
-      renderReplyQuality(reply);
-      $("replyQualityStatus").textContent = "先把复述补完整，再提交给 AI 教练。";
-      input.focus();
+      rescueIncompleteGuidanceReply(reply, input);
       return;
     }
     appendInlineCoach("student", reply);

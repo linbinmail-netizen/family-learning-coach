@@ -494,20 +494,32 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
 test("student stuck replies can submit for rescue instead of staying blocked", () => {
   const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";
-  assert.match(js, /const canAskForHelp = quality\.asksForHelp/);
+  assert.match(js, /const canAskForHelp = quality\.asksForHelp \|\| Boolean\(String\(reply \|\| ""\)\.trim\(\)\)/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.textContent = guidanceSubmitButtonText\(quality\)/);
   assert.match(js, /if \(quality\.asksForHelp\) return "帮我开头"/);
   assert.match(js, /if \(quality\.ready\) return "提交给教练"/);
-  assert.match(js, /return "先补完整"/);
+  assert.match(js, /return "让教练帮我补"/);
   assert.match(js, /if \(quality\.asksForHelp\)/);
-  assert.match(js, /buildGuidanceRescueMove\(state\.guidanceLock\)/);
-  assert.match(stuckBranch, /state\.guidanceLock\.microDrill = guidanceMicroDrillForLock\(state\.guidanceLock\)/);
-  assert.match(stuckBranch, /state\.guidanceLock\.replyDraft = state\.guidanceLock\.microDrill\?\.starter \|\| guidanceTeacherModelForLock\(state\.guidanceLock\)/);
-  assert.match(stuckBranch, /input\.value = state\.guidanceLock\.replyDraft/);
-  assert.match(stuckBranch, /renderReplyQuality\(input\.value\)/);
+  assert.match(js, /function rescueIncompleteGuidanceReply/);
+  assert.match(js, /function buildConceptBridgeMove/);
+  assert.match(submitHandler, /rescueIncompleteGuidanceReply\(reply, input\)/);
+  assert.match(js, /state\.guidanceLock\.microDrill = guidanceMicroDrillForLock\(state\.guidanceLock\)/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = state\.guidanceLock\.microDrill\?\.starter \|\| guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.match(js, /input\.value = state\.guidanceLock\.replyDraft/);
+  assert.match(js, /renderReplyQuality\(input\.value\)/);
   assert.doesNotMatch(stuckBranch, /guidanceReplyStarterForLock/);
   assert.doesNotMatch(js, /buildGuidanceRescueMove[\s\S]*正确答案是/);
+});
+
+test("incomplete guidance replies trigger teaching instead of blocking", () => {
+  const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  assert.match(js, /conceptNotReady/);
+  assert.match(js, /帮我拆题/);
+  assert.match(submitHandler, /if \(!quality\.ready\) \{[\s\S]*?rescueIncompleteGuidanceReply\(reply, input\);[\s\S]*?return;/);
+  assert.doesNotMatch(submitHandler, /先把复述补完整，再提交给 AI 教练/);
+  assert.match(js, /知识点没吃透时确实很难自己说题意/);
+  assert.match(js, /小讲解：\$\{skill\}/);
 });
 
 test("student guidance keeps the suggested rescue draft after re-render", () => {
@@ -545,12 +557,14 @@ test("student guidance starter placeholders do not pass the quality gate", () =>
   assert.match(js, /ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && !asksForHelp && !hasPlaceholder/);
 });
 
-test("student cannot submit inline guidance until restatement is complete", () => {
+test("student cannot pass mastery until restatement is complete", () => {
   assert.match(html, /id="inlineCoachSubmit"/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
   assert.match(js, /const quality = evaluateGuidanceReplyQuality\(reply\)/);
   assert.match(js, /if \(!quality\.ready\)/);
-  assert.match(js, /先把复述补完整/);
+  assert.match(js, /rescueIncompleteGuidanceReply\(reply, input\)/);
+  assert.match(js, /shouldMoveToVariantAfterReply\(reply\)/);
+  assert.match(js, /evaluateGuidanceReplyQuality\(reply\)\.ready/);
 });
 
 test("student guidance coach gives teaching feedback before variant verification", () => {

@@ -36,3 +36,16 @@ test("coach fallback gives a smaller reason task after repeated thin replies", (
   assert.match(reply, /因为这一步能帮我____/);
   assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
 });
+
+test("coach fallback teaches before asking when student cannot state the question goal", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "不知道这问题问什么",
+    explanation: "斜率表示 y 相对于 x 的变化率。",
+  });
+  assert.match(reply, /不是不努力|小讲解/);
+  assert.match(reply, /先照这句改写/);
+  assert.match(reply, /这题要我判断____/);
+  assert.doesNotMatch(reply, /题目要你找哪一类信息/);
+  assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
+});

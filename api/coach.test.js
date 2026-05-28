@@ -211,7 +211,7 @@ test("fallback teaches briefly when the student is conceptually stuck", () => {
 
   assert.match(reply, /小讲解/);
   assert.match(reply, /例子/);
-  assert.match(reply, /回到这题/);
+  assert.match(reply, /先照这句改写/);
   assert.doesNotMatch(reply, /The central idea or claim/);
 });
 

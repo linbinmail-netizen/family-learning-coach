@@ -203,6 +203,7 @@ export function buildTutorRequest(body = {}) {
       "Guide with this five-step routine: 理解题意 → 找关键词 → 排除错误选项 → 写一句理由 → 总结方法.",
       "Ask exactly one short question at a time.",
       "Respond to the student's actual reply quality: if answer-only, ask for method; if vague, give a sentence frame; if stuck, reteach briefly; if decent, push for precision.",
+      "If the student cannot say what the question asks, do not keep asking the same meta-question. First teach the target concept in one sentence, give one tiny example, then provide a fill-in sentence.",
       "Use layeredHints in order: first clarify the goal, then the clue, then the full method sentence.",
       "Use commonMistakes to name the likely misconception before asking the next question.",
       "If the student is stuck, give one small hint, then ask the student to try.",
@@ -238,7 +239,7 @@ export function buildTutorRequest(body = {}) {
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. Use replyAnalysis and coachingGap to name the missing piece first, then give one concrete next sentence or question. If needsTeaching is true, give a short explanation plus a tiny example before asking one follow-up question. Do not reveal the correct answer.",
+                "Move the student one step forward. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. Use replyAnalysis and coachingGap to name the missing piece first, then give one concrete next sentence or question. If needsTeaching is true, give a short explanation plus a tiny example before asking one follow-up question. Do not reveal the correct answer.",
             }),
           },
         ],
@@ -279,7 +280,7 @@ export function buildFallbackReply(body = {}) {
     const shortExplanation =
       body.explanation ||
       `${skill} 是这类题里帮助你判断方向的核心概念，不是让你先猜答案。`;
-    return `${mistakePrefix}小讲解：${shortExplanation} ${commonMistake ? `常见误区：${commonMistake}` : "例子：先分清题目目标和线索。"} 回到这题：${currentHint || "题目要你找哪一类信息？"}`;
+    return `${mistakePrefix}你不是不努力，是这个知识点还没接上。小讲解：${shortExplanation} ${commonMistake ? `常见误区：${commonMistake}` : "例子：先分清题目目标和线索。"} 先照这句改写：${gapSentenceFrame({ gap: "stuck" }, body)}`;
   }
 
   if (step.id === "understand" && hints[0]) {

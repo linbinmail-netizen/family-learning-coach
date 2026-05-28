@@ -44,6 +44,24 @@ export function extractOpenAIText(data) {
   ).trim();
 }
 
+export function unsafeTutorReplyReason(reply = "", body = {}) {
+  const text = String(reply || "").trim();
+  if (!text) return "empty";
+  const answerTexts = (body.answers || []).map((answer) => String(answer || "").trim()).filter((answer) => answer.length >= 4);
+  const lowerText = text.toLowerCase();
+  if (/^\s*(答案|answer)?\s*[A-D]\s*[。.!]?\s*$/i.test(text) || /^\s*[A-D]\s*(是|because|因为|,|，)/i.test(text)) return "reveals_answer_letter";
+  if (/正确答案|答案是|选项\s*[A-D]|choose\s*[A-D]|correct answer|the answer is/i.test(text)) return "reveals_answer_language";
+  if (answerTexts.some((answer) => lowerText.includes(answer.toLowerCase()))) return "reveals_answer_text";
+  if (text.length > 180) return "too_long";
+  return "";
+}
+
+export function safeTutorReply(aiReply = "", body = {}) {
+  const reason = unsafeTutorReplyReason(aiReply, body);
+  if (!reason) return String(aiReply || "").trim();
+  return buildFallbackReply(body);
+}
+
 export function detectNeedsTeaching(studentReply = "") {
   const reply = String(studentReply).toLowerCase();
   return [
@@ -403,7 +421,7 @@ export default async function handler(request, response) {
     }
 
     const data = await openaiResponse.json();
-    const reply = extractOpenAIText(data) || buildFallbackReply(request.body || {});
+    const reply = safeTutorReply(extractOpenAIText(data), request.body || {});
 
     response.status(200).json({ reply });
   } catch (error) {

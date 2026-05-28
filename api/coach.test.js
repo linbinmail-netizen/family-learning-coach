@@ -12,6 +12,7 @@ import {
   fetchOpenAIWithTimeout,
   getLearningStep,
   mergeMasteryEvaluation,
+  safeTutorReply,
 } from "./coach.js";
 import handler from "./coach.js";
 
@@ -213,6 +214,33 @@ test("extractOpenAIText handles Responses API output content", () => {
   });
 
   assert.equal(text, "请先说出题目真正问的是什么。");
+});
+
+test("safeTutorReply replaces answer-revealing AI replies with guided fallback", () => {
+  const reply = safeTutorReply("正确答案是 B，因为 evidence should support the central idea.", {
+    ...baseBody,
+    studentReply: "B",
+    commonMistakes: ["只看答案字母，没有解释证据和主张的关系"],
+  });
+
+  assert.match(reply, /第一步|方法|常见误区/);
+  assert.doesNotMatch(reply, /正确答案|The central idea or claim|答案是 B/);
+});
+
+test("safeTutorReply blocks bare answer-letter explanations", () => {
+  const reply = safeTutorReply("B because evidence should support the central idea.", {
+    ...baseBody,
+    studentReply: "B",
+  });
+
+  assert.match(reply, /第一步|方法|常见误区/);
+  assert.doesNotMatch(reply, /^B because|The central idea or claim/);
+});
+
+test("safeTutorReply keeps normal short coaching questions", () => {
+  const reply = safeTutorReply("先说题目真正问你找什么，不用选答案。", baseBody);
+
+  assert.equal(reply, "先说题目真正问你找什么，不用选答案。");
 });
 
 test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {

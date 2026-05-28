@@ -528,6 +528,14 @@ test("student guidance offers a two-choice micro task when writing is hard", () 
   assert.match(css, /micro-choice-card/);
 });
 
+test("micro choice selection clearly moves the student into submit-ready guidance", () => {
+  assert.match(js, /state\.guidanceLock\.microChoiceReady = true/);
+  assert.match(js, /state\.guidanceLock\.microChoiceNote = "已帮你写好一个小步骤，可以直接提交给教练检查。"/);
+  assert.match(js, /state\.guidanceLock\?\.microChoiceReady && quality\.ready/);
+  assert.match(js, /已帮你写好一个小步骤，可以直接提交给教练检查。/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.focus\(\)/);
+});
+
 test("student stuck replies can submit for rescue instead of staying blocked", () => {
   const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";

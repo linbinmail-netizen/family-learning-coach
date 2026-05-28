@@ -3323,8 +3323,10 @@ function applyGuidanceMicroChoice(choiceIndex = 0, input = $("inlineCoachReply")
   const choice = micro.choices[Number(choiceIndex)] || micro.choices[0];
   input.value = choice.sentence;
   state.guidanceLock.replyDraft = input.value;
-  input.focus();
+  state.guidanceLock.microChoiceReady = true;
+  state.guidanceLock.microChoiceNote = "已帮你写好一个小步骤，可以直接提交给教练检查。";
   renderReplyQuality(input.value);
+  $("inlineCoachSubmit").focus();
 }
 
 function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
@@ -3459,11 +3461,14 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     !quality.reasonWhy && "原因说明",
   ].filter(Boolean);
   const starter = guidanceReplyStarterForLock(state.guidanceLock);
-  $("replyQualityStatus").textContent = quality.ready
-    ? "这句方法比较完整，可以提交给 AI 教练检查。"
-    : quality.asksForHelp || quality.hasPlaceholder
-      ? guidanceReplyHelpText(reply, quality)
-      : `还差：${missing.join("、")}。${guidanceReplyHelpText(reply, quality)}`;
+  $("replyQualityStatus").textContent =
+    state.guidanceLock?.microChoiceReady && quality.ready
+      ? state.guidanceLock.microChoiceNote || "已帮你写好一个小步骤，可以直接提交给教练检查。"
+      : quality.ready
+        ? "这句方法比较完整，可以提交给 AI 教练检查。"
+        : quality.asksForHelp || quality.hasPlaceholder
+          ? guidanceReplyHelpText(reply, quality)
+          : `还差：${missing.join("、")}。${guidanceReplyHelpText(reply, quality)}`;
   $("replyProgressText").textContent = guidanceReplyProgressText(quality);
   if (helperCard) {
     helperCard.classList.toggle("hidden", quality.ready);
@@ -6137,6 +6142,8 @@ function bindEvents() {
     }
     appendInlineCoach("student", reply);
     state.guidanceLock.replyDraft = "";
+    state.guidanceLock.microChoiceReady = false;
+    state.guidanceLock.microChoiceNote = "";
     input.value = "";
     renderReplyQuality("");
     const immediateReply = buildLocalCoachReply(reply, state.inlineCoachHistory).reply;
@@ -6176,7 +6183,10 @@ function bindEvents() {
   });
 
   $("inlineCoachReply").addEventListener("input", () => {
-    if (state.guidanceLock) state.guidanceLock.replyDraft = $("inlineCoachReply").value;
+    if (state.guidanceLock) {
+      state.guidanceLock.replyDraft = $("inlineCoachReply").value;
+      state.guidanceLock.microChoiceReady = false;
+    }
     renderReplyQuality();
   });
   $("coachQuickReplies").addEventListener("click", (event) => {

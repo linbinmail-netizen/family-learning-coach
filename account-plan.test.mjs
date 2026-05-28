@@ -571,11 +571,22 @@ test("student stuck replies can submit for rescue instead of staying blocked", (
   assert.match(js, /function buildConceptBridgeMove/);
   assert.match(submitHandler, /rescueIncompleteGuidanceReply\(reply, input\)/);
   assert.match(js, /state\.guidanceLock\.microDrill = guidanceMicroDrillForLock\(state\.guidanceLock\)/);
-  assert.match(js, /state\.guidanceLock\.replyDraft = state\.guidanceLock\.microDrill\?\.starter \|\| guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = teachFirstLadderDraft\(reply, state\.guidanceLock\)/);
   assert.match(js, /input\.value = state\.guidanceLock\.replyDraft/);
   assert.match(js, /renderReplyQuality\(input\.value\)/);
   assert.doesNotMatch(stuckBranch, /guidanceReplyStarterForLock/);
   assert.doesNotMatch(js, /buildGuidanceRescueMove[\s\S]*正确答案是/);
+});
+
+test("knowledge gap replies immediately lower to a teach-first ladder", () => {
+  assert.match(js, /function shouldUseTeachFirstLadder/);
+  assert.match(js, /function teachFirstLadderDraft/);
+  assert.match(js, /guidanceCannotProduceThought\(reply\) \|\| quality\.asksForHelp/);
+  assert.match(js, /state\.guidanceLock\.forceStepBuilder = shouldUseTeachFirstLadder\(reply, state\.guidanceLock\)/);
+  assert.match(js, /state\.guidanceLock\.stepBuilderParts = \{ goal: guidanceStepBuilderSentence\("goal", state\.guidanceLock\) \}/);
+  assert.match(js, /我先帮你写好第一小句/);
+  assert.match(js, /不要先打完整思路/);
+  assert.doesNotMatch(js, /teachFirstLadderDraft[\s\S]*正确答案是/);
 });
 
 test("incomplete guidance replies trigger teaching instead of blocking", () => {

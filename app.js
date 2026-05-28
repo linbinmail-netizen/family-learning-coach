@@ -3575,6 +3575,17 @@ function guidanceNeedsLowerStep(lock = state.guidanceLock) {
   return teachingTurns >= 3;
 }
 
+function shouldUseTeachFirstLadder(reply = "", lock = state.guidanceLock) {
+  const quality = evaluateGuidanceReplyQuality(reply);
+  return guidanceCannotProduceThought(reply) || quality.asksForHelp || guidanceNeedsLowerStep(lock);
+}
+
+function teachFirstLadderDraft(reply = "", lock = state.guidanceLock) {
+  if (!lock) return "";
+  if (shouldUseTeachFirstLadder(reply, lock)) return guidanceStepBuilderSentence("goal", lock);
+  return lock.microDrill?.starter || guidanceTeacherModelForLock(lock);
+}
+
 function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
   const question = activeQuestions()[lock?.questionIndex || state.currentQuestion];
   const lesson = conceptMiniLesson(question);
@@ -3594,7 +3605,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
     return `你已经卡了几次，这说明任务太大，不是你不努力。我们不用再打完整句，先点下面的小台阶按钮，只完成一个空：题目问什么。系统会帮你把后面的第一步和原因慢慢接上。`;
   }
   if (guidanceCannotProduceThought(reply)) {
-    return `你说得对，别人知识点没吃透时，人家也打不出来。不要再让孩子先完整说思路，我们先帮你拆题和补概念。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 现在只填一个空：${microDrill.starter}`;
+    return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，我们先帮你拆题和补概念。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 我先帮你写好第一小句，接下来你只需要点“第一步”或从两个小选择里选一个：${guidanceStepBuilderSentence("goal", lock, question)}`;
   }
   return `你说得对，知识点没吃透时确实很难自己说题意，也会打不出来、说不出来。先教会，再让你只答一小步，不用自己组织完整答案。老师先示范怎么拆题：1. 题目要判断 ${skill}；2. 第一眼看关键词或条件；3. 用二选一或填空说出第一步。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
 }
@@ -3605,14 +3616,12 @@ function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")
   state.guidanceLock.microDrill = guidanceMicroDrillForLock(state.guidanceLock);
   const coachMove = buildConceptBridgeMove(reply, state.guidanceLock);
   state.inlineCoachHistory.push({ role: "coach", text: coachMove });
-  if (guidanceNeedsLowerStep(state.guidanceLock)) {
-    const goal = guidanceStepBuilderSentence("goal", state.guidanceLock);
+  state.guidanceLock.forceStepBuilder = shouldUseTeachFirstLadder(reply, state.guidanceLock);
+  if (state.guidanceLock.forceStepBuilder) {
     state.guidanceLock.forceStepBuilder = true;
-    state.guidanceLock.stepBuilderParts = { goal: goal };
-    state.guidanceLock.replyDraft = goal;
-  } else {
-    state.guidanceLock.replyDraft = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
+    state.guidanceLock.stepBuilderParts = { goal: guidanceStepBuilderSentence("goal", state.guidanceLock) };
   }
+  state.guidanceLock.replyDraft = teachFirstLadderDraft(reply, state.guidanceLock);
   input.value = state.guidanceLock.replyDraft;
   renderReplyQuality(input.value);
   saveData();

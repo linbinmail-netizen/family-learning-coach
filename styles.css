@@ -598,6 +598,46 @@ textarea {
   color: #8b2f25;
 }
 
+.coach-queue-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.coach-queue-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfb;
+}
+
+.coach-queue-item.active {
+  border-color: rgba(47, 111, 159, 0.35);
+  background: #f3f8fb;
+}
+
+.coach-queue-item span {
+  display: inline-flex;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--green-dark);
+  text-transform: uppercase;
+}
+
+.coach-queue-item strong,
+.coach-queue-item p {
+  display: block;
+}
+
+.coach-queue-item p {
+  margin-top: 4px;
+  color: var(--soft-ink);
+  font-size: 14px;
+}
+
 .answer-grid,
 .knowledge-grid {
   display: grid;

@@ -3960,11 +3960,54 @@ function renderTodayPlan() {
   renderStudentWrapup(completion);
   renderStudentActionBar();
   renderMistakeReview();
-  $("dashboardNextTraining").innerHTML = [
-    `先完成 ${focusSubject.label} 的当前练习，不确定时标记“猜的”。`,
-    stats.weakSkills.length ? `优先复习：${stats.weakSkills[0]}。` : "完成 1 组基础题后再进入挑战题。",
-    "答错后必须通过 AI 引导和变式验证，再进入下一题。",
-  ].map((item) => `<li>${item}</li>`).join("");
+  $("dashboardNextTraining").innerHTML = studentCoachQueue({ focusSubject, stats, completion })
+    .map(
+      (item) => `
+        <li class="coach-queue-item ${item.active ? "active" : ""}">
+          <span>${item.label}</span>
+          <strong>${item.title}</strong>
+          <p>${item.detail}</p>
+        </li>
+      `
+    )
+    .join("");
+}
+
+function studentCoachQueue({ focusSubject, stats, completion }) {
+  const openMistakes = mistakesForStudent(state.studentId);
+  const target = dailyQuestionLimit(planForStudent(state.studentId));
+  const answered = Object.keys(state.selectedAnswers).length;
+  const weakSkill = stats.weakSkills[0] || openMistakes[0]?.skill || "";
+  const needsPractice = answered < target;
+  const needsReview = openMistakes.length > 0;
+  const needsWrapup = answered > 0;
+
+  return [
+    {
+      label: "现在",
+      title: needsPractice ? `完成 ${focusSubject.label} 当前练习` : "今日练习目标已达到",
+      detail: needsPractice
+        ? `还差 ${Math.max(0, target - answered)} 题。先独立作答，不确定就标记“猜的”。`
+        : "可以进入错题复盘或生成今日总结。",
+      active: needsPractice,
+    },
+    {
+      label: "卡住时",
+      title: needsReview ? `优先复习 ${weakSkill}` : "用 AI 教练讲清方法",
+      detail: needsReview
+        ? "先看错因，再做同技能变式题；写出第一步和原因后再继续。"
+        : "答错后系统会要求复述和变式验证，不会直接给答案。",
+      active: needsReview,
+    },
+    {
+      label: "收尾",
+      title: needsWrapup ? "生成今日总结" : "先完成第一题",
+      detail: needsWrapup
+        ? `当前进度 ${completion.percent}%。总结会把正确率、错题和明天建议同步给家长端。`
+        : "完成第一题后，系统会开始记录 XP、掌握度和错题复习。更像正式上课的一小步。",
+      active: !needsPractice && needsWrapup,
+    },
+  ];
 }
 
 function renderLearningPath() {

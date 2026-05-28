@@ -21,6 +21,17 @@ test("student daily task view exists", () => {
   assert.match(js, /renderTodayPlan/);
 });
 
+test("student dashboard recommends a clear three-step coach queue", () => {
+  assert.match(html, /class="coach-queue-list" id="dashboardNextTraining"/);
+  assert.match(js, /function studentCoachQueue/);
+  assert.match(js, /label: "现在"/);
+  assert.match(js, /label: "卡住时"/);
+  assert.match(js, /label: "收尾"/);
+  assert.match(js, /coach-queue-item/);
+  assert.match(css, /coach-queue-list/);
+  assert.match(css, /coach-queue-item\.active/);
+});
+
 test("daily missions show explicit task statuses", () => {
   assert.match(js, /function dailyMissionStatus/);
   assert.match(js, /Pending/);

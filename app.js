@@ -2680,11 +2680,13 @@ function needsSchoolLevelVerification(question, confidence = "sure") {
   const plan = planForStudent(state.studentId);
   const currentStats = state.adaptiveStats[state.subject] || { correctStreak: 0 };
   const lowDifficultyChoice = difficultyScore(question?.difficulty) <= 1 && Array.isArray(question?.answers) && question.answers.length >= 3;
+  const ordinaryChoice = Array.isArray(question?.answers) && question.answers.length >= 3;
   const shallowChoice = isShallowChoiceQuestion(question);
   const notAlreadyExplanation = !question?.openResponse && !question?.constructedResponse && !question?.errorAnalysis;
   const fastCorrect = secondsOnCurrentQuestion() <= 20;
   const alreadyTooEasy = currentStats.correctStreak >= 1 || adaptiveLevelForSubject() >= 2;
-  return plan.difficultyMode !== "steady" && confidence === "sure" && (lowDifficultyChoice || shallowChoice) && notAlreadyExplanation && fastCorrect && alreadyTooEasy;
+  const streakTooEasy = currentStats.correctStreak >= 2 && ordinaryChoice;
+  return plan.difficultyMode !== "steady" && confidence === "sure" && (lowDifficultyChoice || shallowChoice || streakTooEasy) && notAlreadyExplanation && fastCorrect && alreadyTooEasy;
 }
 
 function variantMethodChecklistFor(variant = state.guidanceLock?.variant, question = activeQuestions()[state.currentQuestion]) {
@@ -3313,7 +3315,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
   const hasQuestionGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate/.test(text);
   const hasMethodStep = /先|第一步|步骤|方法|看|找|变化|条件|证据|除以|比较|compare|divide|change|rate/.test(text);
   const hasReasonWhy = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that/.test(text);
-  const asksForHelp = /不知道|不会|不懂|写什么|怎么写|没思路|help|stuck|idk|not sure/.test(text);
+  const asksForHelp = /不知道|不会|不懂|写什么|怎么写|没思路|知识点没吃透|打不出来|说不出来|help|stuck|idk|not sure/.test(text);
   const hasPlaceholder = /\[.*?\]|_{2,}/.test(reply);
   const conceptNotReady = asksForHelp || (Boolean(text) && !hasQuestionGoal && !hasMethodStep);
   return {
@@ -3330,7 +3332,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
 
 function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQuality(reply)) {
   if (quality.asksForHelp) {
-    return "没关系，先照这句填空；还是不会就点“看老师示范句”。先不用写答案，只写你会怎么想。";
+    return "没关系，先教会，再让你只答一小步。还是不会就点“看老师示范句”，不用自己组织完整答案。";
   }
   if (quality.hasPlaceholder) {
     return "把方括号里的内容换成自己的话；如果不知道怎么换，可以先看老师示范句。";
@@ -3459,7 +3461,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
         : !quality.reasonWhy
           ? "原因"
           : "具体内容";
-  return `你说得对，知识点没吃透时确实很难自己说题意。先不要求你完整解释。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
+  return `你说得对，知识点没吃透时确实很难自己说题意，也会打不出来、说不出来。先教会，再让你只答一小步，不用自己组织完整答案。老师先示范怎么拆题：1. 题目要判断 ${skill}；2. 第一眼看关键词或条件；3. 用二选一或填空说出第一步。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
 }
 
 function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")) {

@@ -477,7 +477,7 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
   assert.match(js, /function guidanceMicroDrillForLock/);
   assert.match(js, /function buildGuidanceRescueMove/);
   assert.match(js, /const asksForHelp = .*不知道/);
-  assert.match(js, /没关系，先照这句填空/);
+  assert.match(js, /没关系，先教会，再让你只答一小步/);
   assert.match(js, /不会写时先不要硬猜/);
   assert.match(js, /老师示范句放到输入框/);
   assert.match(js, /微练习/);
@@ -543,6 +543,16 @@ test("incomplete guidance replies trigger teaching instead of blocking", () => {
   assert.doesNotMatch(submitHandler, /先把复述补完整，再提交给 AI 教练/);
   assert.match(js, /知识点没吃透时确实很难自己说题意/);
   assert.match(js, /小讲解：\$\{skill\}/);
+});
+
+test("student knowledge-gap replies trigger teaching before asking for a full explanation", () => {
+  assert.match(js, /知识点没吃透/);
+  assert.match(js, /打不出来/);
+  assert.match(js, /说不出来/);
+  assert.match(js, /先教会，再让你只答一小步/);
+  assert.match(js, /不用自己组织完整答案/);
+  assert.match(js, /老师先示范怎么拆题/);
+  assert.match(js, /二选一或填空/);
 });
 
 test("student guidance keeps the suggested rescue draft after re-render", () => {
@@ -815,7 +825,9 @@ test("student mastery loop requires open explanation before moving on", () => {
 test("easy fast correct answers trigger school-level explanation verification", () => {
   assert.match(js, /function needsSchoolLevelVerification/);
   assert.match(js, /const shallowChoice = isShallowChoiceQuestion\(question\)/);
-  assert.match(js, /\(lowDifficultyChoice \|\| shallowChoice\)/);
+  assert.match(js, /const ordinaryChoice = Array\.isArray\(question\?\.answers\) && question\.answers\.length >= 3/);
+  assert.match(js, /const streakTooEasy = currentStats\.correctStreak >= 2 && ordinaryChoice/);
+  assert.match(js, /\(lowDifficultyChoice \|\| shallowChoice \|\| streakTooEasy\)/);
   assert.match(js, /correctStreak >= 1/);
   assert.match(js, /secondsOnCurrentQuestion\(\) <= 20/);
   assert.match(js, /return "school_verification"/);

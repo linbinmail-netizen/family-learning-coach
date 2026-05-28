@@ -528,6 +528,19 @@ test("student guidance offers a two-choice micro task when writing is hard", () 
   assert.match(css, /micro-choice-card/);
 });
 
+test("student can build a method sentence by tapping smaller guidance steps", () => {
+  assert.match(html, /id="replyStepBuilderCard"/);
+  assert.match(html, /data-reply-step="goal"/);
+  assert.match(html, /data-reply-step="method"/);
+  assert.match(html, /data-reply-step="reason"/);
+  assert.match(js, /function guidanceStepBuilderSentence/);
+  assert.match(js, /function applyGuidanceStepBuilder/);
+  assert.match(js, /button\.dataset\.replyStep/);
+  assert.match(js, /state\.guidanceLock\.stepBuilderParts/);
+  assert.match(js, /renderReplyQuality\(input\.value\)/);
+  assert.match(css, /reply-step-builder-card/);
+});
+
 test("micro choice selection clearly moves the student into submit-ready guidance", () => {
   assert.match(js, /state\.guidanceLock\.microChoiceReady = true/);
   assert.match(js, /state\.guidanceLock\.microChoiceNote = "已帮你写好一个小步骤，可以直接提交给教练检查。"/);

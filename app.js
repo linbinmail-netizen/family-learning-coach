@@ -3317,6 +3317,37 @@ function renderGuidanceMicroChoice(lock = state.guidanceLock, quality = evaluate
   });
 }
 
+function guidanceStepBuilderSentence(part = "goal", lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const scaffold = guidanceScaffoldForLock(lock, question);
+  const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || coachingHintForTurn(question, lock?.teachingTurns || 0) || "题目关键词和已知条件";
+  if (part === "method") return `我第一步先看 ${firstStep}`;
+  if (part === "reason") return "因为这一步能帮我把题目要求和解题方法连起来";
+  return `这题要我判断 ${skill}`;
+}
+
+function applyGuidanceStepBuilder(part = "goal", input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock() || !input) return;
+  const sentence = guidanceStepBuilderSentence(part, state.guidanceLock);
+  const parts = state.guidanceLock.stepBuilderParts || {};
+  parts[part] = sentence;
+  state.guidanceLock.stepBuilderParts = parts;
+  input.value = ["goal", "method", "reason"]
+    .map((key) => parts[key])
+    .filter(Boolean)
+    .join("。");
+  if (input.value && !/[。.!?？]$/.test(input.value)) input.value += "。";
+  state.guidanceLock.replyDraft = input.value;
+  state.guidanceLock.microChoiceReady = false;
+  renderReplyQuality(input.value);
+  const quality = evaluateGuidanceReplyQuality(input.value);
+  if (quality.ready) {
+    $("inlineCoachSubmit").focus();
+  } else {
+    input.focus();
+  }
+}
+
 function applyGuidanceMicroChoice(choiceIndex = 0, input = $("inlineCoachReply")) {
   if (!hasActiveGuidanceLock() || !input) return;
   const micro = guidanceMicroChoiceForLock(state.guidanceLock);
@@ -6223,6 +6254,11 @@ function bindEvents() {
     const button = event.target.closest("[data-micro-choice]");
     if (!button) return;
     applyGuidanceMicroChoice(button.dataset.microChoice, $("inlineCoachReply"));
+  });
+  $("replyStepBuilderCard").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-reply-step]");
+    if (!button) return;
+    applyGuidanceStepBuilder(button.dataset.replyStep, $("inlineCoachReply"));
   });
   $("variantReply").addEventListener("input", () => {
     if (state.guidanceLock) {

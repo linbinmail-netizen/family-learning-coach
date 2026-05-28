@@ -2709,6 +2709,10 @@ function applyVariantStarter(text = "") {
   if (!input || !text) return;
   const prefix = input.value.trim() ? "\n" : "";
   input.value = `${input.value}${prefix}${text}`;
+  if (state.guidanceLock) {
+    state.guidanceLock.variantDraft = input.value;
+    state.guidanceLock.variantFeedback = "";
+  }
   renderVariantRubricFeedback(input.value, state.guidanceLock?.variant);
   input.focus();
 }
@@ -3002,6 +3006,14 @@ function variantNextActionText(reply = "", variant = state.guidanceLock?.variant
   const missing = variantRubricItems(reply, variant).find((item) => !item.ready);
   if (!missing) return "说明已经完整，可以提交给 AI 教练检查。";
   return `下一步：${missing.next}。`;
+}
+
+function variantTargetedRetryText(reply = "", variant = state.guidanceLock?.variant, evaluation = {}) {
+  const missing = variantRubricItems(reply, variant).find((item) => !item.ready);
+  if (missing) return `先别重写全部，只补这一处：${missing.next}。`;
+  const coachNote = evaluation.reply || evaluation.nextPrompt || "";
+  const specificPush = "你的结构已经够了，现在要更像学校考试答案：点出题目里的具体关键词或条件，再说明它们为什么支持你的方法。";
+  return coachNote ? `${coachNote} ${specificPush}` : specificPush;
 }
 
 function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", variant = state.guidanceLock?.variant) {
@@ -4729,9 +4741,9 @@ function renderVariantVerification(lock = state.guidanceLock) {
         `<button class="starter-chip" type="button" data-starter-text="${starter.text}">${starter.label}</button>`
     )
     .join("");
-  $("variantFeedback").textContent = "先按清单写自己的方法；系统会检查表达是否完整，但不会先给参考答案。";
-  $("variantReply").value = "";
-  renderVariantRubricFeedback("", lock.variant);
+  $("variantReply").value = lock.variantDraft || "";
+  renderVariantRubricFeedback(lock.variantDraft || "", lock.variant);
+  if (lock.variantFeedback) $("variantFeedback").textContent = lock.variantFeedback;
 }
 
 async function saveParentPlanSettings() {
@@ -5864,7 +5876,13 @@ function bindEvents() {
     input.focus();
     renderReplyQuality(input.value);
   });
-  $("variantReply").addEventListener("input", () => renderVariantRubricFeedback());
+  $("variantReply").addEventListener("input", () => {
+    if (state.guidanceLock) {
+      state.guidanceLock.variantDraft = $("variantReply").value;
+      state.guidanceLock.variantFeedback = "";
+    }
+    renderVariantRubricFeedback();
+  });
   $("variantStarterBar").addEventListener("click", (event) => {
     const starter = event.target.closest("[data-starter-text]");
     if (!starter) return;
@@ -5898,8 +5916,10 @@ function bindEvents() {
           renderDiagnostic();
           return;
         }
-        state.guidanceLock.status = "coaching";
-        appendInlineCoach("coach", `${rubricFeedback}。${evaluation.reply || evaluation.nextPrompt || variantRetryPrompt(state.guidanceLock?.variant)}`);
+        state.guidanceLock.status = "variant";
+        state.guidanceLock.variantDraft = reply;
+        state.guidanceLock.variantFeedback = variantTargetedRetryText(reply, state.guidanceLock?.variant, evaluation);
+        appendInlineCoach("coach", `${rubricFeedback}。${state.guidanceLock.variantFeedback}`);
         saveData();
         renderDiagnostic();
       })
@@ -5911,8 +5931,10 @@ function bindEvents() {
           renderDiagnostic();
           return;
         }
-        state.guidanceLock.status = "coaching";
-        appendInlineCoach("coach", `${rubricFeedback}。${variantRetryPrompt(state.guidanceLock?.variant)}`);
+        state.guidanceLock.status = "variant";
+        state.guidanceLock.variantDraft = reply;
+        state.guidanceLock.variantFeedback = variantTargetedRetryText(reply, state.guidanceLock?.variant);
+        appendInlineCoach("coach", `${rubricFeedback}。${state.guidanceLock.variantFeedback}`);
         saveData();
         renderDiagnostic();
       });

@@ -799,7 +799,9 @@ test("variant submission returns teacher-style rubric feedback", () => {
 
 test("variant rubric feedback updates live as the student types", () => {
   assert.match(js, /function variantRubricItems/);
-  assert.match(js, /variantReply"\)\.addEventListener\("input", \(\) => renderVariantRubricFeedback\(\)\)/);
+  assert.match(js, /variantReply"\)\.addEventListener\("input", \(\) => \{/);
+  assert.match(js, /state\.guidanceLock\.variantDraft = \$\("variantReply"\)\.value/);
+  assert.match(js, /state\.guidanceLock\.variantFeedback = ""/);
   assert.match(js, /rubric-\$\{item\.ready \? "met" : "missing"\}/);
   assert.match(css, /rubric-met/);
   assert.match(css, /rubric-missing/);
@@ -844,6 +846,18 @@ test("student cannot submit variant explanation until rubric is complete", () =>
   assert.match(js, /\$\("variantSubmit"\)\.disabled = !ready/);
   assert.match(js, /if \(!isVariantRubricReady\(reply/);
   assert.match(js, /先补完整各项变式说明/);
+});
+
+test("variant retry stays in the proof panel and preserves the student draft", () => {
+  assert.match(js, /function variantTargetedRetryText/);
+  assert.match(js, /先别重写全部，只补这一处/);
+  assert.match(js, /更像学校考试答案/);
+  assert.match(js, /\$\("variantReply"\)\.value = lock\.variantDraft \|\| ""/);
+  assert.match(js, /if \(lock\.variantFeedback\) \$\("variantFeedback"\)\.textContent = lock\.variantFeedback/);
+  assert.match(js, /state\.guidanceLock\.status = "variant"/);
+  assert.match(js, /state\.guidanceLock\.variantDraft = reply/);
+  assert.match(js, /state\.guidanceLock\.variantFeedback = variantTargetedRetryText/);
+  assert.doesNotMatch(js, /variantTargetedRetryText[\s\S]*正确答案是/);
 });
 
 test("variant explanation offers non-answer sentence starters", () => {

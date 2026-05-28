@@ -506,12 +506,20 @@ test("student guidance has quick replies for common stuck states", () => {
   assert.match(html, /id="coachQuickReplies"/);
   assert.match(html, /data-guidance-quick-reply="我不懂这题问什么。"/);
   assert.match(html, /data-guidance-quick-reply="我懂一点概念，但不知道第一步看什么。"/);
+  assert.match(html, /data-guidance-quick-reply="我知识点没吃透，先讲给我听，再让我只填一个空。"/);
   assert.match(html, /data-guidance-quick-reply="我还是没懂，换个例子讲。"/);
+  assert.match(html, />先讲知识点</);
   assert.match(js, /function submitGuidanceQuickReply/);
   assert.match(js, /coachQuickReplies"\)\.addEventListener\("click"/);
   assert.match(js, /submitGuidanceQuickReply\(button\.dataset\.guidanceQuickReply, \$\("inlineCoachReply"\)\)/);
   assert.match(js, /rescueIncompleteGuidanceReply\(input\.value, input\)/);
   assert.match(css, /coach-quick-replies/);
+});
+
+test("initial guidance task teaches before asking students to produce the question goal", () => {
+  assert.match(js, /title: "先听讲解，再只填一个空"/);
+  assert.match(js, /body: "不用先完整说题意/);
+  assert.doesNotMatch(js, /title: "先说题目真正问什么"/);
 });
 
 test("student guidance offers a two-choice micro task when writing is hard", () => {

@@ -3150,8 +3150,8 @@ function guidanceCurrentTaskForLock(lock = state.guidanceLock) {
   }
   return {
     badge: "第 1 步 / 先听讲解",
-    title: "先说题目真正问什么",
-    body: "不要猜答案，也不要只写选项。先用一句话说明题目目标和第一步。",
+    title: "先听讲解，再只填一个空",
+    body: "不用先完整说题意。先看 AI 拆题和小讲解，卡住就点“先讲知识点”或“换个例子”。",
   };
 }
 

@@ -1102,6 +1102,19 @@ test("student sees a clear notice after each challenge mission is completed", ()
   assert.match(js, /state\.lastChallengeMissionNotice = ""/);
 });
 
+test("completed challenge missions become reportable mastery proof", () => {
+  assert.match(html, /id="studentChallengeProofs"/);
+  assert.match(html, /id="parentChallengeProofSummary"/);
+  assert.match(js, /challengeProofs: \[\]/);
+  assert.match(js, /function recordChallengeProof/);
+  assert.match(js, /recordChallengeProof\(question, completedMission, outcome, subjectId\)/);
+  assert.match(js, /function challengeProofSummary/);
+  assert.match(js, /renderChallengeProofSummary/);
+  assert.match(js, /renderParentChallengeProofSummary/);
+  assert.match(js, /challengeProofCount: challengeProofSummary\(student\.id\)\.total/);
+  assert.match(js, /挑战证明/);
+});
+
 test("variant verification gives a structured method checklist", () => {
   assert.match(html, /id="variantMission"/);
   assert.match(html, /id="variantMethodChecklist"/);

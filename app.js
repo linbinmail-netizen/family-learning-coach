@@ -1350,6 +1350,7 @@ let state = {
   answeredQuestionKeys: {},
   skillMastery: {},
   practiceSessions: [],
+  challengeProofs: [],
   activePracticeSessionId: "",
   activeQuestionProgressKey: "",
   questionStartedAt: "",
@@ -1396,6 +1397,7 @@ function clearLearningStateForAccount() {
   state.answeredQuestionKeys = {};
   state.skillMastery = {};
   state.practiceSessions = [];
+  state.challengeProofs = [];
   state.activePracticeSessionId = "";
   state.activeQuestionProgressKey = "";
   state.questionStartedAt = "";
@@ -1437,6 +1439,7 @@ function loadSavedData(key = storageKey, options = {}) {
     if (saved?.answeredQuestionKeys) state.answeredQuestionKeys = saved.answeredQuestionKeys;
     if (saved?.skillMastery) state.skillMastery = saved.skillMastery;
     if (Array.isArray(saved?.practiceSessions)) state.practiceSessions = saved.practiceSessions;
+    if (Array.isArray(saved?.challengeProofs)) state.challengeProofs = saved.challengeProofs;
     if (saved?.activePracticeSessionId) state.activePracticeSessionId = saved.activePracticeSessionId;
     if (saved?.activeQuestionProgressKey) state.activeQuestionProgressKey = saved.activeQuestionProgressKey;
     if (saved?.questionStartedAt) state.questionStartedAt = saved.questionStartedAt;
@@ -1472,6 +1475,7 @@ function saveData(key = accountDataStorageKey()) {
       answeredQuestionKeys: state.answeredQuestionKeys,
       skillMastery: state.skillMastery,
       practiceSessions: state.practiceSessions,
+      challengeProofs: state.challengeProofs,
       activePracticeSessionId: state.activePracticeSessionId,
       activeQuestionProgressKey: state.activeQuestionProgressKey,
       questionStartedAt: state.questionStartedAt,
@@ -2633,6 +2637,38 @@ function challengeMissionCompletionNotice(completedMission = {}, remainingQueue 
   return `挑战任务完成：${completedMission.label}。下一步挑战：${remainingQueue[0].label}。`;
 }
 
+function recordChallengeProof(question = {}, completedMission = {}, outcome = "correct", subjectId = state.subject) {
+  const student = activeStudent();
+  const proof = {
+    id: `${state.studentId}-${subjectId}-${Date.now()}-${completedMission.label || "challenge"}`,
+    studentId: state.studentId,
+    studentName: student.name,
+    subjectId,
+    subject: subjectById(subjectId)?.label || subjectId,
+    skill: question.skill || activeDiagnostic().skills[0][0],
+    difficulty: question.difficulty || difficultyLevels[adaptiveLevelForSubject(subjectId)],
+    mission: completedMission.label || "挑战任务",
+    outcome,
+    questionKey: mistakeKey(state.studentId, subjectId, question),
+    completedAt: new Date().toISOString(),
+  };
+  state.challengeProofs = [proof, ...(state.challengeProofs || []).filter((item) => item.questionKey !== proof.questionKey || item.mission !== proof.mission)].slice(0, 80);
+  return proof;
+}
+
+function challengeProofSummary(studentId = state.studentId) {
+  const proofs = (state.challengeProofs || []).filter((proof) => proof.studentId === studentId);
+  const recent = proofs.slice(0, 5);
+  const schoolDepth = proofs.filter((proof) => proof.mission === "学校考试深度题").length;
+  const explanation = proofs.filter((proof) => proof.mission === "解释型题").length;
+  return {
+    total: proofs.length,
+    schoolDepth,
+    explanation,
+    recent,
+  };
+}
+
 function completeChallengeMissionForQuestion(question = {}, outcome = "correct", subjectId = state.subject) {
   if (!["correct", "guided"].includes(outcome)) return false;
   const stats = state.adaptiveStats[subjectId] || {};
@@ -2640,6 +2676,7 @@ function completeChallengeMissionForQuestion(question = {}, outcome = "correct",
   if (!queue.length || !questionCompletesChallengeMission(question, queue[0], subjectId)) return false;
   const completedMission = queue[0];
   const remainingQueue = queue.slice(1);
+  recordChallengeProof(question, completedMission, outcome, subjectId);
   state.adaptiveStats[subjectId] = {
     ...stats,
     challengeQueue: remainingQueue,
@@ -5035,6 +5072,20 @@ function renderStudentWrapup(completion = todayCompletionState()) {
     : `今天目标是 ${target} 题，目前已答 ${answered} 题。正确率 ${session.accuracy || 0}%，使用提示 ${session.hints} 次；可以继续学习，也可以生成阶段总结。`;
 }
 
+function renderChallengeProofSummary(studentId = state.studentId) {
+  const list = $("studentChallengeProofs");
+  if (!list) return;
+  const summary = challengeProofSummary(studentId);
+  list.innerHTML = summary.recent.length
+    ? summary.recent
+        .map(
+          (proof) =>
+            `<li><strong>${proof.mission}</strong>：${proof.subject} · ${proof.skill}。${proof.outcome === "guided" ? "AI 引导后完成" : "独立答对后完成"}。</li>`
+        )
+        .join("")
+    : "<li>还没有挑战证明。答题太轻松时，系统会安排解释型或学校深度题来验证真正掌握。</li>";
+}
+
 function renderStudentActionBar() {
   $("startDiagnosticButton").textContent = "开始今日学习";
   $("reviewMistakesButton").textContent = "复习错题";
@@ -5581,6 +5632,7 @@ function buildReport() {
     issueType: insights.issueType,
     nextAction: insights.nextAction,
     guidedMasteryCount: guidedMasteryCount(student.id),
+    challengeProofCount: challengeProofSummary(student.id).total,
     mistakes: reportMistakes.map((item) => ({
       skill: item.skill,
       prompt: item.prompt,
@@ -5609,6 +5661,7 @@ function buildReport() {
         .map((item) => `<li><strong>${item.skill}</strong>：${item.reason}，累计 ${item.attempts || 1} 次。明天优先复习这类题。</li>`)
         .join("")
     : "<li>暂无错题记录。</li>";
+  renderChallengeProofSummary(student.id);
 
   renderEmail(average, weak, plan, insights, reportMistakes);
   renderActivity();
@@ -6052,6 +6105,7 @@ function renderParentDashboardSummary() {
   const completion = todayCompletionState(tasks);
   const mistakes = mistakesForStudent(student.id);
   const session = todayPracticeSessionSummary(student.id);
+  const proofSummary = challengeProofSummary(student.id);
   const weakSkills = [...new Set(weakSkillMasteryItems(student.id).map((item) => item.skill).concat(topMistakeSkills(mistakes).map(([skill]) => skill)))];
   const estimatedMinutes = session.minutes || Math.round((plan.minutes || 30) * (completion.percent / 100));
   $("parentTodayTime").textContent = `${estimatedMinutes}/${plan.minutes} 分钟`;
@@ -6060,6 +6114,15 @@ function renderParentDashboardSummary() {
   $("parentRecommendation").textContent = weakSkills.length
     ? `复习 ${weakSkills[0]}；今日正确率 ${session.accuracy || "--"}%，提示 ${session.hints || 0} 次。`
     : `保持今日计划；今日正确率 ${session.accuracy || "--"}%。`;
+  renderParentChallengeProofSummary(proofSummary);
+}
+
+function renderParentChallengeProofSummary(summary = challengeProofSummary(state.studentId)) {
+  const target = $("parentChallengeProofSummary");
+  if (!target) return;
+  target.textContent = summary.total
+    ? `${summary.total} 个 · 深度 ${summary.schoolDepth} · 解释 ${summary.explanation}`
+    : "暂无";
 }
 
 function renderQuestionQualityAudit() {
@@ -6357,7 +6420,10 @@ function refreshViewData(viewName) {
   if (viewName === "learningPath") renderLearningPath();
   if (viewName === "diagnostic") renderDiagnostic();
   if (viewName === "mistakes") renderMistakeNotebook();
-  if (viewName === "report") renderStudentAchievements();
+  if (viewName === "report") {
+    renderStudentAchievements();
+    renderChallengeProofSummary();
+  }
   if (viewName === "coach") renderCoach();
   if (viewName === "parent") renderParentDashboardSummary();
 }

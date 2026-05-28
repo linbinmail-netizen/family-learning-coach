@@ -221,6 +221,20 @@ test("buildTutorRequest uses micro-step teaching when knowledge is not ready", (
   assert.match(text, /不要要求学生先完整复述题意/);
 });
 
+test("buildTutorRequest asks AI to diagnose the gap before coaching", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "我不知道这题问什么",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /先用“卡点判断”命名学生缺少的部分/);
+  assert.match(text, /卡点判断 → 小讲解 → 现在只做一小步/);
+  assert.match(text, /不要连续追问“题目问什么”/);
+  assert.match(text, /coachingGap/);
+});
+
 test("fallback teaches briefly when the student is conceptually stuck", () => {
   const reply = buildFallbackReply({
     ...baseBody,

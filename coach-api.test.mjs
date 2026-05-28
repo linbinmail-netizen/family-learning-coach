@@ -50,6 +50,20 @@ test("coach fallback teaches before asking when student cannot state the questio
   assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
 });
 
+test("coach fallback names the diagnosed gap before giving a micro task", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "知识点没吃透，人家也打不出来",
+    explanation: "斜率表示 y 相对于 x 的变化率。",
+  });
+
+  assert.match(reply, /卡点判断：还没形成第一步/);
+  assert.match(reply, /小讲解/);
+  assert.match(reply, /现在只做一小步/);
+  assert.match(reply, /这题要我判断____/);
+  assert.doesNotMatch(reply, /再说题目问什么|正确答案|答案是|选项\s*[A-D]/);
+});
+
 test("coach fallback uses subject-specific mini examples when reteaching", () => {
   const mathReply = buildFallbackReply({
     ...baseBody,

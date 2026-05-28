@@ -139,6 +139,11 @@ function oneStepFallbackPrompt(body = {}) {
   return `我看到你现在缺的是：${coachingGap.label}。${coachingGap.next} 只补这一句：${gapSentenceFrame(coachingGap, body)}`;
 }
 
+function diagnosedGapLine(body = {}) {
+  const coachingGap = coachingGapAnalysis(body.studentReply || "");
+  return `卡点判断：${coachingGap.label}。`;
+}
+
 function buildTeachingNote({ subject, skill, explanation }) {
   const concept = skill || "这个知识点";
   const base = explanation || `${concept} 是解这类题时要先弄清楚的核心概念。`;
@@ -240,6 +245,8 @@ export function buildTutorRequest(body = {}) {
       "Guide with this five-step routine: 理解题意 → 找关键词 → 排除错误选项 → 写一句理由 → 总结方法.",
       "Ask exactly one short question at a time.",
       "Respond to the student's actual reply quality: if answer-only, ask for method; if vague, give a sentence frame; if stuck, reteach briefly; if decent, push for precision.",
+      "先用“卡点判断”命名学生缺少的部分，例如：卡点判断：题目目标不清楚。然后再教。",
+      "卡住时固定顺序：卡点判断 → 小讲解 → 现在只做一小步。不要连续追问“题目问什么”。",
       "If the student cannot say what the question asks, do not keep asking the same meta-question. First teach the target concept in one sentence, give one tiny example, then provide a fill-in sentence.",
       "If the student says the knowledge point is not solid or they cannot type an answer, use teach-then-micro-step: 先讲清概念 → 小例子 → 二选一或填空. Do not demand a full restatement first.",
       "Use layeredHints in order: first clarify the goal, then the clue, then the full method sentence.",
@@ -277,7 +284,7 @@ export function buildTutorRequest(body = {}) {
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. Use replyAnalysis and coachingGap to name the missing piece first, then give one concrete next sentence or question. If needsTeaching is true, give a short explanation plus a tiny example before asking one follow-up question. Do not reveal the correct answer.",
+                "Move the student one step forward. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. Use replyAnalysis and coachingGap to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
             }),
           },
         ],
@@ -322,7 +329,7 @@ export function buildFallbackReply(body = {}) {
     const shortExplanation =
       body.explanation ||
       `${skill} 是这类题里帮助你判断方向的核心概念，不是让你先猜答案。`;
-    return `${mistakePrefix}你不是不努力，是这个知识点还没接上。小讲解：${shortExplanation} ${teachingMiniExampleForApi(skill, body.subject)} ${commonMistake ? `常见误区：${commonMistake}` : ""} 先照这句改写：${gapSentenceFrame({ gap: "stuck" }, body)}`;
+    return `${mistakePrefix}${diagnosedGapLine(body)}你不是不努力，是这个知识点还没接上。小讲解：${shortExplanation} ${teachingMiniExampleForApi(skill, body.subject)} ${commonMistake ? `常见误区：${commonMistake}` : ""} 先照这句改写，现在只做一小步：${gapSentenceFrame({ gap: "stuck" }, body)}`;
   }
 
   if (step.id === "understand" && hints[0]) {

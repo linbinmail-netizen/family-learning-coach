@@ -1093,6 +1093,10 @@ test("student AI replies append after the instant local coach instead of replaci
   const inlineHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   assert.match(js, /AI 正在深度检查/);
   assert.match(js, /function appendCoachSupplement/);
+  assert.match(js, /function sanitizeCoachSupplement/);
+  assert.match(js, /AI 补充太长/);
+  assert.match(js, /重复追问题目/);
+  assert.match(js, /sanitizeCoachSupplement\(text/);
   assert.match(chatHandler, /appendCoachSupplement\(state\.chatHistory, data\.reply/);
   assert.match(inlineHandler, /appendCoachSupplement\(state\.inlineCoachHistory,/);
   assert.doesNotMatch(chatHandler, /state\.chatHistory\.pop\(\)/);

@@ -5389,8 +5389,23 @@ function appendInlineCoach(role, text) {
   renderInlineCoachPanel();
 }
 
+function sanitizeCoachSupplement(text = "", history = [], question = activeQuestions()[state.currentQuestion]) {
+  const raw = String(text || "").trim();
+  const recentStudent = [...history].reverse().find((message) => message.role === "student")?.text || "";
+  const tooLong = raw.length > 180;
+  const repeatsMetaQuestion =
+    /题目.*问什么|问题.*问.*什么|先说.*题目|describe.*question|what.*question/i.test(raw)
+    && /不知道|不会|不懂|打不出来|说不出来|写不出来|知识点没吃透|没思路|idk|stuck/i.test(recentStudent);
+  if (tooLong || repeatsMetaQuestion) {
+    const gap = coachingGapForReply(recentStudent);
+    const reason = tooLong ? "AI 补充太长" : "重复追问题目";
+    return `${reason}，我先压缩成一小步：${localOneStepCoachPrompt(gap, question)}`;
+  }
+  return raw;
+}
+
 function appendCoachSupplement(history, text) {
-  const supplement = `AI 补充：${text}`;
+  const supplement = `AI 补充：${sanitizeCoachSupplement(text, history)}`;
   if (history === state.inlineCoachHistory) {
     appendInlineCoach("coach", supplement);
   } else {

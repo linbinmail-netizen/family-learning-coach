@@ -1069,6 +1069,17 @@ test("challenge mission queue directly steers the next question type", () => {
   assert.match(js, /if \(adaptiveResult\.challengeMode && missionCandidate\) return missionCandidate\.index/);
 });
 
+test("completed challenge missions advance the queue instead of staying stuck", () => {
+  assert.match(js, /function completeChallengeMissionForQuestion/);
+  assert.match(js, /function questionCompletesChallengeMission/);
+  assert.match(js, /const queue = stats\.challengeQueue \|\| \[\]/);
+  assert.match(js, /const remainingQueue = queue\.slice\(1\)/);
+  assert.match(js, /challengeQueue: remainingQueue/);
+  assert.match(js, /challengeBoostRemaining: remainingQueue\.length/);
+  assert.match(js, /completeChallengeMissionForQuestion\(question, "correct", subjectId\)/);
+  assert.match(js, /completeChallengeMissionForQuestion\(question, "guided"\)/);
+});
+
 test("variant verification gives a structured method checklist", () => {
   assert.match(html, /id="variantMission"/);
   assert.match(html, /id="variantMethodChecklist"/);

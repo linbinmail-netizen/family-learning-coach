@@ -2610,6 +2610,35 @@ function challengeMissionPreferredQuestion(unanswered = [], challengeQueue = [],
   return ranked.find(({ question }) => isExplanationFirstChallenge(question));
 }
 
+function questionCompletesChallengeMission(question = {}, mission = {}, subjectId = state.subject) {
+  if (!mission?.label) return false;
+  if (mission.label === "解释型题") {
+    return Boolean(question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning);
+  }
+  if (mission.label === "学校考试深度题") {
+    return Boolean(question.schoolExamDepth);
+  }
+  if (mission.label === "同技能变式题") {
+    const previousSkill = state.adaptiveStats[subjectId]?.challengeSkill || "";
+    return Boolean(question.skill && question.skill === previousSkill && isDepthPracticeQuestion(question));
+  }
+  return false;
+}
+
+function completeChallengeMissionForQuestion(question = {}, outcome = "correct", subjectId = state.subject) {
+  if (!["correct", "guided"].includes(outcome)) return false;
+  const stats = state.adaptiveStats[subjectId] || {};
+  const queue = stats.challengeQueue || [];
+  if (!queue.length || !questionCompletesChallengeMission(question, queue[0], subjectId)) return false;
+  const remainingQueue = queue.slice(1);
+  state.adaptiveStats[subjectId] = {
+    ...stats,
+    challengeQueue: remainingQueue,
+    challengeBoostRemaining: remainingQueue.length,
+  };
+  return true;
+}
+
 function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuestion, mode = "correct", preferredIndex = -1) {
   const questions = activeQuestions();
   if (!questions.length) return false;
@@ -3848,6 +3877,7 @@ function completeGuidedMastery(variantReply = "") {
   const outcome = masteryOutcome(state.guidanceLock, variantReply);
   updateSkillMastery(question, { guided: true });
   markMistakeReviewed(question);
+  completeChallengeMissionForQuestion(question, "guided");
   state.guidedMastery[state.guidanceLock.questionKey] = {
     ...outcome,
   };
@@ -4607,10 +4637,12 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
   const subjectId = state.subject;
   const isCorrect = selectedIndex === question.correct;
   const current = state.adaptiveStats[subjectId] || { correctStreak: 0, missedStreak: 0 };
+  const completedChallengeMission = isCorrect && completeChallengeMissionForQuestion(question, "correct", subjectId);
+  const currentChallengeBoost = Number(state.adaptiveStats[subjectId]?.challengeBoostRemaining ?? current.challengeBoostRemaining ?? 0);
   const nextStats = {
     correctStreak: isCorrect ? current.correctStreak + 1 : 0,
     missedStreak: isCorrect ? 0 : current.missedStreak + 1,
-    challengeBoostRemaining: Math.max(0, Number(current.challengeBoostRemaining || 0) - 1),
+    challengeBoostRemaining: completedChallengeMission ? currentChallengeBoost : Math.max(0, currentChallengeBoost - 1),
   };
   let level = adaptiveLevelForSubject(subjectId);
   let message = "";
@@ -4621,6 +4653,7 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
     nextStats.challengeBoostRemaining = 3;
     state.adaptiveStats[subjectId] = nextStats;
     state.adaptiveStats[subjectId].challengeQueue = buildChallengeMissionQueue(question, nextStats);
+    state.adaptiveStats[subjectId].challengeSkill = question?.skill || "";
     challengeMode = true;
     message = "这组题太轻松，接下来进入挑战模式：优先做解释型/学校考试深度题。";
   }

@@ -218,6 +218,17 @@ test("parent report explains fit, issue type, and next action", () => {
   assert.match(js, /难度是否合适/);
 });
 
+test("parent report uses too-easy evidence, not only accuracy", () => {
+  assert.match(js, /function tooEasyEvidenceForSubject/);
+  assert.match(js, /challengeBoostForSubject\(state\.subject\)/);
+  assert.match(js, /challengeProofSummary\(state\.studentId\)\.total/);
+  assert.match(js, /tooEasyEvidence\.active/);
+  assert.match(js, /太容易信号/);
+  assert.match(js, /下一轮直接增加学校考试深度题/);
+  assert.match(js, /buildLearningInsights\(\{[\s\S]*tooEasyEvidence/);
+  assert.doesNotMatch(js, /tooEasyEvidenceForSubject[\s\S]*正确答案是/);
+});
+
 test("missed questions feed a review loop", () => {
   assert.match(html, /id="mistakeReviewList"/);
   assert.match(html, /id="reportMistakes"/);

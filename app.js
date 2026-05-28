@@ -5728,7 +5728,21 @@ function applyTwoHourPlanPreset() {
   $("planSaveStatus").textContent = "已填入 2 小时学习结构：概念讲解、基础练习、错题复盘、挑战拔高、今日总结。确认后点击保存计划。";
 }
 
-function buildLearningInsights({ average, answeredCount, correctCount, questions, plan }) {
+function tooEasyEvidenceForSubject() {
+  const stats = state.adaptiveStats[state.subject] || {};
+  const challengeProofs = challengeProofSummary(state.studentId).total;
+  const activeChallengeBoost = challengeBoostForSubject(state.subject);
+  const noticeSaysTooEasy = /太简单|太轻松|更高难度/.test(state.lastAdvanceNotice || "");
+  const active = activeChallengeBoost > 0 || challengeProofs > 0 || noticeSaysTooEasy || (stats.correctStreak || 0) >= 2;
+  return {
+    active,
+    challengeBoostRemaining: activeChallengeBoost,
+    challengeProofs,
+    correctStreak: stats.correctStreak || 0,
+  };
+}
+
+function buildLearningInsights({ average, answeredCount, correctCount, questions, plan, tooEasyEvidence = tooEasyEvidenceForSubject() }) {
   const accuracy = answeredCount ? Math.round((correctCount / answeredCount) * 100) : 0;
   const targetLevel = adaptiveLevelForSubject();
   const levelLabel = difficultyLevels[targetLevel] || "中等";
@@ -5739,6 +5753,8 @@ function buildLearningInsights({ average, answeredCount, correctCount, questions
   let difficultyFit = `难度基本合适：当前处在${levelLabel}，完成更多题后会继续判断。`;
   if (answeredCount < Math.max(3, Math.round(targetQuestions / 2))) {
     difficultyFit = `数据还不够：今天只完成 ${answeredCount} 题，建议至少完成 ${Math.max(3, Math.round(targetQuestions / 2))} 题后再判断难度。`;
+  } else if (tooEasyEvidence.active) {
+    difficultyFit = `偏简单：太容易信号已出现，当前有 ${tooEasyEvidence.challengeProofs} 条挑战证明，下一轮直接增加学校考试深度题和解释型题。`;
   } else if (accuracy >= 85 && targetLevel < difficultyLevels.length - 1) {
     difficultyFit = `偏简单：正确率 ${accuracy}%，下一轮可以提高到${difficultyLevels[targetLevel + 1]}，加入解释型和变式题。`;
   } else if (accuracy < 55 && targetLevel > 0) {
@@ -5750,7 +5766,9 @@ function buildLearningInsights({ average, answeredCount, correctCount, questions
   }
 
   let issueType = "暂无判断：还没有完成诊断题。";
-  if (answeredCount && accuracy >= 85) {
+  if (answeredCount && tooEasyEvidence.active) {
+    issueType = "可以拔高：系统检测到太容易信号，需要减少基础选择题，增加解释理由、学校考试深度题和变式验证。";
+  } else if (answeredCount && accuracy >= 85) {
     issueType = "可以拔高：基础题完成顺利，需要更多解释理由、综合应用和挑战题。";
   } else if (answeredCount && accuracy < 55) {
     issueType = `概念不清：重点先补 ${plannedSkills}，AI 需要先讲概念，再让孩子复述。`;
@@ -5761,7 +5779,9 @@ function buildLearningInsights({ average, answeredCount, correctCount, questions
   }
 
   let nextAction = "明天先完成诊断题，再根据正确率自动调整学习计划。";
-  if (issueType.includes("可以拔高")) {
+  if (tooEasyEvidence.active) {
+    nextAction = `明天建议完成 ${targetQuestions + 2} 题，下一轮直接增加学校考试深度题，并要求每题先写方法再选答案。`;
+  } else if (issueType.includes("可以拔高")) {
     nextAction = `明天建议完成 ${targetQuestions + 2} 题，难度设为挑战拔高，并要求每题写一句理由。`;
   } else if (issueType.includes("概念不清")) {
     nextAction = `明天建议完成 ${Math.max(4, targetQuestions - 2)} 题，难度设为稳扎稳打，先补 1 个核心知识点。`;
@@ -5806,6 +5826,7 @@ function buildReport() {
     correctCount,
     questions,
     plan,
+    tooEasyEvidence: tooEasyEvidenceForSubject(),
   });
   const targetQuestions = planForStudent(student.id).questionTarget || 8;
 

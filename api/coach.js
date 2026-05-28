@@ -114,6 +114,26 @@ export function coachingGapAnalysis(studentReply = "") {
   return { gap: "precision", label: "需要更精确", next: "把关键词或证据说具体一点。" };
 }
 
+export function gapSentenceFrame(gap = {}, body = {}) {
+  const skill = body.skill || "这个知识点";
+  const hint = coachingHintForHistory(body) || mergedCoachHints(body)[0] || "题目里的关键词或条件";
+  const frames = {
+    answer_only: `这题考的是 ${skill}。我第一步先看____，因为____。`,
+    stuck: `这题要我判断____。我可以先看 ${hint}。`,
+    goal: `这题要我判断 ${skill} 里的____。`,
+    method: `我第一步先看 ${hint}，再判断____。`,
+    reason: `因为这一步能帮我____，所以不能只凭感觉选。`,
+    detail: `具体来说，题目里的____说明我的方法应该是____。`,
+    precision: `我还要点出题目里的关键词：____，它说明____。`,
+  };
+  return frames[gap.gap] || "这题要我判断____。我第一步先看____，因为____。";
+}
+
+function oneStepFallbackPrompt(body = {}) {
+  const coachingGap = coachingGapAnalysis(body.studentReply || "");
+  return `我看到你现在缺的是：${coachingGap.label}。${coachingGap.next} 只补这一句：${gapSentenceFrame(coachingGap, body)}`;
+}
+
 function buildTeachingNote({ subject, skill, explanation }) {
   const concept = skill || "这个知识点";
   const base = explanation || `${concept} 是解这类题时要先弄清楚的核心概念。`;
@@ -242,16 +262,16 @@ export function buildFallbackReply(body = {}) {
 
   if (replyAnalysis.type === "answer_only") {
     if (coachHistoryContains(body, /第一步看____|只写了答案|答案字母/)) {
-      return `${mistakePrefix}我们不重复刚才那句，直接做微练习：先写“这题要我判断____”，再补“我第一步先看____”。`;
+      return `${mistakePrefix}我们不重复刚才那句，直接做微练习：${gapSentenceFrame(coachingGap, body)}`;
     }
-    return `${mistakePrefix}我看到你现在缺的是：${coachingGap.label}。${commonMistake ? `常见误区：${commonMistake} ` : ""}请写方法：第一步看____，因为____。`;
+    return `${mistakePrefix}${commonMistake ? `常见误区：${commonMistake} ` : ""}${oneStepFallbackPrompt(body)}`;
   }
 
   if (replyAnalysis.type === "thin" || replyAnalysis.type === "claim_without_reason") {
     if (coachHistoryContains(body, /理由还不够|用这句补完整|原因说明不完整/)) {
-      return `${mistakePrefix}换一种更小的任务：只补原因这一句。“因为这一步能帮助我____。”`;
+      return `${mistakePrefix}换一种更小的任务：${gapSentenceFrame({ gap: "reason" }, body)}`;
     }
-    return `${mistakePrefix}我看到你现在缺的是：${coachingGap.label}。${nextHint || coachingGap.next} 用这句补完整：我先看____，因为它能说明____。`;
+    return `${mistakePrefix}${nextHint ? `${nextHint} ` : ""}${oneStepFallbackPrompt(body)}`;
   }
 
   if (needsTeaching) {
@@ -263,7 +283,7 @@ export function buildFallbackReply(body = {}) {
   }
 
   if (step.id === "understand" && hints[0]) {
-    return `${mistakePrefix}${hints[0]} 先不用选答案，请用自己的话说说题目真正问什么。`;
+    return `${mistakePrefix}${hints[0]} 先不用选答案，${oneStepFallbackPrompt(body)}`;
   }
 
   if (step.id === "keywords" && hints[0]) {

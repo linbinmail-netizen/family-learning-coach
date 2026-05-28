@@ -5018,6 +5018,25 @@ function coachingGapForReply(studentReply = "") {
   return { label: "需要更精确", next: "把关键词、条件或证据说具体一点。" };
 }
 
+function localGapSentenceFrame(gap = coachingGapForReply(), question = activeQuestions()[state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const hint = coachingHintForTurn(question, 0) || question?.coachHints?.[0] || "题目里的关键词或条件";
+  const frames = {
+    "只写了答案": `这题考的是 ${skill}。我第一步先看____，因为____。`,
+    "还没形成第一步": `这题要我判断____。我可以先看 ${hint}。`,
+    "题目目标不清楚": `这题要我判断 ${skill} 里的____。`,
+    "方法步骤不清楚": `我第一步先看 ${hint}，再判断____。`,
+    "原因说明不完整": "因为这一步能帮我____，所以不能只凭感觉选。",
+    "表达太短": "具体来说，题目里的____说明我的方法应该是____。",
+    "需要更精确": "我还要点出题目里的关键词：____，它说明____。",
+  };
+  return frames[gap.label] || "这题要我判断____。我第一步先看____，因为____。";
+}
+
+function localOneStepCoachPrompt(gap = coachingGapForReply(), question = activeQuestions()[state.currentQuestion]) {
+  return `我看到你现在缺的是：${gap.label}。${gap.next} 只补这一句：${localGapSentenceFrame(gap, question)}`;
+}
+
 function coachHistoryAlreadyUsed(history = [], pattern) {
   return history.some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
 }
@@ -5102,8 +5121,8 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
   if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(rawReply)) {
     return {
       reply: repeatedAnswerPrompt
-        ? `${mistakePrefix}我们不重复刚才那句，直接做微练习：先写“这题要我判断____”，再补“我第一步先看____”。`
-        : `${mistakePrefix}我看到你现在缺的是：${gap.label}。${gap.next} 请写：第一步看____，因为____。`,
+        ? `${mistakePrefix}我们不重复刚才那句，直接做微练习：${localGapSentenceFrame(gap, question)}`
+        : `${mistakePrefix}${localOneStepCoachPrompt(gap, question)}`,
     };
   }
 
@@ -5116,8 +5135,8 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
   if (studentTurns <= 1) {
     return {
       reply: repeatedReasonPrompt
-        ? `${mistakePrefix}不重复上一句，换成更小一步：只补“因为这一步能帮助我____”。`
-        : `${mistakePrefix}我看到你现在缺的是：${gap.label}。${coachingHintForTurn(question, 1) || hints[0] || gap.next} 下一步只补这一句，不用选答案。`,
+        ? `${mistakePrefix}不重复上一句，换成更小一步：${localGapSentenceFrame({ label: "原因说明不完整" }, question)}`
+        : `${mistakePrefix}${coachingHintForTurn(question, 1) || hints[0] || ""} ${localOneStepCoachPrompt(gap, question)}`,
     };
   }
 

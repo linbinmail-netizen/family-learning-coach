@@ -4279,6 +4279,21 @@ function frontloadSchoolExamPractice(questions, plan = planForStudent(state.stud
   return adjusted;
 }
 
+function limitEasyWarmupQuestions(questions, plan = planForStudent(state.studentId)) {
+  const limit = Math.min(dailyQuestionLimit(plan), questions.length);
+  if (plan.difficultyMode === "steady" || limit < 3) return questions;
+  const firstTwoEasyCount = questions.slice(0, 2).filter((question) => difficultyScore(question.difficulty) <= 1 && !isDepthPracticeQuestion(question)).length;
+  if (firstTwoEasyCount < 2) return questions;
+  const replacementIndex = questions.findIndex(
+    (question, index) => index >= 2 && index < limit && (isDepthPracticeQuestion(question) || isSchoolExamPracticeQuestion(question))
+  );
+  if (replacementIndex < 0) return questions;
+  const adjusted = [...questions];
+  const [replacement] = adjusted.splice(replacementIndex, 1);
+  adjusted.splice(1, 0, replacement);
+  return adjusted;
+}
+
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -4422,13 +4437,13 @@ function activeQuestions() {
   const twoHourQuestions = twoHourExpansionQuestionBank[state.subject] || [];
   if (cloudQuestions.length || localQuestions.length || expandedQuestions.length || challengeQuestions.length || twoHourQuestions.length) {
     const selected = selectTwoHourStructuredQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions)));
-    const depthBalanced = frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selected)));
+    const depthBalanced = limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selected))));
     return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
   }
 
   const diagnostic = activeDiagnostic();
   if (diagnostic.questions) {
-    const depthBalanced = frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selectAdaptiveQuestions(diagnostic.questions))));
+    const depthBalanced = limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selectAdaptiveQuestions(diagnostic.questions)))));
     return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
   }
   const strongest = diagnostic.skills.reduce((best, skill) => (skill[1] > best[1] ? skill : best), diagnostic.skills[0]);
@@ -4466,7 +4481,7 @@ function activeQuestions() {
       skill: weakest[0],
     },
   ]);
-  const depthBalanced = frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(generatedQuestions)));
+  const depthBalanced = limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(generatedQuestions))));
   return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
 }
 

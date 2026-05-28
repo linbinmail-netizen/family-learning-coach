@@ -92,6 +92,14 @@ function buildTeachingNote({ subject, skill, explanation }) {
   ].join("\n");
 }
 
+function mergedCoachHints(body = {}) {
+  return [...(body.layeredHints || []), ...(body.coachHints || [])].filter(Boolean);
+}
+
+function firstCommonMistake(body = {}) {
+  return body.commonMistakes?.[0] || "";
+}
+
 export function buildTutorRequest(body = {}) {
   const {
     studentName,
@@ -102,6 +110,8 @@ export function buildTutorRequest(body = {}) {
     skill,
     explanation,
     coachHints = [],
+    layeredHints = [],
+    commonMistakes = [],
     studentReply,
     history = [],
     recentSkillMistakes = [],
@@ -109,6 +119,7 @@ export function buildTutorRequest(body = {}) {
   const step = getLearningStep(history);
   const needsTeaching = detectNeedsTeaching(studentReply);
   const replyAnalysis = analyzeStudentReply(studentReply);
+  const allHints = [...layeredHints, ...coachHints].filter(Boolean);
   const mistakeNote = recentSkillMistakes.length
     ? "Use recent same-skill mistakes to personalize the next hint, but do not mention private report details or reveal answers."
     : "";
@@ -124,6 +135,8 @@ export function buildTutorRequest(body = {}) {
       "Guide with this five-step routine: 理解题意 → 找关键词 → 排除错误选项 → 写一句理由 → 总结方法.",
       "Ask exactly one short question at a time.",
       "Respond to the student's actual reply quality: if answer-only, ask for method; if vague, give a sentence frame; if stuck, reteach briefly; if decent, push for precision.",
+      "Use layeredHints in order: first clarify the goal, then the clue, then the full method sentence.",
+      "Use commonMistakes to name the likely misconception before asking the next question.",
       "If the student is stuck, give one small hint, then ask the student to try.",
       "If the student is conceptually confused, teach briefly before asking again.",
       "教练式讲解格式：小讲解：... 例子：... 回到这题：...？",
@@ -147,7 +160,8 @@ export function buildTutorRequest(body = {}) {
               answerChoices: answers,
               targetSkill: skill,
               teacherExplanationForInternalUseOnly: explanation,
-              availableHints: coachHints,
+              availableHints: allHints,
+              commonMistakes,
               recentSkillMistakes: recentSkillMistakes.slice(0, 3),
               currentStep: step,
               needsTeaching,
@@ -166,19 +180,20 @@ export function buildTutorRequest(body = {}) {
 
 export function buildFallbackReply(body = {}) {
   const step = getLearningStep(body.history || []);
-  const hints = body.coachHints || [];
+  const hints = mergedCoachHints(body);
   const needsTeaching = detectNeedsTeaching(body.studentReply || "");
   const replyAnalysis = analyzeStudentReply(body.studentReply || "");
+  const commonMistake = firstCommonMistake(body);
   const mistakePrefix = body.recentSkillMistakes?.length
     ? `你之前在同类题上卡过 ${body.recentSkillMistakes[0].attempts || 1} 次，`
     : "";
 
   if (replyAnalysis.type === "answer_only") {
-    return `${mistakePrefix}先不看答案字母。请写方法：第一步看____，因为____。`;
+    return `${mistakePrefix}先不看答案字母。${commonMistake ? `常见误区：${commonMistake} ` : ""}请写方法：第一步看____，因为____。`;
   }
 
   if (replyAnalysis.type === "thin" || replyAnalysis.type === "claim_without_reason") {
-    return `${mistakePrefix}你有方向了，但理由还不够。用这句补完整：我先看____，因为它能说明____。`;
+    return `${mistakePrefix}你有方向了，但理由还不够。${hints[1] || "先找能直接证明方法的线索。"} 用这句补完整：我先看____，因为它能说明____。`;
   }
 
   if (needsTeaching) {
@@ -186,7 +201,7 @@ export function buildFallbackReply(body = {}) {
     const shortExplanation =
       body.explanation ||
       `${skill} 是这类题里帮助你判断方向的核心概念，不是让你先猜答案。`;
-    return `${mistakePrefix}小讲解：${shortExplanation} 例子：先分清“主想法”和“细节”。回到这题：题目要你找哪一类信息？`;
+    return `${mistakePrefix}小讲解：${shortExplanation} ${commonMistake ? `常见误区：${commonMistake}` : "例子：先分清题目目标和线索。"} 回到这题：${hints[0] || "题目要你找哪一类信息？"}`;
   }
 
   if (step.id === "understand" && hints[0]) {

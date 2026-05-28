@@ -435,8 +435,12 @@ test("student guidance includes a three-part method restatement scaffold", () =>
   assert.match(css, /guidance-scaffold-card/);
 });
 
-test("student guidance scaffold prefers lesson steps over raw answer hints", () => {
-  assert.match(js, /const firstHint = lesson\.steps\?\.\[0\] \|\| question\?\.coachHints\?\.\[0\]/);
+test("student guidance scaffold prefers layered AI hints and lesson steps", () => {
+  assert.match(js, /question\?\.aiHintLevel1/);
+  assert.match(js, /question\?\.aiHintLevel2/);
+  assert.match(js, /question\?\.aiHintLevel3/);
+  assert.match(js, /function coachingHintForTurn/);
+  assert.match(js, /const firstHint = coachingHintForTurn/);
 });
 
 test("student guidance reply gives immediate quality feedback while typing", () => {
@@ -467,6 +471,8 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
   assert.match(js, /const asksForHelp = .*不知道/);
   assert.match(js, /没关系，先照这句填空/);
   assert.match(js, /不会写时先不要硬猜/);
+  assert.match(js, /commonMistakeForQuestion/);
+  assert.match(js, /coachingHintForTurn/);
   assert.match(js, /把方括号里的内容换成自己的话/);
   assert.match(js, /applyReplyStarterButton"\)\.addEventListener\("click"/);
   assert.match(css, /reply-helper-card/);
@@ -522,6 +528,7 @@ test("student guidance coach gives teaching feedback before variant verification
   assert.match(js, /function buildGuidedTeachingMove/);
   assert.match(js, /概念提醒/);
   assert.match(js, /小例子/);
+  assert.match(js, /常见误区/);
   assert.match(js, /下一问/);
   assert.match(js, /buildGuidedTeachingMove\(reply/);
   assert.match(js, /state\.guidanceLock\.teachingTurns/);
@@ -850,7 +857,8 @@ test("local student coach handles answer letters and stuck replies directly", ()
   assert.match(js, /先不看答案字母/);
   assert.match(js, /第一步看什么/);
   assert.match(js, /小讲解/);
-  assert.match(js, /lesson\.trap/);
+  assert.match(js, /commonMistakeForQuestion\(question\)/);
+  assert.match(js, /coachingHintForTurn\(question, 0\)/);
 });
 
 test("student coach uses recent same-skill mistakes", () => {

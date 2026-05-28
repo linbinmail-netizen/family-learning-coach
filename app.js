@@ -2785,13 +2785,22 @@ function conceptMiniLesson(question) {
   const firstHint = question?.coachHints?.[0] || "先圈出关键词。";
   const secondHint = question?.coachHints?.[1] || "再判断哪个选项直接回答问题。";
   const blueprint = lessonBlueprintForSkill(skill);
+  const layeredHints = [
+    question?.aiHintLevel1,
+    question?.aiHintLevel2,
+    question?.aiHintLevel3,
+    ...(question?.coachHints || []),
+  ].filter(Boolean);
+  const commonMistake = question?.commonMistakes?.[0] || blueprint?.trap || "不要只看选项长度或熟悉程度，要回到题目要求。";
   return {
     concept: `今天先练：${skill}`,
     example: blueprint?.example || `例题思路：${explanation}`,
     method: `方法句：${firstHint} ${secondHint}`,
-    steps: blueprint?.steps || ["先读题目问什么", "圈出关键词或已知条件", "选择能直接回答问题的思路"],
-    trap: blueprint?.trap || "不要只看选项长度或熟悉程度，要回到题目要求。",
+    steps: layeredHints.length >= 3 ? layeredHints.slice(0, 3) : blueprint?.steps || ["先读题目问什么", "圈出关键词或已知条件", "选择能直接回答问题的思路"],
+    trap: commonMistake,
     quickCheck: blueprint?.quickCheck || "我能用一句话说出这题第一步该做什么吗？",
+    layeredHints,
+    commonMistakes: question?.commonMistakes || [commonMistake],
   };
 }
 
@@ -2857,6 +2866,17 @@ function variantRetryPrompt(variant = {}) {
     return "还差一点：请补上 x 怎么变、y 怎么变，以及为什么要用 y 的变化除以 x 的变化。";
   }
   return "还差一点：请补上第一步看什么，以及为什么这一步能帮你判断。";
+}
+
+function coachingHintForTurn(question, turn = 0) {
+  const lesson = conceptMiniLesson(question);
+  const hints = lesson.layeredHints?.length ? lesson.layeredHints : lesson.steps || [];
+  return hints[Math.min(turn, Math.max(0, hints.length - 1))] || question?.coachHints?.[0] || "先说题目真正问什么。";
+}
+
+function commonMistakeForQuestion(question) {
+  const lesson = conceptMiniLesson(question);
+  return lesson.commonMistakes?.[0] || lesson.trap || "容易错在先猜答案，没有说明第一步。";
 }
 
 function isVariantExplanationStrong(reply = "", variant = state.guidanceLock?.variant) {
@@ -2993,7 +3013,7 @@ function guidanceInsightForLock(lock = state.guidanceLock, question = activeQues
   return {
     issueType,
     skillGap: `${skill}：${lesson.concept.replace(/^今天先练：/, "")}`,
-    repairAction,
+    repairAction: `${repairAction} 常见误区：${commonMistakeForQuestion(question)}`,
   };
 }
 
@@ -3090,7 +3110,8 @@ function renderGuidanceInsight(lock = state.guidanceLock) {
 
 function guidanceScaffoldForLock(lock = state.guidanceLock, question = activeQuestions()[state.currentQuestion]) {
   const lesson = conceptMiniLesson(question);
-  const firstHint = lesson.steps?.[0] || question?.coachHints?.[0] || "找关键词或已知条件。";
+  const hintIndex = Math.min(lock?.teachingTurns || 0, 2);
+  const firstHint = coachingHintForTurn(question, hintIndex);
   const reasonFocus =
     lock?.issue === "confidence"
       ? "因为我要证明自己不是猜的，而是知道这个方法为什么能用。"
@@ -3243,19 +3264,21 @@ function buildGuidedTeachingMove(reply = "", lock = state.guidanceLock) {
   const lesson = conceptMiniLesson(question);
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const quality = evaluateGuidanceReplyQuality(reply);
+  const hint = coachingHintForTurn(question, lock?.teachingTurns || 0);
+  const mistake = commonMistakeForQuestion(question);
   const nextAsk = quality.reasonWhy
     ? "把你的方法换成一句更具体的话：我先看____，因为____。"
     : "先不要写答案，请补上“为什么这一步有用”。";
-  return `概念提醒：${lesson.steps?.[0] || "先看题目真正问什么"}，不是先猜选项。小例子：${teachingMiniExampleForSkill(skill)} 下一问：${nextAsk}`;
+  return `概念提醒：${hint} 常见误区：${mistake} 小例子：${teachingMiniExampleForSkill(skill)} 下一问：${nextAsk}`;
 }
 
 function buildGuidanceRescueMove(lock = state.guidanceLock) {
   const question = activeQuestions()[lock?.questionIndex || state.currentQuestion];
   const skill = question?.skill || activeDiagnostic().skills[0][0];
-  const lesson = conceptMiniLesson(question);
-  const firstStep = lesson.steps?.[0] || question?.coachHints?.[0] || "先看题目真正问什么";
+  const firstStep = coachingHintForTurn(question, lock?.teachingTurns || 0);
+  const mistake = commonMistakeForQuestion(question);
   const modelSentence = guidanceTeacherModelForLock(lock, question);
-  return `可以，不会写时先不要硬猜。这个知识点是 ${skill}。先记住：${firstStep}。你可以照这个开头改成自己的话：${modelSentence}`;
+  return `可以，不会写时先不要硬猜。这个知识点是 ${skill}。先记住：${firstStep}。容易错在：${mistake}。你可以照这个开头改成自己的话：${modelSentence}`;
 }
 
 function shouldMoveToVariantAfterReply(reply = "") {
@@ -4737,6 +4760,8 @@ async function askAiCoach(studentReply, history = state.chatHistory) {
     skill: question?.skill || activeDiagnostic().skills[0][0],
     explanation: question?.explanation || "",
     coachHints: question?.coachHints || [],
+    layeredHints: [question?.aiHintLevel1, question?.aiHintLevel2, question?.aiHintLevel3].filter(Boolean),
+    commonMistakes: question?.commonMistakes || [],
     recentSkillMistakes: sameSkillMistakeSummary(question),
     studentReply,
     history,
@@ -4805,19 +4830,19 @@ function buildLocalCoachReply(studentReply) {
 
   if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
     return {
-      reply: `${mistakePrefix}小讲解：${lesson.trap || "不要先猜答案，要先找题目目标。"} ${hints[0] || "先把题目中的关键词圈出来。"} 先不用选答案，请用自己的话说说题目真正问什么。`,
+      reply: `${mistakePrefix}小讲解：${commonMistakeForQuestion(question)} ${coachingHintForTurn(question, 0)} 先不用选答案，请用自己的话说说题目真正问什么。`,
     };
   }
 
   if (studentTurns <= 1) {
     return {
-      reply: `${mistakePrefix}${hints[0] || "方向不错。"} 下一步找一个关键词，并说明它为什么重要。`,
+      reply: `${mistakePrefix}${coachingHintForTurn(question, 1) || hints[0] || "方向不错。"} 下一步找一个关键词，并说明它为什么重要。`,
     };
   }
 
   if (studentTurns === 2) {
     return {
-      reply: `${hints[1] || "很好，继续缩小范围。"} 现在先排除一个不合理选项，并说出理由。`,
+      reply: `${coachingHintForTurn(question, 2) || hints[1] || "很好，继续缩小范围。"} 现在先排除一个不合理选项，并说出理由。`,
     };
   }
 

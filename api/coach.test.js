@@ -54,6 +54,20 @@ test("buildTutorRequest includes the five-step rule and blocks direct answers", 
   assert.match(text, /ask for method/);
 });
 
+test("buildTutorRequest uses layered hints and common mistakes for smarter coaching", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    layeredHints: ["先说题目目标", "再找直接线索", "最后写完整方法句"],
+    commonMistakes: ["只看答案字母，没有解释证据和主张的关系"],
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /layeredHints/);
+  assert.match(text, /commonMistakes/);
+  assert.match(text, /先说题目目标/);
+  assert.match(text, /只看答案字母/);
+});
+
 test("student reply analysis detects low quality replies for smoother coaching", () => {
   assert.equal(analyzeStudentReply("B").type, "answer_only");
   assert.equal(analyzeStudentReply("我不知道").type, "stuck");
@@ -62,11 +76,17 @@ test("student reply analysis detects low quality replies for smoother coaching",
 });
 
 test("fallback reply adapts to answer-only and vague replies", () => {
-  const answerOnly = buildFallbackReply({ ...baseBody, studentReply: "B" });
-  const vague = buildFallbackReply({ ...baseBody, studentReply: "maybe this" });
+  const context = {
+    ...baseBody,
+    layeredHints: ["先说题目目标", "再找直接线索", "最后写完整方法句"],
+    commonMistakes: ["只看答案字母，没有解释证据和主张的关系"],
+  };
+  const answerOnly = buildFallbackReply({ ...context, studentReply: "B" });
+  const vague = buildFallbackReply({ ...context, studentReply: "maybe this" });
 
   assert.match(answerOnly, /答案字母|第一步/);
-  assert.match(vague, /理由|我先看/);
+  assert.match(answerOnly, /常见误区/);
+  assert.match(vague, /理由|我先看|直接线索/);
   assert.doesNotMatch(answerOnly, /The central idea or claim/);
 });
 

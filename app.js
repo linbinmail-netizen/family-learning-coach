@@ -5503,6 +5503,7 @@ function renderDiagnostic() {
 
 function studentNextStepState({ selectedAnswer, question, locked, guidedComplete, confidence }) {
   const challengeMission = activeChallengeMission();
+  const tooEasyEvidence = tooEasyEvidenceForSubject();
   if (locked) {
     const status = state.guidanceLock?.status === "variant" ? "完成变式验证" : "回答 AI 的问题";
     return {
@@ -5534,6 +5535,14 @@ function studentNextStepState({ selectedAnswer, question, locked, guidedComplete
       badge: "已弄懂",
       title: "可以进入下一题",
       body: "这题已经完成 AI 引导和变式验证。继续保持写理由的习惯。",
+    };
+  }
+  if (selectedAnswer === question.correct && confidence === "sure" && tooEasyEvidence.active) {
+    return {
+      tone: "learning",
+      badge: "准备拔高",
+      title: "下一题切到深度题",
+      body: "这题太顺，系统会优先安排学校考试深度题；先写方法，再选答案。",
     };
   }
   if (selectedAnswer === question.correct && confidence === "sure") {

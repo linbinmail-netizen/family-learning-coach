@@ -404,6 +404,15 @@ test("student lesson view gives a clear next-step instruction", () => {
   assert.match(js, /可以进入下一题/);
 });
 
+test("student next-step card explains why correct answers trigger harder work", () => {
+  assert.match(js, /const tooEasyEvidence = tooEasyEvidenceForSubject\(\)/);
+  assert.match(js, /selectedAnswer === question\.correct && confidence === "sure" && tooEasyEvidence\.active/);
+  assert.match(js, /准备拔高/);
+  assert.match(js, /下一题切到深度题/);
+  assert.match(js, /先写方法，再选答案/);
+  assert.doesNotMatch(js, /下一题切到深度题[\s\S]*正确答案是/);
+});
+
 test("student does not see lesson hints before the first answer", () => {
   assert.match(js, /showLessonAfterAttempt/);
   assert.match(js, /miniLessonCard"\)\.classList\.toggle\("hidden", !showLessonAfterAttempt\)/);

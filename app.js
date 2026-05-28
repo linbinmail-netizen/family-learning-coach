@@ -3231,10 +3231,19 @@ function guidanceScaffoldForLock(lock = state.guidanceLock, question = activeQue
   };
 }
 
+function guidanceQuestionUnpackForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const lesson = conceptMiniLesson(question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstStep = coachingHintForTurn(question, lock?.teachingTurns || 0) || lesson.steps?.[0] || "题干里的关键词或已知条件";
+  const promptPreview = String(question?.prompt || "").replace(/\s+/g, " ").slice(0, 90);
+  return `不是让你先猜答案。题目其实在问：我能不能判断 ${skill}。先看这句题干：${promptPreview}。第一眼只找：${firstStep}。`;
+}
+
 function renderGuidanceScaffold(lock = state.guidanceLock) {
   if (!lock) return;
   const question = activeQuestions()[lock.questionIndex] || activeQuestions()[state.currentQuestion];
   const scaffold = guidanceScaffoldForLock(lock, question);
+  $("questionUnpackText").textContent = guidanceQuestionUnpackForLock(lock, question);
   $("scaffoldQuestionFocus").textContent = scaffold.questionFocus;
   $("scaffoldFirstStep").textContent = scaffold.firstStep;
   $("scaffoldReasonStarter").textContent = scaffold.reasonStarter;
@@ -6285,6 +6294,9 @@ function bindEvents() {
     if (state.guidanceLock) state.guidanceLock.replyDraft = input.value;
     input.focus();
     renderReplyQuality(input.value);
+  });
+  $("applyQuestionGoalButton").addEventListener("click", () => {
+    applyGuidanceStepBuilder("goal", $("inlineCoachReply"));
   });
   $("replyMicroChoiceCard").addEventListener("click", (event) => {
     const button = event.target.closest("[data-micro-choice]");

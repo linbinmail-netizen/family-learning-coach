@@ -533,6 +533,33 @@ textarea {
   margin-top: 4px;
 }
 
+.question-unpack-card {
+  align-items: center;
+  background: #f3f8fb;
+  border: 1px solid #cfe1ed;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 10px 0 12px;
+  padding: 10px;
+}
+
+.question-unpack-card strong,
+.question-unpack-card p {
+  margin: 0;
+}
+
+.question-unpack-card strong {
+  color: var(--blue);
+}
+
+.question-unpack-card p {
+  color: var(--ink);
+  font-size: 14px;
+  grid-column: 1 / -1;
+}
+
 .lesson-status-panel {
   margin-top: 18px;
 }

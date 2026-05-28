@@ -590,6 +590,19 @@ test("student knowledge-gap replies trigger teaching before asking for a full ex
   assert.match(js, /二选一或填空/);
 });
 
+test("student guidance unpacks the question goal before asking the child to explain it", () => {
+  assert.match(html, /id="questionUnpackText"/);
+  assert.match(html, /id="applyQuestionGoalButton"/);
+  assert.match(html, /AI 先帮你拆题/);
+  assert.match(js, /function guidanceQuestionUnpackForLock/);
+  assert.match(js, /不是让你先猜答案/);
+  assert.match(js, /题目其实在问/);
+  assert.match(js, /applyQuestionGoalButton"\)\.addEventListener\("click"/);
+  assert.match(js, /guidanceStepBuilderSentence\("goal"/);
+  assert.match(js, /state\.guidanceLock\.stepBuilderParts/);
+  assert.doesNotMatch(js, /guidanceQuestionUnpackForLock[\s\S]*正确答案是/);
+});
+
 test("repeated stuck guidance lowers the task instead of asking for a full sentence again", () => {
   assert.match(js, /function guidanceNeedsLowerStep/);
   assert.match(js, /teachingTurns >= 3/);

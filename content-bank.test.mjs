@@ -267,3 +267,22 @@ test("systematic expansion marks enough school-depth tasks for exam-level practi
     assert.ok(constructedCount >= 6, `${subject} should have at least six constructed-response expansion tasks`);
   }
 });
+
+test("core subjects have enough advanced open practice for sustained two-hour learning", () => {
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(questionBankSource, context);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    const questions = context.window.twoHourExpansionQuestionBank[subject] || [];
+    const schoolDepthCount = questions.filter((question) => question.schoolExamDepth).length;
+    const constructedCount = questions.filter((question) => question.constructedResponse).length;
+    const errorAnalysisCount = questions.filter((question) => question.errorAnalysis).length;
+    const challengeCount = questions.filter((question) => String(question.difficulty).includes("挑战")).length;
+    assert.ok(questions.length >= 42, `${subject} should have at least forty-two runtime expansion questions`);
+    assert.ok(schoolDepthCount >= 20, `${subject} should have at least twenty school-depth tasks`);
+    assert.ok(constructedCount >= 14, `${subject} should have at least fourteen constructed-response tasks`);
+    assert.ok(errorAnalysisCount >= 12, `${subject} should have at least twelve error-analysis tasks`);
+    assert.ok(challengeCount >= 12, `${subject} should have at least twelve challenge-level tasks`);
+  }
+  assert.match(questionBankSource, /systematic original expansion v2/);
+});

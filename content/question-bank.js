@@ -1349,24 +1349,24 @@ const systematicExpansionBlueprints = {
 };
 
 function buildSystematicExpansionQuestions(subjectId, blueprint) {
-  const difficulties = ["基础", "中等", "进阶", "挑战"];
-  return Array.from({ length: 18 }, (_, index) => {
+  const difficulties = ["中等", "进阶", "挑战", "进阶", "挑战"];
+  return Array.from({ length: 30 }, (_, index) => {
     const patternIndex = index % blueprint.stems.length;
     const cycle = Math.floor(index / blueprint.stems.length) + 1;
     const skill = blueprint.skillCycle[index % blueprint.skillCycle.length];
     const difficulty = difficulties[index % difficulties.length];
-    const schoolLevelDepth = index % 2 === 0 || difficulty === "挑战";
+    const schoolLevelDepth = index % 2 === 0 || difficulty === "挑战" || cycle >= 4;
     return {
       prompt: `${blueprint.stems[patternIndex]} (Systematic practice ${cycle}.${patternIndex + 1})`,
       standard: blueprint.standard,
       difficulty,
-      sourceBatch: "systematic original expansion v1",
+      sourceBatch: cycle >= 4 ? "systematic original expansion v2" : "systematic original expansion v1",
       structuredBank: true,
       schoolExamDepth: schoolLevelDepth ? `${subjectId} ${skill} school-level reasoning` : "",
       multiStepReasoning: schoolLevelDepth,
-      openResponse: index % 3 !== 1,
-      errorAnalysis: index % 4 === 0,
-      constructedResponse: difficulty === "挑战" || index % 5 === 0,
+      openResponse: index % 3 !== 1 || cycle >= 4,
+      errorAnalysis: index % 3 === 0 || cycle >= 4,
+      constructedResponse: difficulty === "挑战" || index % 4 === 0 || cycle >= 5,
       answers: [
         blueprint.corrects[patternIndex],
         "choose the longest answer without checking the question",

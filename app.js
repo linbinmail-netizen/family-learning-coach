@@ -3554,6 +3554,11 @@ function buildGuidanceRescueMove(lock = state.guidanceLock) {
   return `可以，不会写时先不要硬猜。这个知识点是 ${skill}。先记住：${firstStep}。容易错在：${mistake}。我已经把一条老师示范句放到输入框里，你先改成自己的话再继续：${modelSentence}`;
 }
 
+function guidanceNeedsLowerStep(lock = state.guidanceLock) {
+  const teachingTurns = lock?.teachingTurns || 0;
+  return teachingTurns >= 3;
+}
+
 function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
   const question = activeQuestions()[lock?.questionIndex || state.currentQuestion];
   const lesson = conceptMiniLesson(question);
@@ -3569,6 +3574,9 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
         : !quality.reasonWhy
           ? "原因"
           : "具体内容";
+  if (guidanceNeedsLowerStep(lock)) {
+    return `你已经卡了几次，这说明任务太大，不是你不努力。我们不用再打完整句，先点下面的小台阶按钮，只完成一个空：题目问什么。系统会帮你把后面的第一步和原因慢慢接上。`;
+  }
   return `你说得对，知识点没吃透时确实很难自己说题意，也会打不出来、说不出来。先教会，再让你只答一小步，不用自己组织完整答案。老师先示范怎么拆题：1. 题目要判断 ${skill}；2. 第一眼看关键词或条件；3. 用二选一或填空说出第一步。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
 }
 
@@ -3578,7 +3586,14 @@ function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")
   state.guidanceLock.microDrill = guidanceMicroDrillForLock(state.guidanceLock);
   const coachMove = buildConceptBridgeMove(reply, state.guidanceLock);
   state.inlineCoachHistory.push({ role: "coach", text: coachMove });
-  state.guidanceLock.replyDraft = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
+  if (guidanceNeedsLowerStep(state.guidanceLock)) {
+    const goal = guidanceStepBuilderSentence("goal", state.guidanceLock);
+    state.guidanceLock.forceStepBuilder = true;
+    state.guidanceLock.stepBuilderParts = { goal: goal };
+    state.guidanceLock.replyDraft = goal;
+  } else {
+    state.guidanceLock.replyDraft = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
+  }
   input.value = state.guidanceLock.replyDraft;
   renderReplyQuality(input.value);
   saveData();

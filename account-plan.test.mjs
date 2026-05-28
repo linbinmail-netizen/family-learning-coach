@@ -590,6 +590,18 @@ test("student knowledge-gap replies trigger teaching before asking for a full ex
   assert.match(js, /二选一或填空/);
 });
 
+test("repeated stuck guidance lowers the task instead of asking for a full sentence again", () => {
+  assert.match(js, /function guidanceNeedsLowerStep/);
+  assert.match(js, /teachingTurns >= 3/);
+  assert.match(js, /不用再打完整句/);
+  assert.match(js, /先点下面的小台阶按钮/);
+  assert.match(js, /state\.guidanceLock\.forceStepBuilder = true/);
+  assert.match(js, /state\.guidanceLock\.stepBuilderParts = \{ goal:/);
+  assert.match(js, /guidanceStepBuilderSentence\("goal"/);
+  assert.match(js, /只完成一个空/);
+  assert.doesNotMatch(js, /guidanceNeedsLowerStep[\s\S]*正确答案是/);
+});
+
 test("student guidance keeps the suggested rescue draft after re-render", () => {
   assert.match(js, /if \(lock\.replyDraft && !replyInput\.value\.trim\(\)\) replyInput\.value = lock\.replyDraft/);
   assert.match(js, /state\.guidanceLock\.replyDraft = ""/);

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildFallbackReply, coachingGapAnalysis, gapSentenceFrame } from "./api/coach.js";
+import { buildFallbackReply, coachingGapAnalysis, gapSentenceFrame, needsSmallerTaskAfterRepeatedStuck } from "./api/coach.js";
 
 const baseBody = {
   skill: "斜率与变化率",
@@ -66,4 +66,23 @@ test("coach fallback uses subject-specific mini examples when reteaching", () =>
   assert.match(mathReply, /每多 1|每 1 个 x/);
   assert.match(readingReply, /作者观点|观点句|证据/);
   assert.doesNotMatch(`${mathReply} ${readingReply}`, /正确答案|答案是|选项\s*[A-D]/);
+});
+
+test("coach fallback lowers repeated stuck students to one blank instead of repeating meta questions", () => {
+  const body = {
+    ...baseBody,
+    studentReply: "还是不知道，打不出来",
+    history: [
+      { role: "student", text: "不知道" },
+      { role: "coach", text: "先说题目问什么。" },
+      { role: "student", text: "不会" },
+      { role: "coach", text: "再说第一步。" },
+    ],
+  };
+  assert.equal(needsSmallerTaskAfterRepeatedStuck(body), true);
+  const reply = buildFallbackReply(body);
+  assert.match(reply, /任务再降一级/);
+  assert.match(reply, /只完成一个空/);
+  assert.match(reply, /我先看____/);
+  assert.doesNotMatch(reply, /题目真正问你找什么吗|正确答案|答案是|选项\s*[A-D]/);
 });

@@ -173,6 +173,17 @@ function coachHistoryContains(body = {}, pattern) {
   return (body.history || []).some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
 }
 
+export function needsSmallerTaskAfterRepeatedStuck(body = {}) {
+  const studentMessages = (body.history || [])
+    .filter((message) => message.role === "student")
+    .map((message) => String(message.text || ""));
+  const currentReply = String(body.studentReply || "");
+  const currentIsStuck = detectNeedsTeaching(currentReply);
+  const currentCannotProduceWords = /不知道|不懂|看不懂|打不出来|写不出来|说不出来|没吃透|不清楚|完全不会/.test(currentReply);
+  const stuckTurnCount = [body.studentReply, ...studentMessages.slice(-4)].filter((reply) => detectNeedsTeaching(reply)).length;
+  return currentIsStuck && currentCannotProduceWords && (studentMessages.length >= 2 || stuckTurnCount >= 2);
+}
+
 function teachingMiniExampleForApi(skill = "", subject = "") {
   const text = `${skill} ${subject}`.toLowerCase();
   if (/slope|rate|linear|斜率|变化率|函数|比例/.test(text)) {
@@ -287,6 +298,10 @@ export function buildFallbackReply(body = {}) {
   const mistakePrefix = body.recentSkillMistakes?.length
     ? `你之前在同类题上卡过 ${body.recentSkillMistakes[0].attempts || 1} 次，`
     : "";
+
+  if (needsSmallerTaskAfterRepeatedStuck(body)) {
+    return `${mistakePrefix}我来把任务再降一级：现在不要写完整解释，只完成一个空：我先看____，因为这一步能帮我判断方法。`;
+  }
 
   if (replyAnalysis.type === "answer_only") {
     if (coachHistoryContains(body, /第一步看____|只写了答案|答案字母/)) {

@@ -117,6 +117,17 @@ test("fallback reply advances layered hints based on coaching history", () => {
   assert.match(reply, /常见误区/);
 });
 
+test("fallback reply avoids repeating the same answer-only prompt", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "B",
+    history: [{ role: "coach", text: "我看到你现在缺的是：只写了答案。请写方法：第一步看____，因为____。" }],
+  });
+
+  assert.match(reply, /不重复|微练习/);
+  assert.doesNotMatch(reply, /The central idea or claim/);
+});
+
 test("handler uses local coach when OpenAI key is missing instead of showing setup errors", async () => {
   const previousKey = process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_API_KEY;

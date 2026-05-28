@@ -4903,6 +4903,10 @@ function coachingGapForReply(studentReply = "") {
   return { label: "需要更精确", next: "把关键词、条件或证据说具体一点。" };
 }
 
+function coachHistoryAlreadyUsed(history = [], pattern) {
+  return history.some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
+}
+
 async function askAiCoach(studentReply, history = state.chatHistory) {
   const question = activeQuestions()[state.currentQuestion];
   const payload = {
@@ -4977,10 +4981,14 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
     : "";
   const lesson = conceptMiniLesson(question);
   const gap = coachingGapForReply(rawReply);
+  const repeatedAnswerPrompt = coachHistoryAlreadyUsed(history, /第一步看____|只写了答案|答案字母/);
+  const repeatedReasonPrompt = coachHistoryAlreadyUsed(history, /原因说明不完整|为什么这一步|用这句补完整/);
 
   if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(rawReply)) {
     return {
-      reply: `${mistakePrefix}我看到你现在缺的是：${gap.label}。${gap.next} 请写：第一步看____，因为____。`,
+      reply: repeatedAnswerPrompt
+        ? `${mistakePrefix}我们不重复刚才那句，直接做微练习：先写“这题要我判断____”，再补“我第一步先看____”。`
+        : `${mistakePrefix}我看到你现在缺的是：${gap.label}。${gap.next} 请写：第一步看____，因为____。`,
     };
   }
 
@@ -4992,7 +5000,9 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
 
   if (studentTurns <= 1) {
     return {
-      reply: `${mistakePrefix}我看到你现在缺的是：${gap.label}。${coachingHintForTurn(question, 1) || hints[0] || gap.next} 下一步只补这一句，不用选答案。`,
+      reply: repeatedReasonPrompt
+        ? `${mistakePrefix}不重复上一句，换成更小一步：只补“因为这一步能帮助我____”。`
+        : `${mistakePrefix}我看到你现在缺的是：${gap.label}。${coachingHintForTurn(question, 1) || hints[0] || gap.next} 下一步只补这一句，不用选答案。`,
     };
   }
 

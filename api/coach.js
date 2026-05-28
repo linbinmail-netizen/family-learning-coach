@@ -143,6 +143,10 @@ function coachingHintForHistory(body = {}, offset = 0) {
   return hints[index] || "";
 }
 
+function coachHistoryContains(body = {}, pattern) {
+  return (body.history || []).some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
+}
+
 export function buildTutorRequest(body = {}) {
   const {
     studentName,
@@ -237,10 +241,16 @@ export function buildFallbackReply(body = {}) {
     : "";
 
   if (replyAnalysis.type === "answer_only") {
+    if (coachHistoryContains(body, /第一步看____|只写了答案|答案字母/)) {
+      return `${mistakePrefix}我们不重复刚才那句，直接做微练习：先写“这题要我判断____”，再补“我第一步先看____”。`;
+    }
     return `${mistakePrefix}我看到你现在缺的是：${coachingGap.label}。${commonMistake ? `常见误区：${commonMistake} ` : ""}请写方法：第一步看____，因为____。`;
   }
 
   if (replyAnalysis.type === "thin" || replyAnalysis.type === "claim_without_reason") {
+    if (coachHistoryContains(body, /理由还不够|用这句补完整|原因说明不完整/)) {
+      return `${mistakePrefix}换一种更小的任务：只补原因这一句。“因为这一步能帮助我____。”`;
+    }
     return `${mistakePrefix}我看到你现在缺的是：${coachingGap.label}。${nextHint || coachingGap.next} 用这句补完整：我先看____，因为它能说明____。`;
   }
 

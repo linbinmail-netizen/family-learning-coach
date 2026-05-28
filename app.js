@@ -5339,6 +5339,7 @@ function renderDiagnostic() {
   $("difficultyTag").textContent = `${question.difficulty} · ${questionTypeLabel(question)} · 当前目标：${adaptiveLabel}${challengeModeLabel} · 当前环节：${learningBlock.label}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
   renderChallengeMissionQueue(question);
+  renderDifficultyCoachCard(question, adaptiveLevel, challengeMode);
   $("lessonConcept").textContent = lesson.concept;
   $("workedExample").textContent = lesson.example;
   $("methodHint").textContent = lesson.method;
@@ -5459,6 +5460,47 @@ function studentNextStepState({ selectedAnswer, question, locked, guidedComplete
     title: "先别跳过，完成 AI 引导",
     body: "这题暴露了一个知识点缺口。系统会先讲清概念，再让你复述和做变式。",
   };
+}
+
+function difficultyCoachState(question = activeQuestions()[state.currentQuestion], adaptiveLevel = adaptiveLevelForSubject(), challengeMode = challengeBoostForSubject(state.subject) > 0) {
+  const stats = state.adaptiveStats[state.subject] || {};
+  const currentLevel = difficultyLevels[adaptiveLevel] || "中等";
+  const questionType = questionTypeLabel(question);
+  if (challengeMode) {
+    return {
+      level: `${currentLevel} · 挑战模式`,
+      reason: "答得太顺或手动升难度，系统正在确认你是否真的掌握。",
+      next: "下一题会优先安排解释型或学校考试深度题，需要写清方法和原因。",
+    };
+  }
+  if ((stats.correctStreak || 0) >= 1 && adaptiveLevel >= 2) {
+    return {
+      level: `${currentLevel} · 正在拔高`,
+      reason: "最近正确率和速度较好，系统减少基础选择题。",
+      next: "下一题会优先安排解释型或学校考试深度题，避免只靠排除选项猜对。",
+    };
+  }
+  if ((stats.wrongStreak || 0) >= 1) {
+    return {
+      level: `${currentLevel} · 先稳住`,
+      reason: "刚才出现错题或不确定，系统会先补概念再升难度。",
+      next: "下一题会更重视同类知识点和短讲解，先把缺口补上。",
+    };
+  }
+  return {
+    level: `${currentLevel} · ${questionType}`,
+    reason: "系统会看正确率、答题速度和是否能说出理由来调节难度。",
+    next: "保持当前节奏；如果答得太顺，下一题会升到解释型或学校考试深度题。",
+  };
+}
+
+function renderDifficultyCoachCard(question = activeQuestions()[state.currentQuestion], adaptiveLevel = adaptiveLevelForSubject(), challengeMode = challengeBoostForSubject(state.subject) > 0) {
+  const card = $("difficultyCoachCard");
+  if (!card) return;
+  const info = difficultyCoachState(question, adaptiveLevel, challengeMode);
+  $("difficultyCoachLevel").textContent = info.level;
+  $("difficultyCoachReason").textContent = info.reason;
+  $("difficultyCoachNext").textContent = info.next;
 }
 
 function renderStudentNextStep(context) {

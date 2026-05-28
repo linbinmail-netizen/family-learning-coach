@@ -1099,6 +1099,36 @@ textarea {
   line-height: 1.45;
 }
 
+.difficulty-coach-card {
+  display: grid;
+  grid-template-columns: 0.75fr 1.2fr 1.2fr;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid rgba(47, 111, 159, 0.22);
+  border-radius: 8px;
+  background: #f5f9fc;
+}
+
+.difficulty-coach-card div {
+  min-width: 0;
+}
+
+.difficulty-coach-card span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.difficulty-coach-card strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.42;
+}
+
 .guidance-next-action-bar {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -2243,6 +2273,7 @@ li {
   .learning-path-layout,
   .path-module-grid,
   .practice-context-panel,
+  .difficulty-coach-card,
   .mistake-filter-bar,
   .student-action-bar,
   .wrapup-stats,

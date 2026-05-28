@@ -155,6 +155,19 @@ test("student can manually raise difficulty when questions feel too easy", () =>
   assert.match(js, /state\.lastAdvanceNotice = "你觉得太简单，系统已切到更高难度的解释型或挑战题。"/);
 });
 
+test("student sees why the difficulty is changing and what comes next", () => {
+  assert.match(html, /id="difficultyCoachCard"/);
+  assert.match(html, /id="difficultyCoachLevel"/);
+  assert.match(html, /id="difficultyCoachReason"/);
+  assert.match(html, /id="difficultyCoachNext"/);
+  assert.match(js, /function difficultyCoachState/);
+  assert.match(js, /function renderDifficultyCoachCard/);
+  assert.match(js, /renderDifficultyCoachCard\(question, adaptiveLevel, challengeMode\)/);
+  assert.match(js, /答得太顺/);
+  assert.match(js, /下一题会优先安排解释型或学校考试深度题/);
+  assert.match(css, /difficulty-coach-card/);
+});
+
 test("voice coach input is available as an optional browser feature", () => {
   assert.match(html, /id="coachVoiceButton"/);
   assert.match(html, /id="inlineVoiceButton"/);

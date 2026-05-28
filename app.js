@@ -3413,7 +3413,7 @@ function guidanceMicroChoiceForLock(lock = state.guidanceLock, question = active
       prompt: "先选一个最小动作：这类阅读题第一步更应该做什么？",
       choices: [
         { label: "找中心观点", sentence: `这题要我判断 ${skill}。我第一步先找中心观点，因为证据必须直接支持它。` },
-        { label: "看答案长度", sentence: `这题要我判断 ${skill}。我第一步不能看答案长度，要先回到文本找观点和证据。` },
+        { label: "看答案长度", trap: true, sentence: `这题要我判断 ${skill}。我第一步不能看答案长度，要先回到文本找观点和证据。` },
       ],
     };
   }
@@ -3422,7 +3422,7 @@ function guidanceMicroChoiceForLock(lock = state.guidanceLock, question = active
       prompt: "先选一个最小动作：这类数学题第一步更应该看什么？",
       choices: [
         { label: "比较变化", sentence: `这题要我判断 ${skill}。我第一步先比较两个量怎么变，因为变化率要看每单位变化。` },
-        { label: "只看最大数", sentence: `这题要我判断 ${skill}。我第一步不能只看最大数，要先比较变化关系。` },
+        { label: "只看最大数", trap: true, sentence: `这题要我判断 ${skill}。我第一步不能只看最大数，要先比较变化关系。` },
       ],
     };
   }
@@ -3431,7 +3431,7 @@ function guidanceMicroChoiceForLock(lock = state.guidanceLock, question = active
       prompt: "先选一个最小动作：这类科学题第一步更应该分清什么？",
       choices: [
         { label: "改变和测量", sentence: `这题要我判断 ${skill}。我第一步先分清改变什么和测量什么，因为结论要由数据支持。` },
-        { label: "先背名词", sentence: `这题要我判断 ${skill}。我第一步不能只背名词，要先看结构、过程或数据关系。` },
+        { label: "先背名词", trap: true, sentence: `这题要我判断 ${skill}。我第一步不能只背名词，要先看结构、过程或数据关系。` },
       ],
     };
   }
@@ -3494,7 +3494,9 @@ function applyGuidanceMicroChoice(choiceIndex = 0, input = $("inlineCoachReply")
   input.value = choice.sentence;
   state.guidanceLock.replyDraft = input.value;
   state.guidanceLock.microChoiceReady = true;
-  state.guidanceLock.microChoiceNote = "已帮你写好一个小步骤，可以直接提交给教练检查。";
+  state.guidanceLock.microChoiceNote = choice.trap
+    ? "你点到常见误区，系统已帮你改成避坑方法句，可以提交给教练检查。"
+    : "已帮你写好一个小步骤，可以直接提交给教练检查。";
   renderReplyQuality(input.value);
   $("inlineCoachSubmit").focus();
 }

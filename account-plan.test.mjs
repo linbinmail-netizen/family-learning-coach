@@ -652,10 +652,21 @@ test("student can build a method sentence by tapping smaller guidance steps", ()
 
 test("micro choice selection clearly moves the student into submit-ready guidance", () => {
   assert.match(js, /state\.guidanceLock\.microChoiceReady = true/);
-  assert.match(js, /state\.guidanceLock\.microChoiceNote = "已帮你写好一个小步骤，可以直接提交给教练检查。"/);
+  assert.match(js, /已帮你写好一个小步骤，可以直接提交给教练检查。/);
   assert.match(js, /state\.guidanceLock\?\.microChoiceReady && quality\.ready/);
   assert.match(js, /已帮你写好一个小步骤，可以直接提交给教练检查。/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.focus\(\)/);
+});
+
+test("micro choice trap selections become teachable misconception feedback", () => {
+  assert.match(js, /trap: true/);
+  assert.match(js, /choice\.trap/);
+  assert.match(js, /你点到常见误区/);
+  assert.match(js, /系统已帮你改成避坑方法句/);
+  assert.match(js, /看答案长度/);
+  assert.match(js, /只看最大数/);
+  assert.match(js, /先背名词/);
+  assert.doesNotMatch(js, /choice\.trap[\s\S]*正确答案是/);
 });
 
 test("student stuck replies can submit for rescue instead of staying blocked", () => {

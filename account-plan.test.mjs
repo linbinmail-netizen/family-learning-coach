@@ -509,10 +509,10 @@ test("student guidance always shows one explicit next action", () => {
   assert.match(js, /function guidanceNextActionForReply/);
   assert.match(js, /function renderGuidanceNextAction/);
   assert.match(js, /renderGuidanceNextAction\(reply, quality\)/);
-  assert.match(js, /点“小台阶”/);
+  assert.match(js, /点“帮我填第一小句”/);
   assert.match(js, /提交给教练/);
   assert.match(js, /完成变式验证/);
-  assert.match(js, /知识点没吃透时，先不用自己组织完整句/);
+  assert.match(js, /不用先打完整解释/);
   assert.match(css, /guidance-next-action-bar/);
 });
 
@@ -1319,6 +1319,14 @@ test("inline coach waiting state tells the student the next concrete step", () =
   assert.match(js, /先按本地提示补这一小步/);
   assert.match(inlineHandler, /setGuidanceWaitingAction\(immediateReply, canMoveToVariant\)/);
   assert.match(js, /renderGuidanceNextAction\(\)/);
+});
+
+test("guidance next action names the exact button for concept gaps", () => {
+  assert.match(js, /点“帮我填第一小句”/);
+  assert.match(js, /点“再讲一遍”/);
+  assert.match(js, /只补第一小句/);
+  assert.match(js, /不用先打完整解释/);
+  assert.doesNotMatch(js, /guidanceNextActionForReply[\s\S]*正确答案是/);
 });
 
 test("local student coach handles answer letters and stuck replies directly", () => {

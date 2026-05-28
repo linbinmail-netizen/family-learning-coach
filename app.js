@@ -3738,7 +3738,7 @@ function guidanceNextActionForReply(reply = "", quality = evaluateGuidanceReplyQ
     return "提交给教练：方法句已够完整，系统会检查后进入变式验证。";
   }
   if (guidanceCannotProduceThought(reply) || quality.asksForHelp || lock?.forceStepBuilder) {
-    return "知识点没吃透时，先不用自己组织完整句；点“小台阶”或“二选一微任务”。";
+    return "不用先打完整解释：点“帮我填第一小句”，只补第一小句；还是不懂就点“再讲一遍”。";
   }
   if (!quality.questionGoal) return "先补题目目标：这题要我判断什么。";
   if (!quality.methodStep) return "再补方法步骤：第一步看什么或找什么。";

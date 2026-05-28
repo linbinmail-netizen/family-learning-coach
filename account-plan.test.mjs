@@ -754,6 +754,8 @@ test("student mastery loop requires open explanation before moving on", () => {
 
 test("easy fast correct answers trigger school-level explanation verification", () => {
   assert.match(js, /function needsSchoolLevelVerification/);
+  assert.match(js, /const shallowChoice = isShallowChoiceQuestion\(question\)/);
+  assert.match(js, /\(lowDifficultyChoice \|\| shallowChoice\)/);
   assert.match(js, /correctStreak >= 1/);
   assert.match(js, /secondsOnCurrentQuestion\(\) <= 20/);
   assert.match(js, /return "school_verification"/);

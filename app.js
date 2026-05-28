@@ -2558,7 +2558,8 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .filter(({ question }) => difficultyScore(question.difficulty) >= Math.max(2, targetLevel - 1) || question.schoolExamDepth || question.constructedResponse || question.openResponse)
     .sort(
       (a, b) =>
-        questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
+        questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
+        || questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
         || Math.abs(difficultyScore(a.question.difficulty) - targetLevel) - Math.abs(difficultyScore(b.question.difficulty) - targetLevel)
     )[0];
   const supportCandidate = unanswered
@@ -2675,10 +2676,11 @@ function needsSchoolLevelVerification(question, confidence = "sure") {
   const plan = planForStudent(state.studentId);
   const currentStats = state.adaptiveStats[state.subject] || { correctStreak: 0 };
   const lowDifficultyChoice = difficultyScore(question?.difficulty) <= 1 && Array.isArray(question?.answers) && question.answers.length >= 3;
+  const shallowChoice = isShallowChoiceQuestion(question);
   const notAlreadyExplanation = !question?.openResponse && !question?.constructedResponse && !question?.errorAnalysis;
   const fastCorrect = secondsOnCurrentQuestion() <= 20;
   const alreadyTooEasy = currentStats.correctStreak >= 1 || adaptiveLevelForSubject() >= 2;
-  return plan.difficultyMode !== "steady" && confidence === "sure" && lowDifficultyChoice && notAlreadyExplanation && fastCorrect && alreadyTooEasy;
+  return plan.difficultyMode !== "steady" && confidence === "sure" && (lowDifficultyChoice || shallowChoice) && notAlreadyExplanation && fastCorrect && alreadyTooEasy;
 }
 
 function variantMethodChecklistFor(variant = state.guidanceLock?.variant, question = activeQuestions()[state.currentQuestion]) {
@@ -3786,6 +3788,34 @@ function questionExamDepthScore(question = {}) {
   ].filter(Boolean).length;
 }
 
+function questionLearningDepthScore(question = {}) {
+  const promptLength = String(question.prompt || "").trim().length;
+  const explanationLength = String(question.explanation || "").trim().length;
+  const hintCount = [
+    ...(question.coachHints || []),
+    question.aiHintLevel1,
+    question.aiHintLevel2,
+    question.aiHintLevel3,
+  ].filter(Boolean).length;
+  return (
+    difficultyScore(question.difficulty) * 8
+    + questionExamDepthScore(question) * 18
+    + Math.min(12, Math.floor(promptLength / 35))
+    + Math.min(12, Math.floor(explanationLength / 45))
+    + Math.min(10, hintCount * 2)
+  );
+}
+
+function isShallowChoiceQuestion(question = {}) {
+  return Array.isArray(question.answers)
+    && question.answers.length >= 3
+    && questionExamDepthScore(question) === 0
+    && !question.openResponse
+    && !question.constructedResponse
+    && !question.errorAnalysis
+    && questionLearningDepthScore(question) < 28;
+}
+
 function questionTypeLabel(question = {}) {
   if (question.schoolExamDepth) return "学校考试深度";
   if (question.constructedResponse || question.openResponse) return "解释型题";
@@ -3795,7 +3825,7 @@ function questionTypeLabel(question = {}) {
 }
 
 function isDepthPracticeQuestion(question = {}) {
-  return questionExamDepthScore(question) > 0 || difficultyScore(question.difficulty) >= 2;
+  return questionExamDepthScore(question) > 0 || difficultyScore(question.difficulty) >= 2 || questionLearningDepthScore(question) >= 36;
 }
 
 function adaptiveLevelForSubject(subjectId = state.subject) {
@@ -3842,7 +3872,7 @@ function selectAdaptiveQuestions(questions, plan = planForStudent(state.studentI
   const sorted = [...questions].sort((a, b) => {
     const aDistance = Math.abs(difficultyScore(a.difficulty) - target);
     const bDistance = Math.abs(difficultyScore(b.difficulty) - target);
-    return aDistance - bDistance || questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty);
+    return aDistance - bDistance || questionLearningDepthScore(b) - questionLearningDepthScore(a) || questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty);
   });
   const nearTarget = sorted.filter((question) => Math.abs(difficultyScore(question.difficulty) - target) <= 1);
   const candidates = nearTarget.length >= 6 ? nearTarget : sorted;
@@ -3850,7 +3880,7 @@ function selectAdaptiveQuestions(questions, plan = planForStudent(state.studentI
   const advancedTarget = Math.max(2, Math.round(targetCount * advancedQuestionRatio(plan)));
   const advancedQuestions = candidates.filter(
     (question) => difficultyScore(question.difficulty) >= 2 || question.schoolExamDepth || question.openResponse || question.errorAnalysis || question.constructedResponse
-  ).sort((a, b) => questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty));
+  ).sort((a, b) => questionLearningDepthScore(b) - questionLearningDepthScore(a) || questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty));
   const foundationQuestions = candidates.filter((question) => difficultyScore(question.difficulty) < 2 && !question.openResponse && !question.errorAnalysis && !question.constructedResponse);
   return mergeQuestions(advancedQuestions.slice(0, advancedTarget), foundationQuestions.concat(candidates));
 }
@@ -3898,7 +3928,7 @@ function ensureDailyDepthMix(questions, plan = planForStudent(state.studentId)) 
   const depthPool = questions
     .slice(limit)
     .filter((question) => isDepthPracticeQuestion(question) && !used.has(questionStableKey(question)))
-    .sort((a, b) => questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty));
+    .sort((a, b) => questionLearningDepthScore(b) - questionLearningDepthScore(a) || questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty));
   if (!depthPool.length) return questions;
 
   const adjusted = [...firstBatch];

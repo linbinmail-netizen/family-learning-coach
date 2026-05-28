@@ -84,12 +84,15 @@ test("priority grade 8 and grade 9 subjects have deeper coverage", () => {
 test("question selection adapts difficulty as students answer", () => {
   assert.match(source, /const difficultyLevels = \[/);
   assert.match(source, /function difficultyScore/);
+  assert.match(source, /function questionLearningDepthScore/);
+  assert.match(source, /function isShallowChoiceQuestion/);
   assert.match(source, /function adaptiveLevelForSubject/);
   assert.match(source, /function advancedQuestionRatio/);
   assert.match(source, /function questionExamDepthScore/);
   assert.match(source, /function questionTypeLabel/);
   assert.match(source, /function selectAdaptiveQuestions/);
   assert.match(source, /advancedTarget/);
+  assert.match(source, /questionLearningDepthScore\(b\) - questionLearningDepthScore\(a\)/);
   assert.match(source, /questionExamDepthScore\(b\) - questionExamDepthScore\(a\)/);
   assert.match(source, /difficultyScore\(b\.difficulty\) - difficultyScore\(a\.difficulty\)/);
   assert.match(source, /question\.schoolExamDepth/);
@@ -106,6 +109,7 @@ test("adaptive progression skips completed questions and can jump to challenge p
   assert.match(source, /function hasAnsweredQuestion/);
   assert.match(source, /function nextAdaptiveQuestionIndex/);
   assert.match(source, /question\.schoolExamDepth \|\| question\.constructedResponse \|\| question\.openResponse/);
+  assert.match(source, /questionLearningDepthScore\(b\.question\) - questionLearningDepthScore\(a\.question\)/);
   assert.match(source, /questionExamDepthScore\(b\.question\) - questionExamDepthScore\(a\.question\)/);
   assert.match(source, /advanceToNextQuestionAfterCompletion\(state\.currentQuestion, "correct", preferredNextIndex\)/);
   assert.match(source, /系统已切到更合适的第/);
@@ -115,6 +119,7 @@ test("daily question set keeps a minimum mix of depth practice", () => {
   assert.match(source, /function isDepthPracticeQuestion/);
   assert.match(source, /function minimumDailyDepthQuestions/);
   assert.match(source, /function ensureDailyDepthMix/);
+  assert.match(source, /questionLearningDepthScore\(question\) >= 36/);
   assert.match(source, /const currentDepth = firstBatch\.filter\(isDepthPracticeQuestion\)\.length/);
   assert.match(source, /minimumDepth - currentDepth/);
   assert.match(source, /ensureDailyDepthMix\(selected\)\.slice\(0, dailyQuestionLimit\(\)\)/);

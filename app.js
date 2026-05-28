@@ -3562,13 +3562,23 @@ function renderConceptSupportCard(reply = $("inlineCoachReply")?.value || "", qu
   $("conceptSupportCard").classList.toggle("hidden", !showSupport);
   if (!showSupport) return;
   const support = conceptSupportForLock(lock);
+  const recommendedSupportAction = lock.recommendedSupportAction || (guidanceCannotProduceThought(reply) ? "build-method" : "fill-goal");
   $("conceptSupportTeach").textContent = support.teach;
   $("conceptSupportExample").textContent = support.example;
-  $("conceptSupportAction").textContent = support.action;
+  $("conceptSupportAction").textContent =
+    recommendedSupportAction === "build-method"
+      ? `${support.action} 推荐下一步：帮我拼完整方法句。`
+      : support.action;
+  card.querySelectorAll("[data-concept-support]").forEach((button) => {
+    const recommended = button.dataset.conceptSupport === recommendedSupportAction;
+    button.classList.toggle("recommended", recommended);
+    button.toggleAttribute("data-recommended", recommended);
+  });
 }
 
 function applyConceptSupportChoice(choiceKey = "fill-goal", input = $("inlineCoachReply")) {
   if (!hasActiveGuidanceLock() || !input) return;
+  state.guidanceLock.recommendedSupportAction = "";
   if (choiceKey === "reteach") {
     requestConceptExampleReteach(input);
     return;
@@ -3926,6 +3936,7 @@ function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")
   if (state.guidanceLock.forceStepBuilder) {
     state.guidanceLock.forceStepBuilder = true;
     state.guidanceLock.microChoiceNote = repeatedStuckCoachNotice();
+    state.guidanceLock.recommendedSupportAction = guidanceCannotProduceThought(reply) ? "build-method" : "fill-goal";
     state.guidanceLock.stepBuilderParts = { goal: guidanceStepBuilderSentence("goal", state.guidanceLock) };
   }
   state.guidanceLock.replyDraft = teachFirstLadderDraft(reply, state.guidanceLock);

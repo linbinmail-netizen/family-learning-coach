@@ -721,6 +721,16 @@ test("student can say they cannot produce words and continue without typing a lo
   assert.doesNotMatch(js, /可直接点按钮，不用打字[\s\S]*正确答案是/);
 });
 
+test("cannot-produce guidance highlights one recommended support button", () => {
+  assert.match(js, /recommendedSupportAction/);
+  assert.match(js, /guidanceCannotProduceThought\(reply\) \? "build-method" : "fill-goal"/);
+  assert.match(js, /data-recommended/);
+  assert.match(js, /button\.classList\.toggle\("recommended", recommended\)/);
+  assert.match(js, /推荐下一步：帮我拼完整方法句/);
+  assert.match(css, /concept-support-actions \.recommended/);
+  assert.doesNotMatch(js, /recommendedSupportAction[\s\S]*正确答案是/);
+});
+
 test("student stuck on concepts gets a no-typing support card", () => {
   assert.match(html, /id="conceptSupportCard"/);
   assert.match(html, /id="conceptSupportTeach"/);

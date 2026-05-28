@@ -2625,17 +2625,27 @@ function questionCompletesChallengeMission(question = {}, mission = {}, subjectI
   return false;
 }
 
+function challengeMissionCompletionNotice(completedMission = {}, remainingQueue = []) {
+  if (!completedMission?.label) return "";
+  if (!remainingQueue.length) {
+    return `挑战任务完成：${completedMission.label}。挑战三步已完成，可以生成学习总结，或继续选择更高难度。`;
+  }
+  return `挑战任务完成：${completedMission.label}。下一步挑战：${remainingQueue[0].label}。`;
+}
+
 function completeChallengeMissionForQuestion(question = {}, outcome = "correct", subjectId = state.subject) {
   if (!["correct", "guided"].includes(outcome)) return false;
   const stats = state.adaptiveStats[subjectId] || {};
   const queue = stats.challengeQueue || [];
   if (!queue.length || !questionCompletesChallengeMission(question, queue[0], subjectId)) return false;
+  const completedMission = queue[0];
   const remainingQueue = queue.slice(1);
   state.adaptiveStats[subjectId] = {
     ...stats,
     challengeQueue: remainingQueue,
     challengeBoostRemaining: remainingQueue.length,
   };
+  state.lastChallengeMissionNotice = challengeMissionCompletionNotice(completedMission, remainingQueue);
   return true;
 }
 
@@ -2652,25 +2662,30 @@ function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuest
     if (canUsePreferred) {
       state.currentQuestion = preferredIndex;
       state.lastAdvanceNotice =
-        mode === "guided"
+        state.lastChallengeMissionNotice ||
+        (mode === "guided"
           ? `引导完成，已为你切到更合适的第 ${state.currentQuestion + 1} 题。`
-          : `上一题答对了，已为你切到更合适的第 ${state.currentQuestion + 1} 题。`;
+          : `上一题答对了，已为你切到更合适的第 ${state.currentQuestion + 1} 题。`);
+      state.lastChallengeMissionNotice = "";
       return true;
     }
     state.currentQuestion = questions.length - 1;
     state.lastAdvanceNotice =
-      mode === "guided"
+      state.lastChallengeMissionNotice ||
+      (mode === "guided"
         ? "引导完成，这是本轮最后一题，可以生成学习总结。"
-        : "这题答对了，这是本轮最后一题，可以生成学习总结。";
+        : "这题答对了，这是本轮最后一题，可以生成学习总结。");
+    state.lastChallengeMissionNotice = "";
     return false;
   }
   state.currentQuestion = canUsePreferred ? preferredIndex : Math.min(questions.length - 1, answeredIndex + 1);
-  state.lastAdvanceNotice =
-    mode === "guided"
+  state.lastAdvanceNotice = state.lastChallengeMissionNotice ||
+    (mode === "guided"
       ? `引导完成，已进入第 ${state.currentQuestion + 1} 题。`
       : canUsePreferred
         ? `上一题答对了，系统已切到更合适的第 ${state.currentQuestion + 1} 题。`
-        : `上一题答对了，已进入第 ${state.currentQuestion + 1} 题。`;
+        : `上一题答对了，已进入第 ${state.currentQuestion + 1} 题。`);
+  state.lastChallengeMissionNotice = "";
   return true;
 }
 

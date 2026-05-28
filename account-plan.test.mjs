@@ -1080,6 +1080,17 @@ test("completed challenge missions advance the queue instead of staying stuck", 
   assert.match(js, /completeChallengeMissionForQuestion\(question, "guided"\)/);
 });
 
+test("student sees a clear notice after each challenge mission is completed", () => {
+  assert.match(js, /function challengeMissionCompletionNotice/);
+  assert.match(js, /const completedMission = queue\[0\]/);
+  assert.match(js, /state\.lastChallengeMissionNotice = challengeMissionCompletionNotice\(completedMission, remainingQueue\)/);
+  assert.match(js, /挑战任务完成/);
+  assert.match(js, /下一步挑战/);
+  assert.match(js, /挑战三步已完成/);
+  assert.match(js, /state\.lastAdvanceNotice = state\.lastChallengeMissionNotice \|\|/);
+  assert.match(js, /state\.lastChallengeMissionNotice = ""/);
+});
+
 test("variant verification gives a structured method checklist", () => {
   assert.match(html, /id="variantMission"/);
   assert.match(html, /id="variantMethodChecklist"/);

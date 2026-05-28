@@ -590,6 +590,18 @@ test("student knowledge-gap replies trigger teaching before asking for a full ex
   assert.match(js, /二选一或填空/);
 });
 
+test("student who cannot describe the question gets concept support before writing", () => {
+  const cannotProduceBlock = js.match(/function guidanceCannotProduceThought[\s\S]*?\n}/)?.[0] || "";
+  assert.match(js, /function guidanceCannotProduceThought/);
+  assert.match(js, /别人知识点没吃透/);
+  assert.match(js, /人家也打不出来/);
+  assert.match(js, /不要再让孩子先完整说思路/);
+  assert.match(js, /先帮你拆题和补概念/);
+  assert.match(js, /只填一个空/);
+  assert.match(js, /buildConceptBridgeMove[\s\S]*guidanceCannotProduceThought\(reply\)/);
+  assert.doesNotMatch(cannotProduceBlock, /正确答案是/);
+});
+
 test("student guidance unpacks the question goal before asking the child to explain it", () => {
   assert.match(html, /id="questionUnpackText"/);
   assert.match(html, /id="applyQuestionGoalButton"/);
@@ -833,7 +845,7 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
 test("deep questions require a thought before answer choices unlock", () => {
   assert.match(html, /先写思路，再看选项/);
   assert.match(js, /requiresPreAnswerThought\(question\) && selectedAnswer === undefined/);
-  assert.match(js, /isPreAnswerThoughtReady\(preAnswerThought\)/);
+  assert.match(js, /isPreAnswerThoughtReady\(preAnswerThought, question\)/);
   assert.match(js, /aria-disabled=\\"true\\"/);
   assert.match(js, /preAnswerThought"\)\.addEventListener\("input"/);
   assert.match(js, /state\.preAnswerThoughts\[questionProgressKey\(\)\] = event\.target\.value/);
@@ -843,6 +855,18 @@ test("deep questions require a thought before answer choices unlock", () => {
   assert.match(js, /先写一句自己的解题思路，再选择答案/);
   assert.match(css, /pre-answer-card/);
   assert.match(css, /locked-choice/);
+});
+
+test("challenge pre-answer requires goal and method before choices unlock", () => {
+  assert.match(js, /function preAnswerThoughtQuality/);
+  assert.match(js, /const hasGoal =/);
+  assert.match(js, /const hasMethod =/);
+  assert.match(js, /const hasReason =/);
+  assert.match(js, /function isChallengePreAnswerQuestion/);
+  assert.match(js, /if \(isChallengePreAnswerQuestion\(question\)\) return quality\.hasGoal && quality\.hasMethod/);
+  assert.match(js, /if \(isSchoolExamPracticeQuestion\(question\)\) return quality\.hasGoal && quality\.hasMethod && quality\.hasReason/);
+  assert.match(js, /isPreAnswerThoughtReady\(preAnswerThought, question\)/);
+  assert.match(js, /写清题目目标和第一步/);
 });
 
 test("student lesson includes concept, example, steps, trap, and quick check", () => {

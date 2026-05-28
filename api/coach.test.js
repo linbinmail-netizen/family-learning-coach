@@ -235,6 +235,20 @@ test("buildTutorRequest asks AI to diagnose the gap before coaching", () => {
   assert.match(text, /coachingGap/);
 });
 
+test("AI coach treats cannot-produce replies as a teaching problem, not a writing problem", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "引导你让你自己去说问题问的什么，但别人知识点没吃透人家也打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /不要把“打不出来”当成懒得写/);
+  assert.match(text, /先补前置概念/);
+  assert.match(text, /再给半句填空/);
+  assert.match(text, /不能继续要求学生先说“问题问什么”/);
+});
+
 test("fallback teaches briefly when the student is conceptually stuck", () => {
   const reply = buildFallbackReply({
     ...baseBody,
@@ -246,6 +260,20 @@ test("fallback teaches briefly when the student is conceptually stuck", () => {
   assert.match(reply, /例子/);
   assert.match(reply, /先照这句改写/);
   assert.doesNotMatch(reply, /The central idea or claim/);
+});
+
+test("fallback for cannot-produce replies teaches before asking for a tiny fill-in", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "别人知识点没吃透人家也打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /不是写作问题/);
+  assert.match(reply, /先补前置概念/);
+  assert.match(reply, /半句填空/);
+  assert.doesNotMatch(reply, /继续说题目问什么/);
+  assert.doesNotMatch(reply, /答案是/);
 });
 
 test("fallback reteaching uses concrete subject examples", () => {

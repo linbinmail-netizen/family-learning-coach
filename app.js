@@ -3443,7 +3443,14 @@ function evaluateGuidanceReplyQuality(reply = "") {
   };
 }
 
+function guidanceCannotProduceThought(reply = "") {
+  return /别人知识点没吃透|人家也打不出来|打不出来|说不出来|写不出来|不知道这题问什么|不懂这题问什么|不知道要写什么|不会说思路|没思路/.test(String(reply || ""));
+}
+
 function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQuality(reply)) {
+  if (guidanceCannotProduceThought(reply)) {
+    return "你说得对，知识点没吃透时很难自己打出思路。不要再让孩子先完整说思路；系统会先帮你拆题和补概念，然后只填一个空。";
+  }
   if (quality.asksForHelp) {
     return "没关系，先教会，再让你只答一小步。还是不会就点“看老师示范句”，不用自己组织完整答案。";
   }
@@ -3585,6 +3592,9 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
           : "具体内容";
   if (guidanceNeedsLowerStep(lock)) {
     return `你已经卡了几次，这说明任务太大，不是你不努力。我们不用再打完整句，先点下面的小台阶按钮，只完成一个空：题目问什么。系统会帮你把后面的第一步和原因慢慢接上。`;
+  }
+  if (guidanceCannotProduceThought(reply)) {
+    return `你说得对，别人知识点没吃透时，人家也打不出来。不要再让孩子先完整说思路，我们先帮你拆题和补概念。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 现在只填一个空：${microDrill.starter}`;
   }
   return `你说得对，知识点没吃透时确实很难自己说题意，也会打不出来、说不出来。先教会，再让你只答一小步，不用自己组织完整答案。老师先示范怎么拆题：1. 题目要判断 ${skill}；2. 第一眼看关键词或条件；3. 用二选一或填空说出第一步。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
 }
@@ -4027,11 +4037,25 @@ function requiresPreAnswerThought(question = {}) {
   );
 }
 
-function isPreAnswerThoughtReady(text = "") {
+function preAnswerThoughtQuality(text = "") {
   const normalized = String(text || "").trim().toLowerCase();
-  if (normalized.length < 14) return false;
-  if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$|不知道|不会|随便|guess|idk/.test(normalized)) return false;
-  return /题目|判断|比较|先|第一步|看|找|条件|关键词|证据|变化|关系|because|first|evidence|compare|change/.test(normalized);
+  const blocked = /^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$|不知道|不会|随便|guess|idk/.test(normalized);
+  const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|identify|what|which|calculate/.test(normalized);
+  const hasMethod = /先|第一步|步骤|方法|看|找|条件|关键词|证据|变化|关系|first|evidence|compare|change|clue/.test(normalized);
+  const hasReason = /因为|所以|为了|能帮|说明|证明|原因|because|why|so that|therefore/.test(normalized);
+  return { normalized, blocked, hasGoal, hasMethod, hasReason, enoughLength: normalized.length >= 14 };
+}
+
+function isChallengePreAnswerQuestion(question = {}) {
+  return difficultyScore(question.difficulty) >= 2 || question.constructedResponse || question.openResponse || question.errorAnalysis || question.multiStepReasoning;
+}
+
+function isPreAnswerThoughtReady(text = "", question = {}) {
+  const quality = preAnswerThoughtQuality(text);
+  if (!quality.enoughLength || quality.blocked) return false;
+  if (isSchoolExamPracticeQuestion(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason;
+  if (isChallengePreAnswerQuestion(question)) return quality.hasGoal && quality.hasMethod;
+  return quality.hasGoal || quality.hasMethod;
 }
 
 function preAnswerGateState(question = activeQuestions()[state.currentQuestion], progressKey = questionProgressKey()) {
@@ -4040,7 +4064,7 @@ function preAnswerGateState(question = activeQuestions()[state.currentQuestion],
   const guidedComplete = Boolean(state.guidedMastery[progressKey]);
   const thought = state.preAnswerThoughts[progressKey] || "";
   const needsPreAnswer = requiresPreAnswerThought(question) && selectedAnswer === undefined && !locked && !guidedComplete;
-  const preAnswerReady = !needsPreAnswer || isPreAnswerThoughtReady(thought);
+  const preAnswerReady = !needsPreAnswer || isPreAnswerThoughtReady(thought, question);
   return { thought, needsPreAnswer, preAnswerReady };
 }
 
@@ -4054,7 +4078,11 @@ function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion]
   $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "先写一句思路，选项才会解锁。";
   $("preAnswerHelp").textContent = preAnswerReady
     ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
-    : "不要写答案字母。写清“题目要判断什么”或“第一步看什么”。";
+    : isSchoolExamPracticeQuestion(question)
+      ? "不要写答案字母。写清题目目标、第一步和为什么这样做。"
+      : isChallengePreAnswerQuestion(question)
+        ? "不要写答案字母。写清题目目标和第一步。"
+        : "不要写答案字母。写清“题目要判断什么”或“第一步看什么”。";
   document.querySelectorAll("#answerGrid [data-answer-index]").forEach((button) => {
     button.classList.toggle("locked-choice", !preAnswerReady);
     if (!preAnswerReady) button.setAttribute("aria-disabled", "true");
@@ -6082,7 +6110,7 @@ function bindEvents() {
       return;
     }
     const preAnswerThought = state.preAnswerThoughts[progressKey] || "";
-    if (requiresPreAnswerThought(question) && state.selectedAnswers[state.currentQuestion] === undefined && !isPreAnswerThoughtReady(preAnswerThought)) {
+    if (requiresPreAnswerThought(question) && state.selectedAnswers[state.currentQuestion] === undefined && !isPreAnswerThoughtReady(preAnswerThought, question)) {
       $("answerFeedback").textContent = "先写一句自己的解题思路，再选择答案。不要只写答案字母。";
       $("preAnswerThought").focus();
       return;

@@ -182,6 +182,10 @@ function needsImmediateConceptTeaching(studentReply = "") {
   return /不知道|不懂|看不懂|打不出来|写不出来|说不出来|没吃透|不清楚|完全不会|什么意思|概念没接上|概念没懂|don't understand|do not understand|dont understand|idk|confused/i.test(String(studentReply || ""));
 }
 
+function cannotProduceBecauseConceptGap(studentReply = "") {
+  return /别人知识点没吃透|人家也打不出来|打不出来|写不出来|说不出来|没吃透|概念没接上|概念没懂/i.test(String(studentReply || ""));
+}
+
 export function needsSmallerTaskAfterRepeatedStuck(body = {}) {
   const studentMessages = (body.history || [])
     .filter((message) => message.role === "student")
@@ -265,6 +269,7 @@ export function buildTutorRequest(body = {}) {
       "卡住时固定顺序：卡点判断 → 小讲解 → 现在只做一小步。不要连续追问“题目问什么”。",
       "If the student cannot say what the question asks, do not keep asking the same meta-question. First teach the target concept in one sentence, give one tiny example, then provide a fill-in sentence.",
       "If the student says the knowledge point is not solid or they cannot type an answer, use teach-then-micro-step: 先讲清概念 → 小例子 → 二选一或填空. Do not demand a full restatement first.",
+      "不要把“打不出来”当成懒得写；这是前置概念没接上。先补前置概念，再给半句填空，不能继续要求学生先说“问题问什么”。",
       "Do not quote long English teacher explanations to the student. Rewrite them into short student-friendly Chinese.",
       "Use layeredHints in order: first clarify the goal, then the clue, then the full method sentence.",
       "Use commonMistakes to name the likely misconception before asking the next question.",
@@ -301,7 +306,7 @@ export function buildTutorRequest(body = {}) {
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. Use replyAnalysis and coachingGap to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
+                "Move the student one step forward. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先补前置概念，再给半句填空. Use replyAnalysis and coachingGap to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
             }),
           },
         ],
@@ -339,6 +344,12 @@ export function buildFallbackReply(body = {}) {
       return `${mistakePrefix}换一种更小的任务：${gapSentenceFrame({ gap: "reason" }, body)}`;
     }
     return `${mistakePrefix}${nextHint ? `${nextHint} ` : ""}${oneStepFallbackPrompt(body)}`;
+  }
+
+  if (needsTeaching && cannotProduceBecauseConceptGap(body.studentReply || "")) {
+    const skill = body.skill || "这个知识点";
+    const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
+    return `${mistakePrefix}${diagnosedGapLine(body)}这不是写作问题，是前置概念没接上。先补前置概念。小讲解：${shortExplanation} ${teachingMiniExampleForApi(skill, body.subject)} 现在只做一小步：半句填空：这题要我判断____。`;
   }
 
   if (needsTeaching && (needsImmediateConceptTeaching(body.studentReply || "") || !hints.length)) {

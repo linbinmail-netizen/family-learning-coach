@@ -3621,6 +3621,20 @@ function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activ
   return `这题要我[写题目目标]。我第一步先看[${firstStep}]，因为[说明这一步为什么有用]。`;
 }
 
+function guidanceDetailSentenceForQuestion(question = activeQuestions()[state.currentQuestion]) {
+  const skillText = `${question?.skill || ""} ${activeSubject().label}`.toLowerCase();
+  if (/斜率|变化率|equation|algebra|math|geometry|比例|函数|方程|几何/.test(skillText)) {
+    return "具体来说，题目里的具体数字或变化关系说明我应该这样做。";
+  }
+  if (/evidence|claim|central|reading|english|rla|author|theme|证据|主张|中心|作者|文本/.test(skillText)) {
+    return "具体来说，文章里的具体证据或观点句说明我的方法是合理的。";
+  }
+  if (/science|biology|experiment|variable|data|cell|energy|科学|生物|实验|变量|数据|细胞|能量/.test(skillText)) {
+    return "具体来说，变量、数据或实验条件说明这个结论是否可靠。";
+  }
+  return "具体来说，题目里的关键词或条件说明我的方法是合理的。";
+}
+
 function guidanceNextMissingSentence(reply = "", lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const quality = evaluateGuidanceReplyQuality(reply);
   const scaffold = guidanceScaffoldForLock(lock, question);
@@ -3629,7 +3643,7 @@ function guidanceNextMissingSentence(reply = "", lock = state.guidanceLock, ques
   if (!quality.questionGoal) return `这题要我判断 ${skill}。`;
   if (!quality.methodStep) return `我第一步先看 ${firstStep}。`;
   if (!quality.reasonWhy) return "因为这一步能帮我把题目要求和解题方法连起来。";
-  if (!quality.enoughDetail) return "我还要把题目目标、第一步和原因连成一句完整方法。";
+  if (!quality.enoughDetail) return guidanceDetailSentenceForQuestion(question);
   return "现在把这句话用自己的话再说清楚一点。";
 }
 

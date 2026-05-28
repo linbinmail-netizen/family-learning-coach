@@ -501,6 +501,15 @@ test("student guidance reply gives immediate quality feedback while typing", () 
   assert.match(css, /reply-progress-text/);
 });
 
+test("guidance next missing sentence becomes subject specific for thin replies", () => {
+  assert.match(js, /function guidanceDetailSentenceForQuestion/);
+  assert.match(js, /题目里的具体数字或变化关系/);
+  assert.match(js, /文章里的具体证据或观点句/);
+  assert.match(js, /变量、数据或实验条件/);
+  assert.match(js, /guidanceDetailSentenceForQuestion\(question\)/);
+  assert.doesNotMatch(js, /guidanceDetailSentenceForQuestion[\s\S]*正确答案是/);
+});
+
 test("student guidance always shows one explicit next action", () => {
   assert.match(html, /id="guidanceNextActionBar"/);
   assert.match(html, /id="guidanceNextActionLabel"/);

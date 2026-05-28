@@ -3580,7 +3580,7 @@ function prepareQuestionSet(questions) {
 
 function difficultyScore(difficulty = "中等") {
   const value = String(difficulty);
-  if (value.includes("挑战")) return 3;
+  if (value.includes("挑战") || value.includes("challenge")) return 3;
   if (value.includes("进阶") || value.includes("advanced")) return 2;
   if (value.includes("基础") || value.includes("foundation")) return 0;
   return 1;
@@ -3636,7 +3636,9 @@ function selectAdaptiveQuestions(questions, plan = planForStudent(state.studentI
   const candidates = nearTarget.length >= 6 ? nearTarget : sorted;
   const targetCount = dailyQuestionLimit(plan);
   const advancedTarget = Math.max(2, Math.round(targetCount * advancedQuestionRatio(plan)));
-  const advancedQuestions = candidates.filter((question) => difficultyScore(question.difficulty) >= 2 || question.openResponse || question.errorAnalysis || question.constructedResponse);
+  const advancedQuestions = candidates.filter(
+    (question) => difficultyScore(question.difficulty) >= 2 || question.schoolExamDepth || question.openResponse || question.errorAnalysis || question.constructedResponse
+  );
   const foundationQuestions = candidates.filter((question) => difficultyScore(question.difficulty) < 2 && !question.openResponse && !question.errorAnalysis && !question.constructedResponse);
   return mergeQuestions(advancedQuestions.slice(0, advancedTarget), foundationQuestions.concat(candidates));
 }
@@ -3651,7 +3653,9 @@ function selectTwoHourStructuredQuestions(questions, plan = planForStudent(state
   const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
   const foundationQuestions = adaptiveQuestions.filter((question) => difficultyScore(question.difficulty) <= 1);
   const reviewQuestions = adaptiveQuestions.filter((question) => question.spiralReview || question.errorAnalysis);
-  const challengeQuestions = adaptiveQuestions.filter((question) => difficultyScore(question.difficulty) >= 2 || question.constructedResponse || question.openResponse);
+  const challengeQuestions = adaptiveQuestions.filter(
+    (question) => difficultyScore(question.difficulty) >= 2 || question.schoolExamDepth || question.constructedResponse || question.openResponse
+  );
 
   return mergeQuestions(
     foundationQuestions.slice(0, foundationTarget)

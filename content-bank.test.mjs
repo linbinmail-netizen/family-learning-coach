@@ -89,6 +89,7 @@ test("question selection adapts difficulty as students answer", () => {
   assert.match(source, /function selectAdaptiveQuestions/);
   assert.match(source, /advancedTarget/);
   assert.match(source, /difficultyScore\(b\.difficulty\) - difficultyScore\(a\.difficulty\)/);
+  assert.match(source, /question\.schoolExamDepth/);
   assert.match(source, /function updateAdaptiveDifficulty/);
   assert.match(source, /adaptiveStats/);
   assert.match(source, /adaptiveLevels/);
@@ -200,9 +201,25 @@ test("systematic expansion brings core subjects to at least thirty structured qu
   assert.match(questionBankSource, /aiHintLevel1/);
   assert.match(questionBankSource, /aiHintLevel2/);
   assert.match(questionBankSource, /aiHintLevel3/);
+  assert.match(questionBankSource, /schoolExamDepth/);
+  assert.match(questionBankSource, /school-level reasoning/);
+  assert.match(questionBankSource, /constructedResponse: difficulty === "挑战"/);
   assert.match(questionBankSource, /systematic original expansion v1/);
   const counts = runtimeTwoHourQuestionCounts();
   for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
     assert.ok(counts[subject] >= 30, `${subject} should have at least thirty runtime expansion questions`);
+  }
+});
+
+test("systematic expansion marks enough school-depth tasks for exam-level practice", () => {
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(questionBankSource, context);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    const questions = context.window.twoHourExpansionQuestionBank[subject] || [];
+    const schoolDepthCount = questions.filter((question) => question.schoolExamDepth).length;
+    const constructedCount = questions.filter((question) => question.constructedResponse).length;
+    assert.ok(schoolDepthCount >= 9, `${subject} should have at least nine school-depth expansion tasks`);
+    assert.ok(constructedCount >= 6, `${subject} should have at least six constructed-response expansion tasks`);
   }
 });

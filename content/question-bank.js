@@ -1354,15 +1354,19 @@ function buildSystematicExpansionQuestions(subjectId, blueprint) {
     const patternIndex = index % blueprint.stems.length;
     const cycle = Math.floor(index / blueprint.stems.length) + 1;
     const skill = blueprint.skillCycle[index % blueprint.skillCycle.length];
+    const difficulty = difficulties[index % difficulties.length];
+    const schoolLevelDepth = index % 2 === 0 || difficulty === "挑战";
     return {
       prompt: `${blueprint.stems[patternIndex]} (Systematic practice ${cycle}.${patternIndex + 1})`,
       standard: blueprint.standard,
-      difficulty: difficulties[index % difficulties.length],
+      difficulty,
       sourceBatch: "systematic original expansion v1",
       structuredBank: true,
-      multiStepReasoning: index % 2 === 0,
+      schoolExamDepth: schoolLevelDepth ? `${subjectId} ${skill} school-level reasoning` : "",
+      multiStepReasoning: schoolLevelDepth,
       openResponse: index % 3 !== 1,
       errorAnalysis: index % 4 === 0,
+      constructedResponse: difficulty === "挑战" || index % 5 === 0,
       answers: [
         blueprint.corrects[patternIndex],
         "choose the longest answer without checking the question",

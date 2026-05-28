@@ -70,6 +70,11 @@ export function detectNeedsTeaching(studentReply = "") {
     "不知道",
     "什么意思",
     "没学过",
+    "知识点没吃透",
+    "概念没接上",
+    "概念没懂",
+    "打不出来",
+    "说不出来",
     "看不懂",
     "不明白",
     "乱猜",
@@ -139,9 +144,10 @@ function buildTeachingNote({ subject, skill, explanation }) {
   const base = explanation || `${concept} 是解这类题时要先弄清楚的核心概念。`;
   return [
     `如果学生概念不清，先进入“教练式讲解”模式。`,
+    `如果学生说知识点没吃透、打不出来、说不出来，先讲清概念，不要要求学生先完整复述题意。`,
     `用 1 句短讲解说明 ${concept}，语言适合 ${subject || "当前学科"} 学生。`,
     `再给 1 个小例子或正反对比，但不要用题目中的正确选项当例子。`,
-    `最后再问一个问题，把学生带回当前题目。`,
+    `最后再问一个问题，但要用二选一或填空让学生只回答一个微步骤，把学生带回当前题目。`,
     `仍然不要直接说出正确选项、答案字母或最终答案。`,
     `可参考但不要照抄的教师说明：${base}`,
   ].join("\n");
@@ -224,6 +230,7 @@ export function buildTutorRequest(body = {}) {
       "Ask exactly one short question at a time.",
       "Respond to the student's actual reply quality: if answer-only, ask for method; if vague, give a sentence frame; if stuck, reteach briefly; if decent, push for precision.",
       "If the student cannot say what the question asks, do not keep asking the same meta-question. First teach the target concept in one sentence, give one tiny example, then provide a fill-in sentence.",
+      "If the student says the knowledge point is not solid or they cannot type an answer, use teach-then-micro-step: 先讲清概念 → 小例子 → 二选一或填空. Do not demand a full restatement first.",
       "Use layeredHints in order: first clarify the goal, then the clue, then the full method sentence.",
       "Use commonMistakes to name the likely misconception before asking the next question.",
       "If the student is stuck, give one small hint, then ask the student to try.",

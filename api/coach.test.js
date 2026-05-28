@@ -188,6 +188,12 @@ test("detectNeedsTeaching recognizes concept confusion", () => {
   assert.equal(detectNeedsTeaching("I think the keyword is evidence"), false);
 });
 
+test("detectNeedsTeaching recognizes student knowledge-gap wording", () => {
+  assert.equal(detectNeedsTeaching("知识点没吃透，人家也打不出来"), true);
+  assert.equal(detectNeedsTeaching("我说不出来这题问什么"), true);
+  assert.equal(detectNeedsTeaching("不是不想答，是这个概念没接上"), true);
+});
+
 test("buildTutorRequest switches to teach-then-ask mode for concept confusion", () => {
   const request = buildTutorRequest({
     ...baseBody,
@@ -200,6 +206,19 @@ test("buildTutorRequest switches to teach-then-ask mode for concept confusion", 
   assert.match(text, /小例子/);
   assert.match(text, /再问一个问题/);
   assert.match(text, /仍然不要直接说出正确选项/);
+});
+
+test("buildTutorRequest uses micro-step teaching when knowledge is not ready", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "知识点没吃透，人家也打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /先讲清概念/);
+  assert.match(text, /二选一或填空/);
+  assert.match(text, /不要要求学生先完整复述题意/);
 });
 
 test("fallback teaches briefly when the student is conceptually stuck", () => {

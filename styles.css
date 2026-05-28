@@ -1046,6 +1046,34 @@ textarea {
   line-height: 1.45;
 }
 
+.guidance-next-action-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(47, 111, 159, 0.28);
+  border-radius: 8px;
+  background: #eef7fb;
+}
+
+.guidance-next-action-bar span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--blue-dark);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.guidance-next-action-bar strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .guidance-scaffold-card {
   margin: 0 0 14px;
   padding: 14px;

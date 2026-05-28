@@ -488,6 +488,21 @@ test("student guidance reply gives immediate quality feedback while typing", () 
   assert.match(css, /reply-progress-text/);
 });
 
+test("student guidance always shows one explicit next action", () => {
+  assert.match(html, /id="guidanceNextActionBar"/);
+  assert.match(html, /id="guidanceNextActionLabel"/);
+  assert.match(html, /id="guidanceNextActionText"/);
+  assert.match(html, /下一步动作/);
+  assert.match(js, /function guidanceNextActionForReply/);
+  assert.match(js, /function renderGuidanceNextAction/);
+  assert.match(js, /renderGuidanceNextAction\(reply, quality\)/);
+  assert.match(js, /点“小台阶”/);
+  assert.match(js, /提交给教练/);
+  assert.match(js, /完成变式验证/);
+  assert.match(js, /知识点没吃透时，先不用自己组织完整句/);
+  assert.match(css, /guidance-next-action-bar/);
+});
+
 test("student guidance reply quality rejects short keyword-only replies", () => {
   assert.match(js, /const enoughDetail = compactText\.length >= 18 \|\| wordCount >= 8/);
   assert.match(js, /ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy/);

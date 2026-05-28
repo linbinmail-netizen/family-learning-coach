@@ -3048,6 +3048,7 @@ function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", var
   $("variantFeedback").textContent = variantNextActionText(reply, variant);
   $("variantSubmit").disabled = !ready;
   renderVariantNextHelp(reply, variant);
+  renderGuidanceNextAction();
   renderGuidanceUnlockProgress();
   return feedback;
 }
@@ -3506,10 +3507,38 @@ function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality()) {
   return "让教练帮我补";
 }
 
+function guidanceNextActionForReply(reply = "", quality = evaluateGuidanceReplyQuality(reply), lock = state.guidanceLock) {
+  if (lock?.status === "variant") {
+    const variantReply = $("variantReply")?.value || lock.variantDraft || "";
+    const variantReady = isVariantRubricReady(variantReply, lock.variant);
+    return variantReady
+      ? "完成变式验证：提交给 AI 教练，通过后会自动进入下一题。"
+      : "完成变式验证：先写题型、第一步和原因；卡住就点“补下一句”。";
+  }
+  if (quality.ready || lock?.microChoiceReady) {
+    return "提交给教练：方法句已够完整，系统会检查后进入变式验证。";
+  }
+  if (guidanceCannotProduceThought(reply) || quality.asksForHelp || lock?.forceStepBuilder) {
+    return "知识点没吃透时，先不用自己组织完整句；点“小台阶”或“二选一微任务”。";
+  }
+  if (!quality.questionGoal) return "先补题目目标：这题要我判断什么。";
+  if (!quality.methodStep) return "再补方法步骤：第一步看什么或找什么。";
+  if (!quality.reasonWhy) return "最后补原因说明：为什么这一步有用。";
+  return "把三句连成一句完整方法，再提交给教练。";
+}
+
+function renderGuidanceNextAction(reply = $("inlineCoachReply")?.value || "", quality = evaluateGuidanceReplyQuality(reply)) {
+  const bar = $("guidanceNextActionBar");
+  if (!bar) return;
+  $("guidanceNextActionLabel").textContent = "下一步动作";
+  $("guidanceNextActionText").textContent = guidanceNextActionForReply(reply, quality, state.guidanceLock);
+}
+
 function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   const card = $("replyQualityCard");
   if (!card) return;
   const quality = evaluateGuidanceReplyQuality(reply);
+  renderGuidanceNextAction(reply, quality);
   const helperCard = $("replyHelperCard");
   const canAskForHelp = quality.asksForHelp || Boolean(String(reply || "").trim());
   [

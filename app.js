@@ -4486,6 +4486,33 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
   return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, raisedLevel, challengeMode };
 }
 
+function raiseDifficultyOnDemand() {
+  if (hasActiveGuidanceLock()) {
+    $("answerFeedback").textContent = "这题还在 AI 引导中，先完成当前小步骤，再升难度。";
+    return;
+  }
+  const subjectId = state.subject;
+  const currentLevel = adaptiveLevelForSubject(subjectId);
+  const nextLevel = Math.min(difficultyLevels.length - 1, currentLevel + 1);
+  state.adaptiveLevels[subjectId] = nextLevel;
+  state.adaptiveStats[subjectId] = {
+    ...(state.adaptiveStats[subjectId] || {}),
+    correctStreak: 0,
+    missedStreak: 0,
+    challengeBoostRemaining: 3,
+    lastManualBoostAt: new Date().toISOString(),
+    lastManualBoostReason: "手动升难度",
+  };
+  const questions = activeQuestions();
+  const preferredIndex = nextAdaptiveQuestionIndex(questions, state.currentQuestion, { isCorrect: true, level: nextLevel, challengeMode: true, raisedLevel: true });
+  if (preferredIndex >= 0) state.currentQuestion = preferredIndex;
+  state.lastAdvanceNotice = "你觉得太简单，系统已切到更高难度的解释型或挑战题。";
+  $("answerFeedback").textContent = `${state.lastAdvanceNotice} 当前目标难度：${difficultyLevels[nextLevel]}。`;
+  $("dailySuggestion").textContent = `${state.lastAdvanceNotice} 接下来优先做学校考试深度题。`;
+  saveData();
+  renderDiagnostic();
+}
+
 function activeQuestions() {
   applyDifficultyMode(state.studentId, state.subject);
   const cloudQuestions = state.cloudQuestions[state.subject] || [];
@@ -6277,6 +6304,7 @@ function bindEvents() {
       $("answerFeedback").textContent = "当前题库里同技能题较少，先完成这题后系统会安排变式验证。";
     }
   });
+  $("raiseDifficultyButton").addEventListener("click", raiseDifficultyOnDemand);
 
   $("runDiagnostic").addEventListener("click", buildReport);
   $("finishTodayButton").addEventListener("click", buildReport);

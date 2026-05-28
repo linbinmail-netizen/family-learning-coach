@@ -138,10 +138,21 @@ test("practice page shows current subject skill difficulty and tool actions", ()
   assert.match(html, /id="practiceHintButton"/);
   assert.match(html, /id="practiceExplainButton"/);
   assert.match(html, /id="practiceSimilarButton"/);
+  assert.match(html, /id="raiseDifficultyButton"/);
   assert.match(js, /practiceSubject"\)\.textContent = subject\.label/);
   assert.match(js, /questionTypeLabel\(question\)/);
   assert.match(js, /practiceSimilarButton"\)\.addEventListener/);
   assert.match(css, /practice-context-panel/);
+});
+
+test("student can manually raise difficulty when questions feel too easy", () => {
+  assert.match(html, /太简单/);
+  assert.match(js, /function raiseDifficultyOnDemand/);
+  assert.match(js, /challengeBoostRemaining: 3/);
+  assert.match(js, /手动升难度/);
+  assert.match(js, /nextAdaptiveQuestionIndex\(questions, state\.currentQuestion, \{ isCorrect: true, level: nextLevel, challengeMode: true, raisedLevel: true \}\)/);
+  assert.match(js, /raiseDifficultyButton"\)\.addEventListener\("click", raiseDifficultyOnDemand\)/);
+  assert.match(js, /state\.lastAdvanceNotice = "你觉得太简单，系统已切到更高难度的解释型或挑战题。"/);
 });
 
 test("voice coach input is available as an optional browser feature", () => {

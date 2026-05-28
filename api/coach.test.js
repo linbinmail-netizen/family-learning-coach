@@ -117,6 +117,42 @@ test("fallback reply advances layered hints based on coaching history", () => {
   assert.match(reply, /常见误区/);
 });
 
+test("coach request carries session memory so AI continues instead of restarting", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "还是不知道怎么写",
+    history: [
+      { role: "student", text: "我不知道这题问什么" },
+      { role: "coach", text: "卡点判断：题意没拆开。小讲解：先找题目目标。" },
+      { role: "student", text: "还是不会" },
+      { role: "coach", text: "现在只做一小步：这题要我判断____。" },
+    ],
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /coachSessionMemory/);
+  assert.match(text, /不要重讲已经给过的同一句提示/);
+  assert.match(text, /延续上一轮卡点/);
+  assert.match(text, /lastCoachMove/);
+});
+
+test("fallback reply uses session memory to avoid restarting the same guidance", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "还是不会",
+    history: [
+      { role: "student", text: "我不知道这题问什么" },
+      { role: "coach", text: "卡点判断：题意没拆开。小讲解：先找题目目标。" },
+      { role: "student", text: "还是不会" },
+      { role: "coach", text: "现在只做一小步：这题要我判断____。" },
+    ],
+  });
+
+  assert.match(reply, /延续刚才/);
+  assert.match(reply, /下一小步/);
+  assert.doesNotMatch(reply, /重新开始/);
+});
+
 test("fallback reply avoids repeating the same answer-only prompt", () => {
   const reply = buildFallbackReply({
     ...baseBody,

@@ -215,6 +215,23 @@ function coachHistoryContains(body = {}, pattern) {
   return (body.history || []).some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
 }
 
+function coachSessionMemory(body = {}) {
+  const history = body.history || [];
+  const studentMessages = history.filter((message) => message.role === "student").map((message) => String(message.text || ""));
+  const coachMessages = history.filter((message) => message.role === "coach").map((message) => String(message.text || ""));
+  const lastCoachMove = coachMessages.at(-1) || "";
+  const repeatedStuck = [body.studentReply, ...studentMessages.slice(-3)].filter((reply) => detectNeedsTeaching(reply)).length >= 2;
+  const priorGap = coachMessages.slice(-3).find((text) => /卡点判断/.test(text)) || "";
+  return {
+    repeatedStuck,
+    priorGap,
+    lastCoachMove,
+    nextInstruction: repeatedStuck
+      ? "延续上一轮卡点，不要重讲已经给过的同一句提示；直接降低任务，给下一小步。"
+      : "根据最近一轮继续推进，不要像第一次辅导一样重新开始。",
+  };
+}
+
 function needsImmediateConceptTeaching(studentReply = "") {
   return /不知道|不懂|看不懂|打不出来|写不出来|说不出来|没吃透|不清楚|完全不会|什么意思|概念没接上|概念没懂|don't understand|do not understand|dont understand|idk|confused/i.test(String(studentReply || ""));
 }
@@ -286,6 +303,7 @@ export function buildTutorRequest(body = {}) {
   const needsTeaching = detectNeedsTeaching(studentReply);
   const replyAnalysis = analyzeStudentReply(studentReply);
   const coachingGap = coachingGapAnalysis(studentReply);
+  const sessionMemory = coachSessionMemory({ ...body, history, studentReply });
   const allHints = [...layeredHints, ...coachHints].filter(Boolean);
   const mistakeNote = recentSkillMistakes.length
     ? "Use recent same-skill mistakes to personalize the next hint, but do not mention private report details or reveal answers."
@@ -315,6 +333,7 @@ export function buildTutorRequest(body = {}) {
       "If the student is conceptually confused, teach briefly before asking again.",
       "教练式讲解格式：小讲解：... 例子：... 回到这题：...？",
       "Do not say Great job for incomplete or wrong reasoning; name the missing piece kindly.",
+      "Use coachSessionMemory: 延续上一轮卡点，不要重讲已经给过的同一句提示；如果 lastCoachMove 已经给过填空，就给下一小步。",
       "Keep the reply under 110 Chinese characters.",
       mistakeNote,
       `Current step: ${step.label}. ${step.instruction}`,
@@ -341,10 +360,11 @@ export function buildTutorRequest(body = {}) {
               needsTeaching,
               replyAnalysis,
               coachingGap,
+              coachSessionMemory: sessionMemory,
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先补前置概念，再给半句填空. Use replyAnalysis and coachingGap to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
+                "Move the student one step forward. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先补前置概念，再给半句填空. Use replyAnalysis, coachingGap, and coachSessionMemory to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
             }),
           },
         ],
@@ -359,6 +379,7 @@ export function buildFallbackReply(body = {}) {
   const needsTeaching = detectNeedsTeaching(body.studentReply || "");
   const replyAnalysis = analyzeStudentReply(body.studentReply || "");
   const coachingGap = coachingGapAnalysis(body.studentReply || "");
+  const sessionMemory = coachSessionMemory(body);
   const commonMistake = firstCommonMistake(body);
   const currentHint = coachingHintForHistory(body);
   const nextHint = coachingHintForHistory(body, 1);
@@ -367,7 +388,11 @@ export function buildFallbackReply(body = {}) {
     : "";
 
   if (needsSmallerTaskAfterRepeatedStuck(body)) {
-    return `${mistakePrefix}我来把任务再降一级：现在不要写完整解释，只完成一个空：我先看____，因为这一步能帮我判断方法。`;
+    return `${mistakePrefix}延续刚才的卡点，我来把任务再降一级：现在不要写完整解释，下一小步只完成一个空：我先看____，因为这一步能帮我判断方法。`;
+  }
+
+  if (sessionMemory.repeatedStuck && needsTeaching && /只做一小步|判断____|填空/.test(sessionMemory.lastCoachMove)) {
+    return `${mistakePrefix}延续刚才的卡点。下一小步只补一个空：我先看____，因为这一步能帮我判断方法。`;
   }
 
   if (replyAnalysis.type === "answer_only") {

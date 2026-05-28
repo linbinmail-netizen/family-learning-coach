@@ -2562,7 +2562,7 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .filter(({ question, index }) => index !== answeredIndex && state.selectedAnswers[index] === undefined && !hasAnsweredQuestion(question));
   if (!unanswered.length) return -1;
 
-  const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
+  const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
   const challengeQueue = state.adaptiveStats[state.subject]?.challengeQueue || [];
   const missionCandidate = challengeMissionPreferredQuestion(unanswered, challengeQueue, targetLevel);
   const explanationChallengeCandidate = unanswered
@@ -4461,6 +4461,13 @@ function shouldEnterChallengeBoost(question = {}, nextStats = {}, isCorrect = fa
   return plan.difficultyMode !== "steady" && isCorrect && easyChoice && (fastCorrect || effortlessStreak);
 }
 
+function isObviousEasyCorrect(question = {}, selectedIndex = -1, confidence = "sure") {
+  const plan = planForStudent(state.studentId);
+  const isCorrect = selectedIndex === question.correct;
+  const easyChoice = difficultyScore(question?.difficulty) <= 1 || isShallowChoiceQuestion(question);
+  return plan.difficultyMode !== "steady" && isCorrect && confidence === "sure" && easyChoice && secondsOnCurrentQuestion() <= 20;
+}
+
 function buildChallengeMissionQueue(question = {}, nextStats = {}) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const streak = Math.max(2, Number(nextStats.correctStreak || 2));
@@ -4762,9 +4769,10 @@ function todayPracticeSessionSummary(studentId = state.studentId) {
   };
 }
 
-function updateAdaptiveDifficulty(question, selectedIndex) {
+function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") {
   const subjectId = state.subject;
   const isCorrect = selectedIndex === question.correct;
+  const obviousEasyCorrect = isObviousEasyCorrect(question, selectedIndex, confidence);
   const current = state.adaptiveStats[subjectId] || { correctStreak: 0, missedStreak: 0 };
   const completedChallengeMission = isCorrect && completeChallengeMissionForQuestion(question, "correct", subjectId);
   const currentChallengeBoost = Number(state.adaptiveStats[subjectId]?.challengeBoostRemaining ?? current.challengeBoostRemaining ?? 0);
@@ -4790,6 +4798,9 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
     level += 1;
     nextStats.correctStreak = 0;
     if (!message) message = "答得很顺，下一题会提高一点难度。";
+  } else if (obviousEasyCorrect && !message) {
+    level = Math.max(level, 2);
+    message = "这题太轻松，下一题直接切到解释型或学校考试深度题。";
   } else if (nextStats.missedStreak >= 2 && level > 0) {
     level -= 1;
     nextStats.missedStreak = 0;
@@ -4798,7 +4809,7 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
 
   state.adaptiveLevels[subjectId] = level;
   state.adaptiveStats[subjectId] = { ...(state.adaptiveStats[subjectId] || {}), ...nextStats };
-  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, raisedLevel, challengeMode };
+  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, obviousEasyCorrect, raisedLevel, challengeMode };
 }
 
 function raiseDifficultyOnDemand() {
@@ -6648,7 +6659,7 @@ function bindEvents() {
     state.selectedAnswers[state.currentQuestion] = selectedIndex;
     markQuestionAnswered(question);
     const issue = shouldStartGuidance(selectedIndex, question, confidence);
-    const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
+    const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex, confidence);
     const preferredNextIndex = nextAdaptiveQuestionIndex(questionsAtAnswerTime, state.currentQuestion, adaptiveResult);
     const practiceEvent = recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResult);
     syncAnswerSubmitToApi(question, selectedIndex, confidence, practiceEvent);

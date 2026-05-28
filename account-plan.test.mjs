@@ -1074,13 +1074,13 @@ test("easy fast correct answers trigger school-level explanation verification", 
 
 test("high-performing students are routed to explanation-first challenge questions", () => {
   assert.match(js, /function isExplanationFirstChallenge/);
-  assert.match(js, /const highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.raisedLevel \|\| adaptiveResult\.challengeMode \|\| targetLevel >= 2\)/);
+  assert.match(js, /const highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.obviousEasyCorrect \|\| adaptiveResult\.raisedLevel \|\| adaptiveResult\.challengeMode \|\| targetLevel >= 2\)/);
   assert.match(js, /const explanationChallengeCandidate = unanswered/);
   assert.match(js, /isExplanationFirstChallenge\(question\)/);
   assert.match(js, /if \(highPerformance && explanationChallengeCandidate\) return explanationChallengeCandidate\.index/);
   assert.match(js, /fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20/);
   assert.match(js, /const raisedLevel = nextStats\.correctStreak >= 2 && level < difficultyLevels\.length - 1/);
-  assert.match(js, /return \{ isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20, raisedLevel, challengeMode \}/);
+  assert.match(js, /return \{ isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20, obviousEasyCorrect, raisedLevel, challengeMode \}/);
 });
 
 test("easy streaks enter a short challenge mode with clear student feedback", () => {
@@ -1093,6 +1093,16 @@ test("easy streaks enter a short challenge mode with clear student feedback", ()
   assert.match(js, /challengeMode \? 0\.85 :/);
   assert.match(js, /adaptiveResult\.challengeMode/);
   assert.match(js, /当前目标难度：\$\{adaptiveLabel\}\$\{challengeModeLabel\}/);
+});
+
+test("one obvious easy correct answer immediately promotes to depth practice", () => {
+  assert.match(js, /function isObviousEasyCorrect/);
+  assert.match(js, /isCorrect && confidence === "sure"/);
+  assert.match(js, /secondsOnCurrentQuestion\(\) <= 20/);
+  assert.match(js, /adaptiveResult\.obviousEasyCorrect/);
+  assert.match(js, /highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.obviousEasyCorrect/);
+  assert.match(js, /这题太轻松/);
+  assert.match(js, /下一题直接切到解释型或学校考试深度题/);
 });
 
 test("easy streaks create a visible challenge mission queue", () => {

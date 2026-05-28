@@ -471,6 +471,7 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
   assert.match(js, /const asksForHelp = .*不知道/);
   assert.match(js, /没关系，先照这句填空/);
   assert.match(js, /不会写时先不要硬猜/);
+  assert.match(js, /老师示范句放到输入框/);
   assert.match(js, /commonMistakeForQuestion/);
   assert.match(js, /coachingHintForTurn/);
   assert.match(js, /把方括号里的内容换成自己的话/);
@@ -479,12 +480,16 @@ test("student guidance gives a concrete rescue prompt when the reply says they a
 });
 
 test("student stuck replies can submit for rescue instead of staying blocked", () => {
+  const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";
   assert.match(js, /const canAskForHelp = quality\.asksForHelp/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.textContent = canAskForHelp \? "帮我开头" : "继续引导"/);
   assert.match(js, /if \(quality\.asksForHelp\)/);
   assert.match(js, /buildGuidanceRescueMove\(state\.guidanceLock\)/);
-  assert.match(js, /input\.value = guidanceReplyStarterForLock\(state\.guidanceLock\)/);
+  assert.match(stuckBranch, /input\.value = guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.match(stuckBranch, /renderReplyQuality\(input\.value\)/);
+  assert.doesNotMatch(stuckBranch, /guidanceReplyStarterForLock/);
   assert.doesNotMatch(js, /buildGuidanceRescueMove[\s\S]*正确答案是/);
 });
 

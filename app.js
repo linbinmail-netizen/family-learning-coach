@@ -3278,7 +3278,7 @@ function buildGuidanceRescueMove(lock = state.guidanceLock) {
   const firstStep = coachingHintForTurn(question, lock?.teachingTurns || 0);
   const mistake = commonMistakeForQuestion(question);
   const modelSentence = guidanceTeacherModelForLock(lock, question);
-  return `可以，不会写时先不要硬猜。这个知识点是 ${skill}。先记住：${firstStep}。容易错在：${mistake}。你可以照这个开头改成自己的话：${modelSentence}`;
+  return `可以，不会写时先不要硬猜。这个知识点是 ${skill}。先记住：${firstStep}。容易错在：${mistake}。我已经把一条老师示范句放到输入框里，你先改成自己的话再继续：${modelSentence}`;
 }
 
 function shouldMoveToVariantAfterReply(reply = "") {
@@ -5540,7 +5540,8 @@ function bindEvents() {
       appendInlineCoach("student", reply);
       state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
       state.inlineCoachHistory.push({ role: "coach", text: buildGuidanceRescueMove(state.guidanceLock) });
-      input.value = guidanceReplyStarterForLock(state.guidanceLock);
+      input.value = guidanceTeacherModelForLock(state.guidanceLock);
+      renderReplyQuality(input.value);
       saveData();
       renderDiagnostic();
       focusGuidancePanel();

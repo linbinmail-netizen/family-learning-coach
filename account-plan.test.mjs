@@ -502,6 +502,18 @@ test("student can ask for another example without typing a perfect restatement",
   assert.doesNotMatch(js, /requestConceptExampleReteach[\s\S]*正确答案是/);
 });
 
+test("student guidance has quick replies for common stuck states", () => {
+  assert.match(html, /id="coachQuickReplies"/);
+  assert.match(html, /data-guidance-quick-reply="我不懂这题问什么。"/);
+  assert.match(html, /data-guidance-quick-reply="我懂一点概念，但不知道第一步看什么。"/);
+  assert.match(html, /data-guidance-quick-reply="我还是没懂，换个例子讲。"/);
+  assert.match(js, /function submitGuidanceQuickReply/);
+  assert.match(js, /coachQuickReplies"\)\.addEventListener\("click"/);
+  assert.match(js, /submitGuidanceQuickReply\(button\.dataset\.guidanceQuickReply, \$\("inlineCoachReply"\)\)/);
+  assert.match(js, /rescueIncompleteGuidanceReply\(input\.value, input\)/);
+  assert.match(css, /coach-quick-replies/);
+});
+
 test("student stuck replies can submit for rescue instead of staying blocked", () => {
   const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";

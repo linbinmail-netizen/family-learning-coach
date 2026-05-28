@@ -343,6 +343,11 @@
               </section>
               <div class="chat-window inline-chat-window" id="inlineCoachWindow"></div>
               <form class="chat-form" id="inlineCoachForm">
+                <div class="coach-quick-replies" id="coachQuickReplies" aria-label="快速告诉 AI 哪里卡住">
+                  <button class="secondary-button small-button" type="button" data-guidance-quick-reply="我不懂这题问什么。">不懂题目</button>
+                  <button class="secondary-button small-button" type="button" data-guidance-quick-reply="我懂一点概念，但不知道第一步看什么。">不会第一步</button>
+                  <button class="secondary-button small-button" type="button" data-guidance-quick-reply="我还是没懂，换个例子讲。">换个例子</button>
+                </div>
                 <input id="inlineCoachReply" placeholder="用自己的话写：这题真正问什么？下一步该怎么做？" />
                 <button class="secondary-button" id="inlineVoiceButton" type="button">语音输入</button>
                 <button class="primary-button" id="inlineCoachSubmit" type="submit" disabled>先补完整</button>

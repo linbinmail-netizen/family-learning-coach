@@ -3491,6 +3491,18 @@ function requestConceptExampleReteach(input = $("inlineCoachReply")) {
   focusGuidancePanel();
 }
 
+function submitGuidanceQuickReply(text = "", input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock() || !text.trim()) return;
+  input.value = text.trim();
+  if (state.guidanceLock) state.guidanceLock.replyDraft = input.value;
+  renderReplyQuality(input.value);
+  if (/换个例子|换种讲法|another example/i.test(input.value)) {
+    requestConceptExampleReteach(input);
+    return;
+  }
+  rescueIncompleteGuidanceReply(input.value, input);
+}
+
 function shouldMoveToVariantAfterReply(reply = "") {
   return evaluateGuidanceReplyQuality(reply).ready || (isReasonStrong(reply) && (state.guidanceLock?.teachingTurns || 0) >= 1);
 }
@@ -6081,6 +6093,11 @@ function bindEvents() {
   $("inlineCoachReply").addEventListener("input", () => {
     if (state.guidanceLock) state.guidanceLock.replyDraft = $("inlineCoachReply").value;
     renderReplyQuality();
+  });
+  $("coachQuickReplies").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-guidance-quick-reply]");
+    if (!button) return;
+    submitGuidanceQuickReply(button.dataset.guidanceQuickReply, $("inlineCoachReply"));
   });
   $("applyReplyStarterButton").addEventListener("click", () => {
     const input = $("inlineCoachReply");

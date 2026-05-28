@@ -1051,6 +1051,19 @@ textarea {
   background: #f8fbfd;
 }
 
+.coach-quick-replies {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.coach-quick-replies .small-button {
+  min-height: 34px;
+  padding-inline: 12px;
+}
+
 .reply-quality-card strong {
   display: block;
   margin-bottom: 8px;

@@ -72,7 +72,7 @@ test("expanded question bank is present", () => {
 test("questions rotate answer order so correct choices are not always first", () => {
   assert.match(source, /function rotateQuestionOptions/);
   assert.match(source, /const correct = \(question\.correct - shift \+ question\.answers\.length\) % question\.answers\.length/);
-  assert.match(source, /prepareQuestionSet\(ensureDailyDepthMix\(selected\)\.slice\(0, dailyQuestionLimit\(\)\)\)/);
+  assert.match(source, /prepareQuestionSet\(depthBalanced\.slice\(0, dailyQuestionLimit\(\)\)\)/);
 });
 
 test("priority grade 8 and grade 9 subjects have deeper coverage", () => {
@@ -91,6 +91,7 @@ test("question selection adapts difficulty as students answer", () => {
   assert.match(source, /function renderPreAnswerGate/);
   assert.match(source, /function adaptiveLevelForSubject/);
   assert.match(source, /function advancedQuestionRatio/);
+  assert.match(source, /function depthFirstQuestionSort/);
   assert.match(source, /function questionExamDepthScore/);
   assert.match(source, /function questionTypeLabel/);
   assert.match(source, /function selectAdaptiveQuestions/);
@@ -125,7 +126,18 @@ test("daily question set keeps a minimum mix of depth practice", () => {
   assert.match(source, /questionLearningDepthScore\(question\) >= 36/);
   assert.match(source, /const currentDepth = firstBatch\.filter\(isDepthPracticeQuestion\)\.length/);
   assert.match(source, /minimumDepth - currentDepth/);
-  assert.match(source, /ensureDailyDepthMix\(selected\)\.slice\(0, dailyQuestionLimit\(\)\)/);
+  assert.match(source, /ensureDailyDepthMix\(ensureDailySchoolExamMix\(selected\)\)/);
+});
+
+test("daily question set frontloads school exam depth", () => {
+  assert.match(source, /function isSchoolExamPracticeQuestion/);
+  assert.match(source, /function minimumDailySchoolExamQuestions/);
+  assert.match(source, /function ensureDailySchoolExamMix/);
+  assert.match(source, /function frontloadSchoolExamPractice/);
+  assert.match(source, /currentSchoolDepth = firstBatch\.filter\(isSchoolExamPracticeQuestion\)\.length/);
+  assert.match(source, /minimumSchoolDepth - currentSchoolDepth/);
+  assert.match(source, /firstWindow\.some\(isSchoolExamPracticeQuestion\)/);
+  assert.match(source, /frontloadSchoolExamPractice\(ensureDailyDepthMix\(ensureDailySchoolExamMix\(selected\)\)\)/);
 });
 
 test("two-hour sessions use block-aware question sequencing", () => {

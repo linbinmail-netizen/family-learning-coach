@@ -3919,6 +3919,17 @@ function isDepthPracticeQuestion(question = {}) {
   return questionExamDepthScore(question) > 0 || difficultyScore(question.difficulty) >= 2 || questionLearningDepthScore(question) >= 36;
 }
 
+function isSchoolExamPracticeQuestion(question = {}) {
+  return Boolean(
+    question.schoolExamDepth
+    || question.multiStepReasoning
+    || question.constructedResponse
+    || question.openResponse
+    || question.errorAnalysis
+    || questionLearningDepthScore(question) >= 50
+  );
+}
+
 function adaptiveLevelForSubject(subjectId = state.subject) {
   return Math.max(0, Math.min(difficultyLevels.length - 1, state.adaptiveLevels[subjectId] ?? 1));
 }
@@ -3958,20 +3969,27 @@ function advancedQuestionRatio(plan = planForStudent(state.studentId)) {
   return 0.55;
 }
 
+function depthFirstQuestionSort(a, b, target = adaptiveLevelForSubject()) {
+  const aDistance = Math.abs(difficultyScore(a.difficulty) - target);
+  const bDistance = Math.abs(difficultyScore(b.difficulty) - target);
+  return (
+    questionExamDepthScore(b) - questionExamDepthScore(a)
+    || questionLearningDepthScore(b) - questionLearningDepthScore(a)
+    || aDistance - bDistance
+    || difficultyScore(b.difficulty) - difficultyScore(a.difficulty)
+  );
+}
+
 function selectAdaptiveQuestions(questions, plan = planForStudent(state.studentId)) {
   const target = Math.max(adaptiveLevelForSubject(), plan.difficultyMode === "steady" ? 1 : 2);
-  const sorted = [...questions].sort((a, b) => {
-    const aDistance = Math.abs(difficultyScore(a.difficulty) - target);
-    const bDistance = Math.abs(difficultyScore(b.difficulty) - target);
-    return aDistance - bDistance || questionLearningDepthScore(b) - questionLearningDepthScore(a) || questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty);
-  });
+  const sorted = [...questions].sort((a, b) => depthFirstQuestionSort(a, b, target));
   const nearTarget = sorted.filter((question) => Math.abs(difficultyScore(question.difficulty) - target) <= 1);
   const candidates = nearTarget.length >= 6 ? nearTarget : sorted;
   const targetCount = dailyQuestionLimit(plan);
   const advancedTarget = Math.max(2, Math.round(targetCount * advancedQuestionRatio(plan)));
   const advancedQuestions = candidates.filter(
     (question) => difficultyScore(question.difficulty) >= 2 || question.schoolExamDepth || question.openResponse || question.errorAnalysis || question.constructedResponse
-  ).sort((a, b) => questionLearningDepthScore(b) - questionLearningDepthScore(a) || questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty));
+  ).sort((a, b) => depthFirstQuestionSort(a, b, target));
   const foundationQuestions = candidates.filter((question) => difficultyScore(question.difficulty) < 2 && !question.openResponse && !question.errorAnalysis && !question.constructedResponse);
   return mergeQuestions(advancedQuestions.slice(0, advancedTarget), foundationQuestions.concat(candidates));
 }
@@ -3981,10 +3999,12 @@ function selectTwoHourStructuredQuestions(questions, plan = planForStudent(state
   if (!isTwoHourPlan(plan)) return adaptiveQuestions;
 
   const targetQuestions = plan.questionTarget || 24;
-  const foundationTarget = Math.max(3, Math.round(targetQuestions * 0.3));
+  const foundationTarget = Math.max(2, Math.round(targetQuestions * 0.2));
   const reviewTarget = Math.max(3, Math.round(targetQuestions * 0.25));
   const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
-  const foundationQuestions = adaptiveQuestions.filter((question) => difficultyScore(question.difficulty) <= 1);
+  const foundationQuestions = adaptiveQuestions
+    .filter((question) => difficultyScore(question.difficulty) <= 1)
+    .sort((a, b) => questionLearningDepthScore(b) - questionLearningDepthScore(a));
   const reviewQuestions = adaptiveQuestions.filter((question) => question.spiralReview || question.errorAnalysis);
   const challengeQuestions = adaptiveQuestions.filter(
     (question) => difficultyScore(question.difficulty) >= 2 || question.schoolExamDepth || question.constructedResponse || question.openResponse
@@ -4006,6 +4026,13 @@ function minimumDailyDepthQuestions(plan = planForStudent(state.studentId)) {
   if (plan.difficultyMode === "steady") return Math.min(limit, 2);
   if (plan.difficultyMode === "challenge") return Math.min(limit, Math.max(3, Math.round(limit * 0.45)));
   return Math.min(limit, Math.max(2, Math.round(limit * 0.35)));
+}
+
+function minimumDailySchoolExamQuestions(plan = planForStudent(state.studentId)) {
+  const limit = dailyQuestionLimit(plan);
+  if (plan.difficultyMode === "steady") return Math.min(limit, Math.max(1, Math.round(limit * 0.18)));
+  if (plan.difficultyMode === "challenge") return Math.min(limit, Math.max(3, Math.round(limit * 0.45)));
+  return Math.min(limit, Math.max(2, Math.round(limit * 0.3)));
 }
 
 function ensureDailyDepthMix(questions, plan = planForStudent(state.studentId)) {
@@ -4030,6 +4057,43 @@ function ensureDailyDepthMix(questions, plan = planForStudent(state.studentId)) 
     needed -= 1;
   }
   return mergeQuestions(adjusted, questions);
+}
+
+function ensureDailySchoolExamMix(questions, plan = planForStudent(state.studentId)) {
+  const limit = dailyQuestionLimit(plan);
+  const minimumSchoolDepth = minimumDailySchoolExamQuestions(plan);
+  const firstBatch = questions.slice(0, limit);
+  const currentSchoolDepth = firstBatch.filter(isSchoolExamPracticeQuestion).length;
+  if (currentSchoolDepth >= minimumSchoolDepth) return questions;
+
+  const used = new Set(firstBatch.map((question) => questionStableKey(question)));
+  const schoolDepthPool = questions
+    .slice(limit)
+    .filter((question) => isSchoolExamPracticeQuestion(question) && !used.has(questionStableKey(question)))
+    .sort((a, b) => depthFirstQuestionSort(a, b));
+  if (!schoolDepthPool.length) return questions;
+
+  const adjusted = [...firstBatch];
+  let needed = minimumSchoolDepth - currentSchoolDepth;
+  for (let index = adjusted.length - 1; index >= 0 && needed > 0 && schoolDepthPool.length; index -= 1) {
+    if (isSchoolExamPracticeQuestion(adjusted[index])) continue;
+    adjusted[index] = schoolDepthPool.shift();
+    needed -= 1;
+  }
+  return mergeQuestions(adjusted, questions);
+}
+
+function frontloadSchoolExamPractice(questions, plan = planForStudent(state.studentId)) {
+  const limit = Math.min(dailyQuestionLimit(plan), questions.length);
+  if (limit < 3) return questions;
+  const firstWindow = questions.slice(0, Math.min(3, limit));
+  if (firstWindow.some(isSchoolExamPracticeQuestion)) return questions;
+  const schoolDepthIndex = questions.findIndex((question, index) => index < limit && isSchoolExamPracticeQuestion(question));
+  if (schoolDepthIndex <= 0) return questions;
+  const adjusted = [...questions];
+  const [schoolDepthQuestion] = adjusted.splice(schoolDepthIndex, 1);
+  adjusted.splice(1, 0, schoolDepthQuestion);
+  return adjusted;
 }
 
 function todayIsoDate() {
@@ -4167,14 +4231,18 @@ function activeQuestions() {
   const twoHourQuestions = twoHourExpansionQuestionBank[state.subject] || [];
   if (cloudQuestions.length || localQuestions.length || expandedQuestions.length || challengeQuestions.length || twoHourQuestions.length) {
     const selected = selectTwoHourStructuredQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions)));
-    return prepareQuestionSet(ensureDailyDepthMix(selected).slice(0, dailyQuestionLimit()));
+    const depthBalanced = frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selected)));
+    return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
   }
 
   const diagnostic = activeDiagnostic();
-  if (diagnostic.questions) return prepareQuestionSet(ensureDailyDepthMix(selectAdaptiveQuestions(diagnostic.questions)).slice(0, dailyQuestionLimit()));
+  if (diagnostic.questions) {
+    const depthBalanced = frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selectAdaptiveQuestions(diagnostic.questions))));
+    return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
+  }
   const strongest = diagnostic.skills.reduce((best, skill) => (skill[1] > best[1] ? skill : best), diagnostic.skills[0]);
   const weakest = diagnostic.skills.reduce((low, skill) => (skill[1] < low[1] ? skill : low), diagnostic.skills[0]);
-  return prepareQuestionSet(ensureDailyDepthMix(selectAdaptiveQuestions([
+  const generatedQuestions = selectAdaptiveQuestions([
     {
       prompt: diagnostic.prompt,
       standard: diagnostic.standard,
@@ -4206,7 +4274,9 @@ function activeQuestions() {
       correct: 0,
       skill: weakest[0],
     },
-  ])).slice(0, dailyQuestionLimit()));
+  ]);
+  const depthBalanced = frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(generatedQuestions)));
+  return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
 }
 
 function normalizeDifficulty(difficulty) {

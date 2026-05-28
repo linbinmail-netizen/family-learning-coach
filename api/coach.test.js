@@ -336,6 +336,17 @@ test("safeTutorReply keeps normal short coaching questions", () => {
   assert.equal(reply, "先说题目真正问你找什么，不用选答案。");
 });
 
+test("safeTutorReply rejects repeated meta questions when the student cannot produce an explanation", () => {
+  const reply = safeTutorReply("你先说题目问什么，然后再想第一步。", {
+    ...baseBody,
+    studentReply: "我知识点没吃透，打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /小讲解|前置概念|半句填空|现在只做一小步/);
+  assert.doesNotMatch(reply, /你先说题目问什么/);
+});
+
 test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {
   const request = buildMasteryEvaluationRequest({
     ...baseBody,

@@ -49,9 +49,13 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (!text) return "empty";
   const answerTexts = (body.answers || []).map((answer) => String(answer || "").trim()).filter((answer) => answer.length >= 4);
   const lowerText = text.toLowerCase();
+  const studentCannotProduce = needsImmediateConceptTeaching(body.studentReply || "") || cannotProduceBecauseConceptGap(body.studentReply || "");
   if (/^\s*(答案|answer)?\s*[A-D]\s*[。.!]?\s*$/i.test(text) || /^\s*[A-D]\s*(是|because|因为|,|，)/i.test(text)) return "reveals_answer_letter";
   if (/正确答案|答案是|选项\s*[A-D]|choose\s*[A-D]|correct answer|the answer is/i.test(text)) return "reveals_answer_language";
   if (answerTexts.some((answer) => lowerText.includes(answer.toLowerCase()))) return "reveals_answer_text";
+  if (studentCannotProduce && /题目.*问什么|问题.*问.*什么|先说.*题目|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念/.test(text)) {
+    return "repeats_meta_question_when_stuck";
+  }
   if (text.length > 180) return "too_long";
   return "";
 }

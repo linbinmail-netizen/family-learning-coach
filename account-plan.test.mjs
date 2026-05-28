@@ -688,6 +688,22 @@ test("student knowledge-gap replies trigger teaching before asking for a full ex
   assert.match(js, /二选一或填空/);
 });
 
+test("student stuck on concepts gets a no-typing support card", () => {
+  assert.match(html, /id="conceptSupportCard"/);
+  assert.match(html, /id="conceptSupportTeach"/);
+  assert.match(html, /id="conceptSupportExample"/);
+  assert.match(html, /data-concept-support="fill-goal"/);
+  assert.match(html, /data-concept-support="reteach"/);
+  assert.match(js, /function conceptSupportForLock/);
+  assert.match(js, /function renderConceptSupportCard/);
+  assert.match(js, /function applyConceptSupportChoice/);
+  assert.match(js, /不用先打完整解释/);
+  assert.match(js, /先听一句讲解，再点按钮补第一小句/);
+  assert.match(js, /renderConceptSupportCard\(reply, quality, state\.guidanceLock\)/);
+  assert.match(js, /conceptSupportCard"\)\.classList\.toggle\("hidden", !showSupport\)/);
+  assert.doesNotMatch(js, /conceptSupportForLock[\s\S]*正确答案是/);
+});
+
 test("student who cannot describe the question gets concept support before writing", () => {
   const cannotProduceBlock = js.match(/function guidanceCannotProduceThought[\s\S]*?\n}/)?.[0] || "";
   assert.match(js, /function guidanceCannotProduceThought/);

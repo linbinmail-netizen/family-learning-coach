@@ -3546,6 +3546,45 @@ function applyConceptBridgeChoice(choiceKey = "goal", input = $("inlineCoachRepl
   input.focus();
 }
 
+function conceptSupportForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  return {
+    teach: `先听一句讲解，再点按钮补第一小句：${localStudentFriendlyConceptLine(question)}`,
+    example: `同类小例子：${teachingMiniExampleForSkill(skill)}`,
+    action: `现在不用先打完整解释。只点“帮我填第一小句”，再把这句读一遍：${guidanceStepBuilderSentence("goal", lock, question)}`,
+  };
+}
+
+function renderConceptSupportCard(reply = $("inlineCoachReply")?.value || "", quality = evaluateGuidanceReplyQuality(reply), lock = state.guidanceLock) {
+  const card = $("conceptSupportCard");
+  if (!card || !lock) return;
+  const showSupport = guidanceCannotProduceThought(reply) || quality.asksForHelp || Boolean(lock.forceStepBuilder);
+  $("conceptSupportCard").classList.toggle("hidden", !showSupport);
+  if (!showSupport) return;
+  const support = conceptSupportForLock(lock);
+  $("conceptSupportTeach").textContent = support.teach;
+  $("conceptSupportExample").textContent = support.example;
+  $("conceptSupportAction").textContent = support.action;
+}
+
+function applyConceptSupportChoice(choiceKey = "fill-goal", input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock() || !input) return;
+  if (choiceKey === "reteach") {
+    requestConceptExampleReteach(input);
+    return;
+  }
+  const sentence = guidanceStepBuilderSentence("goal", state.guidanceLock);
+  input.value = sentence;
+  state.guidanceLock.replyDraft = sentence;
+  state.guidanceLock.forceStepBuilder = true;
+  state.guidanceLock.stepBuilderParts = {
+    ...(state.guidanceLock.stepBuilderParts || {}),
+    goal: sentence.replace(/[。.!！]$/, ""),
+  };
+  renderReplyQuality(input.value);
+  input.focus();
+}
+
 function continueConceptBridgeSentence(input = $("inlineCoachReply")) {
   if (!hasActiveGuidanceLock() || !input) return;
   let draft = input.value.trim();
@@ -3758,6 +3797,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     $("replyHelperText").textContent = guidanceReplyHelpText(reply, quality);
     $("replyStarterText").textContent = starter;
     $("replyNextSentenceText").textContent = `建议下一句：${guidanceNextMissingSentence(reply, state.guidanceLock)}`;
+    renderConceptSupportCard(reply, quality, state.guidanceLock);
     renderGuidanceMicroChoice(state.guidanceLock, quality);
     renderConceptBridgeChoices(reply, quality, state.guidanceLock);
   }
@@ -6746,6 +6786,11 @@ function bindEvents() {
     const button = event.target.closest("[data-guidance-quick-reply]");
     if (!button) return;
     submitGuidanceQuickReply(button.dataset.guidanceQuickReply, $("inlineCoachReply"));
+  });
+  $("conceptSupportCard").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-concept-support]");
+    if (!button) return;
+    applyConceptSupportChoice(button.dataset.conceptSupport, $("inlineCoachReply"));
   });
   $("applyReplyStarterButton").addEventListener("click", () => {
     const input = $("inlineCoachReply");

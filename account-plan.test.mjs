@@ -1173,6 +1173,15 @@ test("variant live feedback tells the student the next missing step", () => {
   assert.match(js, /variantFeedback"\)\.textContent = variantNextActionText/);
 });
 
+test("variant waiting feedback gives a concrete self-check while AI grades", () => {
+  const variantHandler = js.match(/\$\("variantForm"\)\.addEventListener\("submit",[\s\S]*?\n  \}\);/)?.[0] || "";
+  assert.match(js, /function setVariantWaitingFeedback/);
+  assert.match(js, /AI 正在批改变式解释/);
+  assert.match(js, /先自查四项/);
+  assert.match(js, /题目类型、第一步、原因、具体内容/);
+  assert.match(variantHandler, /setVariantWaitingFeedback\(rubricFeedback\)/);
+});
+
 test("variant verification can insert the next missing method sentence", () => {
   assert.match(html, /id="variantNextHelp"/);
   assert.match(html, /id="applyVariantNextStepButton"/);

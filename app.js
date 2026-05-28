@@ -3159,6 +3159,11 @@ function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", var
   return feedback;
 }
 
+function setVariantWaitingFeedback(rubricFeedback = "") {
+  $("variantFeedback").textContent =
+    `AI 正在批改变式解释。先自查四项：题目类型、第一步、原因、具体内容。${rubricFeedback}`;
+}
+
 function renderVariantNextHelp(reply = $("variantReply")?.value || "", variant = state.guidanceLock?.variant) {
   const help = $("variantNextHelp");
   if (!help) return;
@@ -6813,8 +6818,8 @@ function bindEvents() {
       $("variantReply").focus();
       return;
     }
-    $("variantFeedback").textContent = "AI 正在批改你的方法解释...";
     const rubricFeedback = renderVariantRubricFeedback(reply, state.guidanceLock?.variant);
+    setVariantWaitingFeedback(rubricFeedback);
     askMasteryEvaluation(reply)
       .then((evaluation) => {
         const passed = Boolean(evaluation.passed) || isVariantExplanationStrong(reply, state.guidanceLock?.variant);

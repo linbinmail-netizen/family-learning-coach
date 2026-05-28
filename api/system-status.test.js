@@ -23,6 +23,7 @@ test("system status reports production readiness flags", () => {
 
   assert.equal(response.statusCode, 200);
   assert.equal(typeof body.emailConfigured, "boolean");
+  assert.equal(typeof body.openAiConfigured, "boolean");
   assert.equal(typeof body.digestEmailFromConfigured, "boolean");
   assert.equal(typeof body.scheduledDigestConfigured, "boolean");
   assert.equal(typeof body.supabaseServiceConfigured, "boolean");
@@ -32,7 +33,7 @@ test("system status reports production readiness flags", () => {
   assert.equal(Array.isArray(body.launchChecklist), true);
   assert.deepEqual(
     body.launchChecklist.map((item) => item.id),
-    ["database", "learning-api", "email"]
+    ["database", "learning-api", "openai", "email"]
   );
   assert.deepEqual(body.requiredSupabaseScripts, [
     "000_run_all_learning_platform.sql",

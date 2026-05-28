@@ -18,6 +18,7 @@ const requiredSupabaseScripts = [
 
 export default function handler(_request, response) {
   const emailConfigured = Boolean(process.env.RESEND_API_KEY);
+  const openAiConfigured = Boolean(process.env.OPENAI_API_KEY);
   const supabaseServiceConfigured = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
   const parentDigestEmailConfigured = Boolean(process.env.PARENT_DIGEST_EMAIL);
   const scheduledDigestConfigured = Boolean(emailConfigured && supabaseServiceConfigured);
@@ -37,6 +38,12 @@ export default function handler(_request, response) {
       action: "已启用今日计划、答题提交、错题复习、掌握报告接口",
     },
     {
+      id: "openai",
+      label: "AI 引导",
+      ready: openAiConfigured,
+      action: "配置 OPENAI_API_KEY；未配置时系统会自动使用本地教练引导",
+    },
+    {
       id: "email",
       label: "家长邮件",
       ready: scheduledDigestConfigured,
@@ -46,6 +53,7 @@ export default function handler(_request, response) {
 
   sendJson(response, 200, {
     emailConfigured,
+    openAiConfigured,
     digestEmailFromConfigured: Boolean(process.env.DIGEST_EMAIL_FROM),
     scheduledDigestConfigured,
     supabaseServiceConfigured,

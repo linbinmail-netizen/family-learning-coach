@@ -345,8 +345,8 @@ export default async function handler(request, response) {
       return;
     }
     response.status(200).json({
-      reply:
-        "AI 服务还没有配置好。请先在 Vercel 环境变量里添加 OPENAI_API_KEY。现在我先用本地提示方式引导：请你先说明题目在问什么，再找一个已知条件。",
+      reply: buildFallbackReply(request.body || {}),
+      mode: "local_coach",
     });
     return;
   }

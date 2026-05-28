@@ -13,6 +13,7 @@ import {
   getLearningStep,
   mergeMasteryEvaluation,
 } from "./coach.js";
+import handler from "./coach.js";
 
 const baseBody = {
   studentName: "MIA",
@@ -68,6 +69,32 @@ test("fallback reply adapts to answer-only and vague replies", () => {
   assert.match(vague, /理由|我先看/);
   assert.doesNotMatch(answerOnly, /The central idea or claim/);
 });
+
+test("handler uses local coach when OpenAI key is missing instead of showing setup errors", async () => {
+  const previousKey = process.env.OPENAI_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  const payload = await callHandler({ ...baseBody, studentReply: "B" });
+  if (previousKey) process.env.OPENAI_API_KEY = previousKey;
+
+  assert.equal(payload.mode, "local_coach");
+  assert.match(payload.reply, /第一步|方法/);
+  assert.doesNotMatch(payload.reply, /OPENAI_API_KEY|服务还没有配置好/);
+});
+
+function callHandler(body) {
+  return new Promise((resolve) => {
+    const response = {
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(payload) {
+        resolve(payload);
+      },
+    };
+    handler({ method: "POST", body }, response);
+  });
+}
 
 test("buildTutorRequest includes recent mistakes for the same skill", () => {
   const request = buildTutorRequest({

@@ -149,6 +149,14 @@ test("adaptive and challenge modes limit easy warmup at the start", () => {
   assert.match(source, /limitEasyWarmupQuestions\(frontloadSchoolExamPractice\(ensureDailyDepthMix\(ensureDailySchoolExamMix\(selected\)\)\)\)/);
 });
 
+test("challenge mode starts with school-depth or explanation practice instead of easy warmup", () => {
+  assert.match(source, /const challengeMode = plan\.difficultyMode === "challenge"/);
+  assert.match(source, /const foundationTarget = challengeMode \? 1 : Math\.max\(2, Math\.round\(targetQuestions \* 0\.2\)\)/);
+  assert.match(source, /const reviewTarget = challengeMode \? Math\.max\(2, Math\.round\(targetQuestions \* 0\.15\)\) : Math\.max\(3, Math\.round\(targetQuestions \* 0\.25\)\)/);
+  assert.match(source, /if \(plan\.difficultyMode === "challenge" && isSchoolExamPracticeQuestion\(schoolDepthQuestion\)\) adjusted\.splice\(0, 0, schoolDepthQuestion\)/);
+  assert.match(source, /challenge-first school exam depth/);
+});
+
 test("two-hour sessions use block-aware question sequencing", () => {
   assert.match(source, /function isTwoHourPlan/);
   assert.match(source, /function learningBlockForQuestionIndex/);

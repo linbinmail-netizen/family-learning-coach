@@ -4210,8 +4210,9 @@ function selectTwoHourStructuredQuestions(questions, plan = planForStudent(state
   if (!isTwoHourPlan(plan)) return adaptiveQuestions;
 
   const targetQuestions = plan.questionTarget || 24;
-  const foundationTarget = Math.max(2, Math.round(targetQuestions * 0.2));
-  const reviewTarget = Math.max(3, Math.round(targetQuestions * 0.25));
+  const challengeMode = plan.difficultyMode === "challenge";
+  const foundationTarget = challengeMode ? 1 : Math.max(2, Math.round(targetQuestions * 0.2));
+  const reviewTarget = challengeMode ? Math.max(2, Math.round(targetQuestions * 0.15)) : Math.max(3, Math.round(targetQuestions * 0.25));
   const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
   const foundationQuestions = adaptiveQuestions
     .filter((question) => difficultyScore(question.difficulty) <= 1)
@@ -4303,7 +4304,9 @@ function frontloadSchoolExamPractice(questions, plan = planForStudent(state.stud
   if (schoolDepthIndex <= 0) return questions;
   const adjusted = [...questions];
   const [schoolDepthQuestion] = adjusted.splice(schoolDepthIndex, 1);
-  adjusted.splice(1, 0, schoolDepthQuestion);
+  // challenge-first school exam depth
+  if (plan.difficultyMode === "challenge" && isSchoolExamPracticeQuestion(schoolDepthQuestion)) adjusted.splice(0, 0, schoolDepthQuestion);
+  else adjusted.splice(1, 0, schoolDepthQuestion);
   return adjusted;
 }
 

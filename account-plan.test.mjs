@@ -496,15 +496,23 @@ test("student stuck replies can submit for rescue instead of staying blocked", (
   assert.match(js, /if \(quality\.asksForHelp\)/);
   assert.match(js, /buildGuidanceRescueMove\(state\.guidanceLock\)/);
   assert.match(stuckBranch, /state\.guidanceLock\.microDrill = guidanceMicroDrillForLock\(state\.guidanceLock\)/);
-  assert.match(stuckBranch, /input\.value = state\.guidanceLock\.microDrill\?\.starter \|\| guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.match(stuckBranch, /state\.guidanceLock\.replyDraft = state\.guidanceLock\.microDrill\?\.starter \|\| guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.match(stuckBranch, /input\.value = state\.guidanceLock\.replyDraft/);
   assert.match(stuckBranch, /renderReplyQuality\(input\.value\)/);
   assert.doesNotMatch(stuckBranch, /guidanceReplyStarterForLock/);
   assert.doesNotMatch(js, /buildGuidanceRescueMove[\s\S]*正确答案是/);
 });
 
+test("student guidance keeps the suggested rescue draft after re-render", () => {
+  assert.match(js, /if \(lock\.replyDraft && !replyInput\.value\.trim\(\)\) replyInput\.value = lock\.replyDraft/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = ""/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = \$\("inlineCoachReply"\)\.value/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = input\.value/);
+});
+
 test("student guidance reply placeholder adapts to the skill", () => {
   assert.match(js, /function guidanceReplyPlaceholderForLock/);
-  assert.match(js, /inlineCoachReply"\)\.placeholder = guidanceReplyPlaceholderForLock\(lock\)/);
+  assert.match(js, /replyInput\.placeholder = guidanceReplyPlaceholderForLock\(lock\)/);
   assert.match(js, /x 和 y 怎么变/);
   assert.match(js, /中心句和证据/);
   assert.match(js, /离 x 最远的运算/);

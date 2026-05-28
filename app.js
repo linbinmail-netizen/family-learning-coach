@@ -4655,7 +4655,9 @@ function renderInlineCoachPanel() {
   if (!lock) return;
 
   $("guidanceStatus").textContent = lock.status === "variant" ? "做变式验证" : "AI 引导中";
-  $("inlineCoachReply").placeholder = guidanceReplyPlaceholderForLock(lock);
+  const replyInput = $("inlineCoachReply");
+  replyInput.placeholder = guidanceReplyPlaceholderForLock(lock);
+  if (lock.replyDraft && !replyInput.value.trim()) replyInput.value = lock.replyDraft;
   renderGuidanceTask(lock);
   renderGuidanceUnlockProgress(lock);
   renderGuidanceInsight(lock);
@@ -5747,7 +5749,8 @@ function bindEvents() {
         state.guidanceLock.microDrill = guidanceMicroDrillForLock(state.guidanceLock);
       }
       state.inlineCoachHistory.push({ role: "coach", text: buildGuidanceRescueMove(state.guidanceLock) });
-      input.value = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
+      state.guidanceLock.replyDraft = state.guidanceLock.microDrill?.starter || guidanceTeacherModelForLock(state.guidanceLock);
+      input.value = state.guidanceLock.replyDraft;
       renderReplyQuality(input.value);
       saveData();
       renderDiagnostic();
@@ -5761,6 +5764,7 @@ function bindEvents() {
       return;
     }
     appendInlineCoach("student", reply);
+    state.guidanceLock.replyDraft = "";
     input.value = "";
     renderReplyQuality("");
     const immediateReply = buildLocalCoachReply(reply, state.inlineCoachHistory).reply;
@@ -5799,10 +5803,14 @@ function bindEvents() {
       });
   });
 
-  $("inlineCoachReply").addEventListener("input", () => renderReplyQuality());
+  $("inlineCoachReply").addEventListener("input", () => {
+    if (state.guidanceLock) state.guidanceLock.replyDraft = $("inlineCoachReply").value;
+    renderReplyQuality();
+  });
   $("applyReplyStarterButton").addEventListener("click", () => {
     const input = $("inlineCoachReply");
     input.value = guidanceReplyStarterForLock(state.guidanceLock);
+    if (state.guidanceLock) state.guidanceLock.replyDraft = input.value;
     input.focus();
     renderReplyQuality(input.value);
   });
@@ -5810,12 +5818,14 @@ function bindEvents() {
     const input = $("inlineCoachReply");
     const nextSentence = guidanceNextMissingSentence(input.value, state.guidanceLock);
     input.value = `${input.value.trim()} ${nextSentence}`.trim();
+    if (state.guidanceLock) state.guidanceLock.replyDraft = input.value;
     input.focus();
     renderReplyQuality(input.value);
   });
   $("applyTeacherModelButton").addEventListener("click", () => {
     const input = $("inlineCoachReply");
     input.value = guidanceTeacherModelForLock(state.guidanceLock);
+    if (state.guidanceLock) state.guidanceLock.replyDraft = input.value;
     input.focus();
     renderReplyQuality(input.value);
   });

@@ -4810,11 +4810,12 @@ async function askMasteryEvaluation(variantReply) {
   return postCoachPayload(payload, MASTERY_RESPONSE_TIMEOUT_MS);
 }
 
-function buildLocalCoachReply(studentReply) {
-  const question = activeQuestions()[state.currentQuestion];
+function buildLocalCoachReply(studentReply, history = state.chatHistory, question = activeQuestions()[state.currentQuestion]) {
   const rawReply = String(studentReply || "").trim();
   const reply = rawReply.toLowerCase();
-  const studentTurns = state.chatHistory.filter((message) => message.role === "student").length;
+  const studentTurns = history.filter((message) => message.role === "student").length;
+  const coachTurns = history.filter((message) => message.role === "coach").length;
+  const hintTurn = Math.max(0, Math.min(2, Math.max(studentTurns - 1, coachTurns - 1)));
   const hints = question?.coachHints || [];
   const recentSkillMistakes = mistakesForCurrentSkill(question);
   const mistakePrefix = recentSkillMistakes.length
@@ -4830,7 +4831,7 @@ function buildLocalCoachReply(studentReply) {
 
   if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
     return {
-      reply: `${mistakePrefix}小讲解：${commonMistakeForQuestion(question)} ${coachingHintForTurn(question, 0)} 先不用选答案，请用自己的话说说题目真正问什么。`,
+      reply: `${mistakePrefix}小讲解：${commonMistakeForQuestion(question)} ${coachingHintForTurn(question, hintTurn)} 先不用选答案，请用自己的话说说题目真正问什么。`,
     };
   }
 
@@ -5512,7 +5513,7 @@ function bindEvents() {
     if (!reply) return;
     appendChat("student", reply);
     input.value = "";
-    const localReply = buildLocalCoachReply(reply).reply;
+    const localReply = buildLocalCoachReply(reply, state.chatHistory).reply;
     appendChat("coach", `先给你一个提示：${localReply}`);
 
     askAiCoach(reply, state.chatHistory.slice(0, -1))
@@ -5554,7 +5555,7 @@ function bindEvents() {
     appendInlineCoach("student", reply);
     input.value = "";
     renderReplyQuality("");
-    const immediateReply = buildLocalCoachReply(reply).reply;
+    const immediateReply = buildLocalCoachReply(reply, state.inlineCoachHistory).reply;
     appendInlineCoach("coach", `先给你一个提示：${immediateReply}`);
 
     askAiCoach(reply, state.inlineCoachHistory.slice(0, -1))

@@ -90,6 +90,24 @@ test("fallback reply adapts to answer-only and vague replies", () => {
   assert.doesNotMatch(answerOnly, /The central idea or claim/);
 });
 
+test("fallback reply advances layered hints based on coaching history", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "我不会",
+    layeredHints: ["第一层：先说题目目标", "第二层：找直接线索", "第三层：写方法句"],
+    commonMistakes: ["只看关键词，没有解释关系"],
+    history: [
+      { role: "student", text: "我不会" },
+      { role: "coach", text: "先说题目目标" },
+      { role: "student", text: "还是不会" },
+      { role: "coach", text: "找直接线索" },
+    ],
+  });
+
+  assert.match(reply, /第二层|找直接线索/);
+  assert.match(reply, /常见误区/);
+});
+
 test("handler uses local coach when OpenAI key is missing instead of showing setup errors", async () => {
   const previousKey = process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_API_KEY;

@@ -854,11 +854,14 @@ test("student AI requests have fast timeout fallback", () => {
 
 test("local student coach handles answer letters and stuck replies directly", () => {
   assert.match(js, /function buildLocalCoachReply/);
+  assert.match(js, /history = state\.chatHistory/);
+  assert.match(js, /const hintTurn = Math\.max/);
   assert.match(js, /先不看答案字母/);
   assert.match(js, /第一步看什么/);
   assert.match(js, /小讲解/);
   assert.match(js, /commonMistakeForQuestion\(question\)/);
-  assert.match(js, /coachingHintForTurn\(question, 0\)/);
+  assert.match(js, /coachingHintForTurn\(question, hintTurn\)/);
+  assert.match(js, /buildLocalCoachReply\(reply, state\.inlineCoachHistory\)/);
 });
 
 test("student coach uses recent same-skill mistakes", () => {

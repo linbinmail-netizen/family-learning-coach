@@ -100,6 +100,14 @@ function firstCommonMistake(body = {}) {
   return body.commonMistakes?.[0] || "";
 }
 
+function coachingHintForHistory(body = {}, offset = 0) {
+  const hints = mergedCoachHints(body);
+  const studentTurns = (body.history || []).filter((message) => message.role === "student").length;
+  const coachTurns = (body.history || []).filter((message) => message.role === "coach").length;
+  const index = Math.max(0, Math.min(Math.max(0, hints.length - 1), Math.max(studentTurns - 1, coachTurns - 1) + offset));
+  return hints[index] || "";
+}
+
 export function buildTutorRequest(body = {}) {
   const {
     studentName,
@@ -184,6 +192,8 @@ export function buildFallbackReply(body = {}) {
   const needsTeaching = detectNeedsTeaching(body.studentReply || "");
   const replyAnalysis = analyzeStudentReply(body.studentReply || "");
   const commonMistake = firstCommonMistake(body);
+  const currentHint = coachingHintForHistory(body);
+  const nextHint = coachingHintForHistory(body, 1);
   const mistakePrefix = body.recentSkillMistakes?.length
     ? `你之前在同类题上卡过 ${body.recentSkillMistakes[0].attempts || 1} 次，`
     : "";
@@ -193,7 +203,7 @@ export function buildFallbackReply(body = {}) {
   }
 
   if (replyAnalysis.type === "thin" || replyAnalysis.type === "claim_without_reason") {
-    return `${mistakePrefix}你有方向了，但理由还不够。${hints[1] || "先找能直接证明方法的线索。"} 用这句补完整：我先看____，因为它能说明____。`;
+    return `${mistakePrefix}你有方向了，但理由还不够。${nextHint || "先找能直接证明方法的线索。"} 用这句补完整：我先看____，因为它能说明____。`;
   }
 
   if (needsTeaching) {
@@ -201,7 +211,7 @@ export function buildFallbackReply(body = {}) {
     const shortExplanation =
       body.explanation ||
       `${skill} 是这类题里帮助你判断方向的核心概念，不是让你先猜答案。`;
-    return `${mistakePrefix}小讲解：${shortExplanation} ${commonMistake ? `常见误区：${commonMistake}` : "例子：先分清题目目标和线索。"} 回到这题：${hints[0] || "题目要你找哪一类信息？"}`;
+    return `${mistakePrefix}小讲解：${shortExplanation} ${commonMistake ? `常见误区：${commonMistake}` : "例子：先分清题目目标和线索。"} 回到这题：${currentHint || "题目要你找哪一类信息？"}`;
   }
 
   if (step.id === "understand" && hints[0]) {

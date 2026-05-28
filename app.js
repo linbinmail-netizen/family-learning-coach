@@ -3551,7 +3551,7 @@ function conceptSupportForLock(lock = state.guidanceLock, question = activeQuest
   return {
     teach: `先听一句讲解，再点按钮补第一小句：${localStudentFriendlyConceptLine(question)}`,
     example: `同类小例子：${teachingMiniExampleForSkill(skill)}`,
-    action: `现在不用先打完整解释。只点“帮我填第一小句”，再把这句读一遍：${guidanceStepBuilderSentence("goal", lock, question)}`,
+    action: `现在不用先打完整解释，不用打字也能继续。只点“帮我填第一小句”，再把这句读一遍：${guidanceStepBuilderSentence("goal", lock, question)}`,
   };
 }
 
@@ -3706,7 +3706,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
 }
 
 function guidanceCannotProduceThought(reply = "") {
-  return /别人知识点没吃透|人家也打不出来|打不出来|说不出来|写不出来|不知道这题问什么|不懂这题问什么|不知道要写什么|不会说思路|没思路/.test(String(reply || ""));
+  return /别人知识点没吃透|人家也打不出来|打不出来|说不出来|写不出来|不知道这题问什么|不懂这题问什么|不知道要写什么|不会说思路|没思路|不要再让我先说题目问什么|问我.*题目问什么.*打不出来/.test(String(reply || ""));
 }
 
 function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQuality(reply)) {
@@ -3763,7 +3763,7 @@ function guidanceNextActionForReply(reply = "", quality = evaluateGuidanceReplyQ
     return "提交给教练：方法句已够完整，系统会检查后进入变式验证。";
   }
   if (guidanceCannotProduceThought(reply) || quality.asksForHelp || lock?.forceStepBuilder) {
-    return "不用先打完整解释：点“帮我填第一小句”，只补第一小句；还是不懂就点“再讲一遍”。";
+    return "不用先打完整解释：点“帮我填第一小句”只补第一小句，或点“先补知识点”“帮我拼完整方法句”；还是不懂就点“再讲一遍”。";
   }
   if (!quality.questionGoal) return "先补题目目标：这题要我判断什么。";
   if (!quality.methodStep) return "再补方法步骤：第一步看什么或找什么。";
@@ -3911,7 +3911,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
     return `你已经第二次卡住，这说明任务太大，不是你不努力。我们不用再打完整句，先点下面的小台阶按钮，只完成一个空：题目问什么。系统会帮你把后面的第一步和原因慢慢接上。`;
   }
   if (guidanceCannotProduceThought(reply)) {
-    return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，我们先帮你拆题和补概念。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 我先帮你写好第一小句，接下来你只需要点“第一步”或从两个小选择里选一个：${guidanceStepBuilderSentence("goal", lock, question)}`;
+    return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，我们先帮你拆题和补概念。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 可直接点按钮，不用打字。二选一先判断：先看题干关键词，还是先看答案长短？我先帮你写好第一小句：${guidanceStepBuilderSentence("goal", lock, question)}`;
   }
   return `你说得对，知识点没吃透时确实很难自己说题意，也会打不出来、说不出来。先教会，再让你只答一小步，不用自己组织完整答案。老师先示范怎么拆题：1. 题目要判断 ${skill}；2. 第一眼看关键词或条件；3. 用二选一或填空说出第一步。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
 }

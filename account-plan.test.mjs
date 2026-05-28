@@ -710,6 +710,17 @@ test("student knowledge-gap replies trigger teaching before asking for a full ex
   assert.match(js, /二选一或填空/);
 });
 
+test("student can say they cannot produce words and continue without typing a long explanation", () => {
+  assert.match(html, /data-guidance-quick-reply="我知识点没吃透，打不出来。不要再让我先说题目问什么，请先讲知识点并给我二选一。"/);
+  assert.match(html, />说不出来</);
+  assert.match(js, /不用打字也能继续/);
+  assert.match(js, /可直接点按钮，不用打字/);
+  assert.match(js, /先看题干关键词，还是先看答案长短/);
+  assert.match(js, /点“先补知识点”/);
+  assert.match(js, /点“帮我拼完整方法句”/);
+  assert.doesNotMatch(js, /可直接点按钮，不用打字[\s\S]*正确答案是/);
+});
+
 test("student stuck on concepts gets a no-typing support card", () => {
   assert.match(html, /id="conceptSupportCard"/);
   assert.match(html, /id="conceptSupportTeach"/);

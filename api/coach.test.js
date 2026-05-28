@@ -335,6 +335,8 @@ test("fallback for cannot-produce replies teaches before asking for a tiny fill-
   assert.match(reply, /不是写作问题/);
   assert.match(reply, /先补前置概念/);
   assert.match(reply, /半句填空/);
+  assert.match(reply, /二选一/);
+  assert.match(reply, /先看题干关键词，还是先看答案长短/);
   assert.doesNotMatch(reply, /继续说题目问什么/);
   assert.doesNotMatch(reply, /答案是/);
 });

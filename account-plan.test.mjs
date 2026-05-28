@@ -1274,6 +1274,15 @@ test("student AI replies append after the instant local coach instead of replaci
   assert.doesNotMatch(chatHandler, /lastElementChild\.remove\(\)/);
 });
 
+test("inline coach waiting state tells the student the next concrete step", () => {
+  const inlineHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  assert.match(js, /function setGuidanceWaitingAction/);
+  assert.match(js, /AI 正在补充检查/);
+  assert.match(js, /先按本地提示补这一小步/);
+  assert.match(inlineHandler, /setGuidanceWaitingAction\(immediateReply, canMoveToVariant\)/);
+  assert.match(js, /renderGuidanceNextAction\(\)/);
+});
+
 test("local student coach handles answer letters and stuck replies directly", () => {
   assert.match(js, /function buildLocalCoachReply/);
   assert.match(js, /function coachingGapForReply/);

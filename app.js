@@ -3709,6 +3709,15 @@ function renderGuidanceNextAction(reply = $("inlineCoachReply")?.value || "", qu
   $("guidanceNextActionText").textContent = guidanceNextActionForReply(reply, quality, state.guidanceLock);
 }
 
+function setGuidanceWaitingAction(immediateReply = "", canMoveToVariant = false) {
+  const bar = $("guidanceNextActionBar");
+  if (!bar) return;
+  $("guidanceNextActionLabel").textContent = "AI 正在补充检查";
+  $("guidanceNextActionText").textContent = canMoveToVariant
+    ? "你已经进入变式验证。先按本地提示补这一小步，远端 AI 返回后会追加更细的建议。"
+    : `先按本地提示补这一小步：${immediateReply}`;
+}
+
 function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   const card = $("replyQualityCard");
   if (!card) return;
@@ -6687,6 +6696,7 @@ function bindEvents() {
     const canMoveToVariant = shouldMoveToVariantAfterReply(reply);
     if (canMoveToVariant) transitionGuidanceToVariantImmediately(reply, immediateReply);
     else appendInlineCoach("coach", `AI 正在深度检查，我先给你一个提示：${immediateReply}`);
+    setGuidanceWaitingAction(immediateReply, canMoveToVariant);
 
     askAiCoach(reply, state.inlineCoachHistory.slice(0, -1))
       .then((data) => {
@@ -6700,6 +6710,7 @@ function bindEvents() {
         }
         saveData();
         renderDiagnostic();
+        renderGuidanceNextAction();
       })
       .catch(() => {
         if (!state.guidanceLock) return;
@@ -6709,11 +6720,13 @@ function bindEvents() {
           appendCoachSupplement(state.inlineCoachHistory, `远端 AI 暂时没有返回，但你已经进入变式验证。${teachingMove}`);
           saveData();
           renderDiagnostic();
+          renderGuidanceNextAction();
           return;
         }
         state.inlineCoachHistory[state.inlineCoachHistory.length - 1].text = `先按这个提示继续：${immediateReply} ${teachingMove}`;
         saveData();
         renderDiagnostic();
+        renderGuidanceNextAction();
       });
   });
 

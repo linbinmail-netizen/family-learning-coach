@@ -139,6 +139,7 @@ test("practice page shows current subject skill difficulty and tool actions", ()
   assert.match(html, /id="practiceExplainButton"/);
   assert.match(html, /id="practiceSimilarButton"/);
   assert.match(js, /practiceSubject"\)\.textContent = subject\.label/);
+  assert.match(js, /questionTypeLabel\(question\)/);
   assert.match(js, /practiceSimilarButton"\)\.addEventListener/);
   assert.match(css, /practice-context-panel/);
 });

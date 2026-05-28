@@ -2556,7 +2556,11 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
 
   const challengeCandidate = unanswered
     .filter(({ question }) => difficultyScore(question.difficulty) >= Math.max(2, targetLevel - 1) || question.schoolExamDepth || question.constructedResponse || question.openResponse)
-    .sort((a, b) => Math.abs(difficultyScore(a.question.difficulty) - targetLevel) - Math.abs(difficultyScore(b.question.difficulty) - targetLevel))[0];
+    .sort(
+      (a, b) =>
+        questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
+        || Math.abs(difficultyScore(a.question.difficulty) - targetLevel) - Math.abs(difficultyScore(b.question.difficulty) - targetLevel)
+    )[0];
   const supportCandidate = unanswered
     .filter(({ question }) => difficultyScore(question.difficulty) <= Math.max(1, targetLevel))
     .sort((a, b) => difficultyScore(a.question.difficulty) - difficultyScore(b.question.difficulty))[0];
@@ -3725,6 +3729,24 @@ function difficultyScore(difficulty = "中等") {
   return 1;
 }
 
+function questionExamDepthScore(question = {}) {
+  return [
+    question.schoolExamDepth,
+    question.constructedResponse,
+    question.openResponse,
+    question.errorAnalysis,
+    question.multiStepReasoning,
+  ].filter(Boolean).length;
+}
+
+function questionTypeLabel(question = {}) {
+  if (question.schoolExamDepth) return "学校考试深度";
+  if (question.constructedResponse || question.openResponse) return "解释型题";
+  if (question.errorAnalysis) return "错因分析题";
+  if (question.multiStepReasoning) return "多步推理题";
+  return "选择诊断题";
+}
+
 function adaptiveLevelForSubject(subjectId = state.subject) {
   return Math.max(0, Math.min(difficultyLevels.length - 1, state.adaptiveLevels[subjectId] ?? 1));
 }
@@ -3769,7 +3791,7 @@ function selectAdaptiveQuestions(questions, plan = planForStudent(state.studentI
   const sorted = [...questions].sort((a, b) => {
     const aDistance = Math.abs(difficultyScore(a.difficulty) - target);
     const bDistance = Math.abs(difficultyScore(b.difficulty) - target);
-    return aDistance - bDistance || difficultyScore(b.difficulty) - difficultyScore(a.difficulty);
+    return aDistance - bDistance || questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty);
   });
   const nearTarget = sorted.filter((question) => Math.abs(difficultyScore(question.difficulty) - target) <= 1);
   const candidates = nearTarget.length >= 6 ? nearTarget : sorted;
@@ -3777,7 +3799,7 @@ function selectAdaptiveQuestions(questions, plan = planForStudent(state.studentI
   const advancedTarget = Math.max(2, Math.round(targetCount * advancedQuestionRatio(plan)));
   const advancedQuestions = candidates.filter(
     (question) => difficultyScore(question.difficulty) >= 2 || question.schoolExamDepth || question.openResponse || question.errorAnalysis || question.constructedResponse
-  );
+  ).sort((a, b) => questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty));
   const foundationQuestions = candidates.filter((question) => difficultyScore(question.difficulty) < 2 && !question.openResponse && !question.errorAnalysis && !question.constructedResponse);
   return mergeQuestions(advancedQuestions.slice(0, advancedTarget), foundationQuestions.concat(candidates));
 }
@@ -4424,10 +4446,10 @@ function renderDiagnostic() {
   $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 今日学习课`;
   $("practiceSubject").textContent = subject.label;
   $("practiceSkill").textContent = question.skill || diagnostic.skills[0][0];
-  $("practiceDifficulty").textContent = `${question.difficulty} / ${adaptiveLabel}`;
+  $("practiceDifficulty").textContent = `${question.difficulty} / ${adaptiveLabel} · ${questionTypeLabel(question)}`;
   $("practiceProgress").textContent = `${state.currentQuestion + 1}/${questions.length}`;
   $("standardTag").textContent = question.standard;
-  $("difficultyTag").textContent = `${question.difficulty} · 当前目标：${adaptiveLabel} · 当前环节：${learningBlock.label}`;
+  $("difficultyTag").textContent = `${question.difficulty} · ${questionTypeLabel(question)} · 当前目标：${adaptiveLabel} · 当前环节：${learningBlock.label}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
   $("lessonConcept").textContent = lesson.concept;
   $("workedExample").textContent = lesson.example;

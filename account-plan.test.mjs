@@ -1115,6 +1115,16 @@ test("completed challenge missions become reportable mastery proof", () => {
   assert.match(js, /挑战证明/);
 });
 
+test("student next-step card explains the active challenge mission", () => {
+  assert.match(js, /function activeChallengeMission/);
+  assert.match(js, /const challengeMission = activeChallengeMission\(\)/);
+  assert.match(js, /badge: "挑战证明"/);
+  assert.match(js, /title: `先完成\$\{challengeMission\.label\}`/);
+  assert.match(js, /这题不是普通选择题/);
+  assert.match(js, /证明你不是靠选项猜对/);
+  assert.match(js, /activeChallengeMission\(\)\?\.detail/);
+});
+
 test("variant verification gives a structured method checklist", () => {
   assert.match(html, /id="variantMission"/);
   assert.match(html, /id="variantMethodChecklist"/);

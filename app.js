@@ -4383,6 +4383,11 @@ function challengeBoostForSubject(subjectId = state.subject) {
   return Math.max(0, Number(state.adaptiveStats[subjectId]?.challengeBoostRemaining || 0));
 }
 
+function activeChallengeMission(subjectId = state.subject) {
+  const queue = state.adaptiveStats[subjectId]?.challengeQueue || [];
+  return challengeBoostForSubject(subjectId) > 0 ? queue[0] || null : null;
+}
+
 function shouldEnterChallengeBoost(question = {}, nextStats = {}, isCorrect = false) {
   const plan = planForStudent(state.studentId);
   const easyChoice = difficultyScore(question?.difficulty) <= 1 || isShallowChoiceQuestion(question);
@@ -5344,6 +5349,7 @@ function renderDiagnostic() {
 }
 
 function studentNextStepState({ selectedAnswer, question, locked, guidedComplete, confidence }) {
+  const challengeMission = activeChallengeMission();
   if (locked) {
     const status = state.guidanceLock?.status === "variant" ? "完成变式验证" : "回答 AI 的问题";
     return {
@@ -5354,6 +5360,14 @@ function studentNextStepState({ selectedAnswer, question, locked, guidedComplete
     };
   }
   if (selectedAnswer === undefined) {
+    if (challengeMission) {
+      return {
+        tone: "learning",
+        badge: "挑战证明",
+        title: `先完成${challengeMission.label}`,
+        body: `这题不是普通选择题：${activeChallengeMission()?.detail || challengeMission.detail} 目标是证明你不是靠选项猜对。先写思路，再作答。`,
+      };
+    }
     return {
       tone: "learning",
       badge: "当前任务",

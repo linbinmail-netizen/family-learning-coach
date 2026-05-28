@@ -3319,6 +3319,27 @@ function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQualit
   return missing.length ? `下一步只补：${missing[0]}。可以先照下面句式写。` : "这句还不够清楚，先照下面句式补完整。";
 }
 
+function guidanceReplyProgressText(quality = evaluateGuidanceReplyQuality()) {
+  const completed = [quality.questionGoal, quality.methodStep, quality.reasonWhy].filter(Boolean).length;
+  const next =
+    !quality.questionGoal
+      ? "先写这题要判断什么"
+      : !quality.methodStep
+        ? "再写第一步看什么"
+        : !quality.reasonWhy
+          ? "最后写为什么这一步有用"
+          : quality.ready
+            ? "可以提交给教练检查"
+            : "把 3 个部分连成一句完整方法";
+  return `已完成 ${completed}/3：${next}。`;
+}
+
+function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality()) {
+  if (quality.asksForHelp) return "帮我开头";
+  if (quality.ready) return "提交给教练";
+  return "先补完整";
+}
+
 function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   const card = $("replyQualityCard");
   if (!card) return;
@@ -3344,6 +3365,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     : quality.asksForHelp || quality.hasPlaceholder
       ? guidanceReplyHelpText(reply, quality)
       : `还差：${missing.join("、")}。${guidanceReplyHelpText(reply, quality)}`;
+  $("replyProgressText").textContent = guidanceReplyProgressText(quality);
   if (helperCard) {
     helperCard.classList.toggle("hidden", quality.ready);
     $("replyHelperText").textContent = guidanceReplyHelpText(reply, quality);
@@ -3351,7 +3373,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     $("replyNextSentenceText").textContent = `建议下一句：${guidanceNextMissingSentence(reply, state.guidanceLock)}`;
   }
   $("inlineCoachSubmit").disabled = !quality.ready && !canAskForHelp;
-  $("inlineCoachSubmit").textContent = canAskForHelp ? "帮我开头" : "继续引导";
+  $("inlineCoachSubmit").textContent = guidanceSubmitButtonText(quality);
   renderGuidanceUnlockProgress();
 }
 

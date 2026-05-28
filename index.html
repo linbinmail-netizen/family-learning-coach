@@ -337,10 +337,11 @@
               <form class="chat-form" id="inlineCoachForm">
                 <input id="inlineCoachReply" placeholder="用自己的话写：这题真正问什么？下一步该怎么做？" />
                 <button class="secondary-button" id="inlineVoiceButton" type="button">语音输入</button>
-                <button class="primary-button" id="inlineCoachSubmit" type="submit" disabled>继续引导</button>
+                <button class="primary-button" id="inlineCoachSubmit" type="submit" disabled>先补完整</button>
                 <span class="voice-status" id="inlineVoiceStatus">可选：用语音说出思路</span>
                 <div class="reply-quality-card" id="replyQualityCard" aria-live="polite">
                   <strong id="replyQualityStatus">写一句完整方法，系统会帮你检查是否够清楚。</strong>
+                  <p class="reply-progress-text" id="replyProgressText">先完成题目目标、方法步骤、原因说明 3 个部分。</p>
                   <div class="reply-quality-list">
                     <span id="qualityQuestionGoal">题目目标</span>
                     <span id="qualityMethodStep">方法步骤</span>

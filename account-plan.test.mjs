@@ -447,15 +447,19 @@ test("student guidance scaffold prefers layered AI hints and lesson steps", () =
 test("student guidance reply gives immediate quality feedback while typing", () => {
   assert.match(html, /id="replyQualityCard"/);
   assert.match(html, /id="replyQualityStatus"/);
+  assert.match(html, /id="replyProgressText"/);
   assert.match(html, /id="qualityQuestionGoal"/);
   assert.match(html, /id="qualityMethodStep"/);
   assert.match(html, /id="qualityReasonWhy"/);
   assert.match(html, /id="replyNextSentenceText"/);
   assert.match(js, /function evaluateGuidanceReplyQuality/);
+  assert.match(js, /function guidanceReplyProgressText/);
+  assert.match(js, /function guidanceSubmitButtonText/);
   assert.match(js, /function renderReplyQuality/);
   assert.match(js, /function guidanceNextMissingSentence/);
   assert.match(js, /inlineCoachReply"\)\.addEventListener\("input"/);
   assert.match(css, /reply-quality-card/);
+  assert.match(css, /reply-progress-text/);
 });
 
 test("student guidance reply quality rejects short keyword-only replies", () => {
@@ -492,7 +496,10 @@ test("student stuck replies can submit for rescue instead of staying blocked", (
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";
   assert.match(js, /const canAskForHelp = quality\.asksForHelp/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
-  assert.match(js, /\$\("inlineCoachSubmit"\)\.textContent = canAskForHelp \? "帮我开头" : "继续引导"/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.textContent = guidanceSubmitButtonText\(quality\)/);
+  assert.match(js, /if \(quality\.asksForHelp\) return "帮我开头"/);
+  assert.match(js, /if \(quality\.ready\) return "提交给教练"/);
+  assert.match(js, /return "先补完整"/);
   assert.match(js, /if \(quality\.asksForHelp\)/);
   assert.match(js, /buildGuidanceRescueMove\(state\.guidanceLock\)/);
   assert.match(stuckBranch, /state\.guidanceLock\.microDrill = guidanceMicroDrillForLock\(state\.guidanceLock\)/);

@@ -1017,6 +1017,14 @@ textarea {
   font-size: 14px;
 }
 
+.reply-progress-text {
+  margin: -2px 0 10px;
+  color: var(--soft-ink);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .reply-quality-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

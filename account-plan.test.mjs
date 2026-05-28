@@ -840,6 +840,17 @@ test("easy fast correct answers trigger school-level explanation verification", 
   assert.match(js, /答对后深度验证掌握/);
 });
 
+test("high-performing students are routed to explanation-first challenge questions", () => {
+  assert.match(js, /function isExplanationFirstChallenge/);
+  assert.match(js, /const highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.raisedLevel \|\| targetLevel >= 2\)/);
+  assert.match(js, /const explanationChallengeCandidate = unanswered/);
+  assert.match(js, /isExplanationFirstChallenge\(question\)/);
+  assert.match(js, /if \(highPerformance && explanationChallengeCandidate\) return explanationChallengeCandidate\.index/);
+  assert.match(js, /fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20/);
+  assert.match(js, /const raisedLevel = nextStats\.correctStreak >= 2 && level < difficultyLevels\.length - 1/);
+  assert.match(js, /return \{ isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20, raisedLevel \}/);
+});
+
 test("variant verification gives a structured method checklist", () => {
   assert.match(html, /id="variantMission"/);
   assert.match(html, /id="variantMethodChecklist"/);

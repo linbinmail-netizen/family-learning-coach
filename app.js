@@ -2558,6 +2558,15 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .filter(({ question, index }) => index !== answeredIndex && state.selectedAnswers[index] === undefined && !hasAnsweredQuestion(question));
   if (!unanswered.length) return -1;
 
+  const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.raisedLevel || targetLevel >= 2);
+  const explanationChallengeCandidate = unanswered
+    .filter(({ question }) => isExplanationFirstChallenge(question))
+    .sort(
+      (a, b) =>
+        questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
+        || questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
+        || difficultyScore(b.question.difficulty) - difficultyScore(a.question.difficulty)
+    )[0];
   const challengeCandidate = unanswered
     .filter(({ question }) => difficultyScore(question.difficulty) >= Math.max(2, targetLevel - 1) || question.schoolExamDepth || question.constructedResponse || question.openResponse)
     .sort(
@@ -2570,6 +2579,7 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .filter(({ question }) => difficultyScore(question.difficulty) <= Math.max(1, targetLevel))
     .sort((a, b) => difficultyScore(a.question.difficulty) - difficultyScore(b.question.difficulty))[0];
 
+  if (highPerformance && explanationChallengeCandidate) return explanationChallengeCandidate.index;
   if (adaptiveResult.isCorrect && targetLevel >= 2 && challengeCandidate) return challengeCandidate.index;
   if (adaptiveResult.isCorrect === false && supportCandidate) return supportCandidate.index;
   return unanswered.find(({ index }) => index > answeredIndex)?.index ?? unanswered[0].index;
@@ -3959,6 +3969,16 @@ function isSchoolExamPracticeQuestion(question = {}) {
   );
 }
 
+function isExplanationFirstChallenge(question = {}) {
+  return Boolean(
+    question.schoolExamDepth
+    || question.constructedResponse
+    || question.openResponse
+    || question.errorAnalysis
+    || question.multiStepReasoning
+  ) && difficultyScore(question.difficulty) >= 2;
+}
+
 function adaptiveLevelForSubject(subjectId = state.subject) {
   return Math.max(0, Math.min(difficultyLevels.length - 1, state.adaptiveLevels[subjectId] ?? 1));
 }
@@ -4236,7 +4256,8 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
   let level = adaptiveLevelForSubject(subjectId);
   let message = "";
 
-  if (nextStats.correctStreak >= 2 && level < difficultyLevels.length - 1) {
+  const raisedLevel = nextStats.correctStreak >= 2 && level < difficultyLevels.length - 1;
+  if (raisedLevel) {
     level += 1;
     nextStats.correctStreak = 0;
     message = "答得很顺，下一题会提高一点难度。";
@@ -4248,7 +4269,7 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
 
   state.adaptiveLevels[subjectId] = level;
   state.adaptiveStats[subjectId] = nextStats;
-  return { isCorrect, level, message };
+  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, raisedLevel };
 }
 
 function activeQuestions() {

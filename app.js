@@ -1334,6 +1334,7 @@ let state = {
   inlineCoachHistory: [],
   currentQuestion: 0,
   lastAdvanceNotice: "",
+  answerSyncStatus: { state: "idle", text: "记录待同步" },
   cloudQuestions: {},
   cloudLoading: false,
   chatHistory: [],
@@ -2104,21 +2105,37 @@ async function callLearningApi(path, payload = {}) {
   return response.json();
 }
 
-function syncAnswerSubmitToApi(question, selectedIndex, confidence, practiceEvent = {}) {
+function setAnswerSyncStatus(syncState, text) {
+  state.answerSyncStatus = { state: syncState, text };
+  const pill = $("answerSyncStatus");
+  if (!pill) return;
+  pill.textContent = text;
+  pill.classList.toggle("pending", syncState === "pending");
+  pill.classList.toggle("error", syncState === "error");
+}
+
+async function syncAnswerSubmitToApi(question, selectedIndex, confidence, practiceEvent = {}) {
   const selectedLabel = String.fromCharCode(65 + selectedIndex);
-  callLearningApi("/api/answer/submit", {
-    studentId: state.studentId,
-    question: {
-      id: question.id || question.prompt,
-      subject: subjectLabelById(state.subject),
-      skill: question.skill || question.knowledgePoint || question.topic || "",
-      correctAnswer: String.fromCharCode(65 + question.correct),
-      hintSteps: question.coachHints || question.hints || [],
-    },
-    studentAnswer: selectedLabel,
-    confidence,
-    timeSpentSeconds: practiceEvent.seconds || 0,
-  }).catch((error) => console.warn("Learning API answer sync skipped.", error));
+  setAnswerSyncStatus("pending", "正在保存记录");
+  try {
+    const result = await callLearningApi("/api/answer/submit", {
+      studentId: state.studentId,
+      question: {
+        id: question.id || question.prompt,
+        subject: subjectLabelById(state.subject),
+        skill: question.skill || question.knowledgePoint || question.topic || "",
+        correctAnswer: String.fromCharCode(65 + question.correct),
+        hintSteps: question.coachHints || question.hints || [],
+      },
+      studentAnswer: selectedLabel,
+      confidence,
+      timeSpentSeconds: practiceEvent.seconds || 0,
+    });
+    setAnswerSyncStatus("ready", result?.mistakeNotebookEntry ? "错题已记录" : "记录已保存");
+  } catch (error) {
+    console.warn("Learning API answer sync skipped.", error);
+    setAnswerSyncStatus("error", "本地已保存");
+  }
 }
 
 async function loadAuthProfile() {
@@ -4220,6 +4237,7 @@ function renderDiagnostic() {
 
   $("prevQuestion").disabled = state.currentQuestion === 0;
   $("nextQuestion").disabled = state.currentQuestion === questions.length - 1 || hasActiveGuidanceLock();
+  setAnswerSyncStatus(state.answerSyncStatus.state, state.answerSyncStatus.text);
   if (locked) {
     $("answerFeedback").textContent = "这题还在 AI 引导中。完成讲解和变式验证后，下一题会自动解锁。";
   } else if (selectedAnswer === undefined) {
@@ -5131,7 +5149,23 @@ async function renderProductionReadiness() {
   ];
 
   const readyCount = items.filter((item) => item.ready).length;
-  status.textContent = readyCount === items.length ? "正式可用" : `${readyCount}/${items.length} 已准备`;
+  const totalCount = items.length;
+  const nextAction = items.find((item) => !item.ready);
+  if (nextAction) {
+    items.unshift({
+      title: "下一步最优先",
+      ready: false,
+      note: nextAction.note,
+    });
+  } else {
+    items.unshift({
+      title: "下一步最优先",
+      ready: true,
+      note: "核心上线配置已完成，可以让孩子连续使用并观察报告。",
+    });
+  }
+
+  status.textContent = readyCount === totalCount ? "正式可用" : `${readyCount}/${totalCount} 已准备`;
   list.innerHTML = items
     .map(
       (item) => `
@@ -5245,6 +5279,7 @@ function bindEvents() {
       return;
     }
     state.lastAdvanceNotice = "";
+    setAnswerSyncStatus("pending", "准备保存记录");
     state.selectedAnswers[state.currentQuestion] = selectedIndex;
     const issue = shouldStartGuidance(selectedIndex, question, confidence);
     const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);

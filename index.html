@@ -278,7 +278,10 @@
                   <option value="guess">猜的</option>
                 </select>
               </label>
-              <p class="form-note" id="answerFeedback">先看上面的短讲解，再选择答案；不确定或答错时，AI 会引导你。</p>
+              <div class="answer-feedback-row">
+                <p class="form-note" id="answerFeedback">先看上面的短讲解，再选择答案；不确定或答错时，AI 会引导你。</p>
+                <span class="sync-pill" id="answerSyncStatus">记录待同步</span>
+              </div>
             </div>
             <div class="answer-grid" id="answerGrid"></div>
             <section class="inline-coach-panel hidden" id="inlineCoachPanel">

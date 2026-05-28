@@ -560,6 +560,44 @@ textarea {
   font-weight: 800;
 }
 
+.answer-feedback-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.answer-feedback-row .form-note {
+  margin: 0;
+}
+
+.sync-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #d7e4dc;
+  background: #f7fbf8;
+  color: #3f6150;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.sync-pill.pending {
+  background: #fff8e8;
+  border-color: #efd598;
+  color: #7a5816;
+}
+
+.sync-pill.error {
+  background: #fff1f0;
+  border-color: #efb8b1;
+  color: #8b2f25;
+}
+
 .answer-grid,
 .knowledge-grid {
   display: grid;
@@ -1894,6 +1932,7 @@ li {
 
   .view-header,
   .answer-grid,
+  .answer-feedback-row,
   .knowledge-grid,
   .route-steps,
   .student-next-step-card,

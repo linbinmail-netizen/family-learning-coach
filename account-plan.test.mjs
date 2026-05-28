@@ -254,17 +254,23 @@ test("parent dashboard shows production readiness status", () => {
   assert.match(js, /标准学习 API/);
   assert.match(js, /launchChecklist/);
   assert.match(js, /上线验收/);
+  assert.match(js, /下一步最优先/);
   assert.match(js, /每日自动日报/);
   assert.match(js, /scheduledDigestConfigured/);
   assert.match(css, /readiness-grid/);
 });
 
 test("student answer submission also syncs through the standard learning API", () => {
+  assert.match(html, /id="answerSyncStatus"/);
   assert.match(js, /function callLearningApi/);
+  assert.match(js, /function setAnswerSyncStatus/);
   assert.match(js, /function syncAnswerSubmitToApi/);
   assert.match(js, /\/api\/answer\/submit/);
+  assert.match(js, /错题已记录/);
+  assert.match(js, /本地已保存/);
   assert.match(js, /syncAnswerSubmitToApi\(question, selectedIndex, confidence, practiceEvent\)/);
   assert.match(js, /subjectLabelById/);
+  assert.match(css, /sync-pill/);
 });
 
 test("parent can adjust study plan settings", () => {

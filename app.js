@@ -2558,7 +2558,7 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .filter(({ question, index }) => index !== answeredIndex && state.selectedAnswers[index] === undefined && !hasAnsweredQuestion(question));
   if (!unanswered.length) return -1;
 
-  const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.raisedLevel || targetLevel >= 2);
+  const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
   const explanationChallengeCandidate = unanswered
     .filter(({ question }) => isExplanationFirstChallenge(question))
     .sort(
@@ -4081,6 +4081,18 @@ function adaptiveLevelForSubject(subjectId = state.subject) {
   return Math.max(0, Math.min(difficultyLevels.length - 1, state.adaptiveLevels[subjectId] ?? 1));
 }
 
+function challengeBoostForSubject(subjectId = state.subject) {
+  return Math.max(0, Number(state.adaptiveStats[subjectId]?.challengeBoostRemaining || 0));
+}
+
+function shouldEnterChallengeBoost(question = {}, nextStats = {}, isCorrect = false) {
+  const plan = planForStudent(state.studentId);
+  const easyChoice = difficultyScore(question?.difficulty) <= 1 || isShallowChoiceQuestion(question);
+  const fastCorrect = secondsOnCurrentQuestion() <= 20;
+  const effortlessStreak = Number(nextStats.correctStreak || 0) >= 2;
+  return plan.difficultyMode !== "steady" && isCorrect && easyChoice && (fastCorrect || effortlessStreak);
+}
+
 function isTwoHourPlan(plan = planForStudent(state.studentId)) {
   return plan.minutes >= 90 || (plan.questionTarget || 8) >= 18;
 }
@@ -4110,10 +4122,9 @@ function learningRouteBlocks(plan = planForStudent(state.studentId)) {
   ];
 }
 
-function advancedQuestionRatio(plan = planForStudent(state.studentId)) {
-  if (plan.difficultyMode === "challenge") return 0.75;
-  if (plan.difficultyMode === "steady") return 0.35;
-  return 0.55;
+function advancedQuestionRatio(plan = planForStudent(state.studentId), subjectId = state.subject) {
+  const challengeMode = challengeBoostForSubject(subjectId) > 0;
+  return challengeMode ? 0.85 : plan.difficultyMode === "challenge" ? 0.75 : plan.difficultyMode === "steady" ? 0.35 : 0.55;
 }
 
 function depthFirstQuestionSort(a, b, target = adaptiveLevelForSubject()) {
@@ -4128,12 +4139,13 @@ function depthFirstQuestionSort(a, b, target = adaptiveLevelForSubject()) {
 }
 
 function selectAdaptiveQuestions(questions, plan = planForStudent(state.studentId)) {
-  const target = Math.max(adaptiveLevelForSubject(), plan.difficultyMode === "steady" ? 1 : 2);
+  const challengeMode = challengeBoostForSubject(state.subject) > 0;
+  const target = challengeMode ? 3 : Math.max(adaptiveLevelForSubject(), plan.difficultyMode === "steady" ? 1 : 2);
   const sorted = [...questions].sort((a, b) => depthFirstQuestionSort(a, b, target));
   const nearTarget = sorted.filter((question) => Math.abs(difficultyScore(question.difficulty) - target) <= 1);
   const candidates = nearTarget.length >= 6 ? nearTarget : sorted;
   const targetCount = dailyQuestionLimit(plan);
-  const advancedTarget = Math.max(2, Math.round(targetCount * advancedQuestionRatio(plan)));
+  const advancedTarget = Math.max(2, Math.round(targetCount * advancedQuestionRatio(plan, state.subject)));
   const advancedQuestions = candidates.filter(
     (question) => difficultyScore(question.difficulty) >= 2 || question.schoolExamDepth || question.openResponse || question.errorAnalysis || question.constructedResponse
   ).sort((a, b) => depthFirstQuestionSort(a, b, target));
@@ -4350,15 +4362,22 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
   const nextStats = {
     correctStreak: isCorrect ? current.correctStreak + 1 : 0,
     missedStreak: isCorrect ? 0 : current.missedStreak + 1,
+    challengeBoostRemaining: Math.max(0, Number(current.challengeBoostRemaining || 0) - 1),
   };
   let level = adaptiveLevelForSubject(subjectId);
   let message = "";
+  let challengeMode = nextStats.challengeBoostRemaining > 0;
 
   const raisedLevel = nextStats.correctStreak >= 2 && level < difficultyLevels.length - 1;
+  if (shouldEnterChallengeBoost(question, nextStats, isCorrect)) {
+    nextStats.challengeBoostRemaining = 3;
+    challengeMode = true;
+    message = "这组题太轻松，接下来进入挑战模式：优先做解释型/学校考试深度题。";
+  }
   if (raisedLevel) {
     level += 1;
     nextStats.correctStreak = 0;
-    message = "答得很顺，下一题会提高一点难度。";
+    if (!message) message = "答得很顺，下一题会提高一点难度。";
   } else if (nextStats.missedStreak >= 2 && level > 0) {
     level -= 1;
     nextStats.missedStreak = 0;
@@ -4367,7 +4386,7 @@ function updateAdaptiveDifficulty(question, selectedIndex) {
 
   state.adaptiveLevels[subjectId] = level;
   state.adaptiveStats[subjectId] = nextStats;
-  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, raisedLevel };
+  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, raisedLevel, challengeMode };
 }
 
 function activeQuestions() {
@@ -4855,6 +4874,8 @@ function renderDiagnostic() {
   const question = questions[state.currentQuestion] || questions[0];
   const adaptiveLevel = adaptiveLevelForSubject();
   const adaptiveLabel = difficultyLevels[adaptiveLevel];
+  const challengeMode = challengeBoostForSubject(state.subject) > 0;
+  const challengeModeLabel = challengeMode ? " · 挑战模式：优先做解释型/学校考试深度题" : "";
   const learningBlock = learningBlockForQuestionIndex(state.currentQuestion);
   const progressKey = questionProgressKey();
   markQuestionTimer(progressKey);
@@ -4869,10 +4890,10 @@ function renderDiagnostic() {
   $("diagnosticTitle").textContent = `${student.name} · ${subject.label} 今日学习课`;
   $("practiceSubject").textContent = subject.label;
   $("practiceSkill").textContent = question.skill || diagnostic.skills[0][0];
-  $("practiceDifficulty").textContent = `${question.difficulty} / ${adaptiveLabel} · ${questionTypeLabel(question)}`;
+  $("practiceDifficulty").textContent = `${question.difficulty} / ${adaptiveLabel}${challengeModeLabel} · ${questionTypeLabel(question)}`;
   $("practiceProgress").textContent = `${state.currentQuestion + 1}/${questions.length}`;
   $("standardTag").textContent = question.standard;
-  $("difficultyTag").textContent = `${question.difficulty} · ${questionTypeLabel(question)} · 当前目标：${adaptiveLabel} · 当前环节：${learningBlock.label}`;
+  $("difficultyTag").textContent = `${question.difficulty} · ${questionTypeLabel(question)} · 当前目标：${adaptiveLabel}${challengeModeLabel} · 当前环节：${learningBlock.label}`;
   $("questionProgress").textContent = `${state.currentQuestion + 1} / ${questions.length}`;
   $("lessonConcept").textContent = lesson.concept;
   $("workedExample").textContent = lesson.example;
@@ -4885,7 +4906,7 @@ function renderDiagnostic() {
   $("confidenceSelect").value = confidence;
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subject;
-  $("dailySuggestion").textContent = `${student.name} 今天计划学习 ${plan.minutes} 分钟，重点完成 ${focusSubject.label}。当前目标难度：${adaptiveLabel}；系统会根据答题表现自动升降。`;
+  $("dailySuggestion").textContent = `${student.name} 今天计划学习 ${plan.minutes} 分钟，重点完成 ${focusSubject.label}。当前目标难度：${adaptiveLabel}${challengeModeLabel}；系统会根据答题表现自动升降。`;
 
   $("answerGrid").innerHTML = question.answers
     .map(

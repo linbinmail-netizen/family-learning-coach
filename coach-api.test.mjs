@@ -18,6 +18,30 @@ test("coach fallback gives a gap-specific one-sentence frame", () => {
   assert.doesNotMatch(frame, /正确答案|答案是|选项\s*[A-D]/);
 });
 
+test("coach gap analysis separates question, concept, method, and reason confusion", () => {
+  assert.equal(coachingGapAnalysis("我不懂这题问什么").gap, "question_goal");
+  assert.equal(coachingGapAnalysis("知识点没吃透，人家也打不出来").gap, "concept");
+  assert.equal(coachingGapAnalysis("我懂一点概念，但不知道第一步看什么").gap, "method_stuck");
+  assert.equal(coachingGapAnalysis("我知道第一步，但是不知道为什么").gap, "reason_stuck");
+});
+
+test("coach fallback uses different teaching actions for different stuck gaps", () => {
+  const questionReply = buildFallbackReply({ ...baseBody, studentReply: "我不懂这题问什么" });
+  const conceptReply = buildFallbackReply({ ...baseBody, studentReply: "知识点没吃透，人家也打不出来" });
+  const methodReply = buildFallbackReply({ ...baseBody, studentReply: "我懂一点概念，但不知道第一步看什么" });
+  const reasonReply = buildFallbackReply({ ...baseBody, studentReply: "我知道第一步，但是不知道为什么" });
+
+  assert.match(questionReply, /卡点判断：题意没拆开/);
+  assert.match(questionReply, /先把题目翻译成一句话/);
+  assert.match(conceptReply, /卡点判断：概念没接上/);
+  assert.match(conceptReply, /先补前置概念/);
+  assert.match(methodReply, /卡点判断：第一步不会选/);
+  assert.match(methodReply, /只选第一步动作/);
+  assert.match(reasonReply, /卡点判断：原因说不出/);
+  assert.match(reasonReply, /只补因为/);
+  assert.doesNotMatch(`${questionReply} ${conceptReply} ${methodReply} ${reasonReply}`, /正确答案|答案是|选项\s*[A-D]/);
+});
+
 test("coach fallback moves answer-only replies into method writing", () => {
   const reply = buildFallbackReply({ ...baseBody, studentReply: "A" });
   assert.match(reply, /只写了答案|第一步/);
@@ -43,8 +67,8 @@ test("coach fallback teaches before asking when student cannot state the questio
     studentReply: "不知道这问题问什么",
     explanation: "斜率表示 y 相对于 x 的变化率。",
   });
-  assert.match(reply, /不是不努力|小讲解/);
-  assert.match(reply, /先照这句改写/);
+  assert.match(reply, /卡点判断：题意没拆开/);
+  assert.match(reply, /先把题目翻译成一句话/);
   assert.match(reply, /这题要我判断____/);
   assert.doesNotMatch(reply, /题目要你找哪一类信息/);
   assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
@@ -57,7 +81,7 @@ test("coach fallback names the diagnosed gap before giving a micro task", () => 
     explanation: "斜率表示 y 相对于 x 的变化率。",
   });
 
-  assert.match(reply, /卡点判断：还没形成第一步/);
+  assert.match(reply, /卡点判断：概念没接上/);
   assert.match(reply, /小讲解/);
   assert.match(reply, /现在只做一小步/);
   assert.match(reply, /这题要我判断____/);

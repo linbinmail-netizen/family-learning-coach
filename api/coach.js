@@ -110,12 +110,21 @@ export function coachingGapAnalysis(studentReply = "") {
   const text = String(studentReply || "").trim().toLowerCase();
   const answerOnly = /^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(text);
   const stuck = detectNeedsTeaching(text);
+  const questionConfusion = /题目.*(问什么|什么意思|看不懂)|问题.*(问什么|什么意思)|不懂.*(题|问题).*问什么|看不懂.*题|what.*question|question.*ask/.test(text);
+  const methodConfusion = /第一步|先看什么|怎么开始|从哪|不知道.*步骤|不知道.*方法|first step|where.*start/.test(text);
+  const reasonConfusion = /为什么|原因|because|why|不知道.*解释|说不出.*理由/.test(text);
+  const conceptConfusion = /知识点|概念|没学过|没吃透|前置|打不出来|写不出来|说不出来|完全不会|不明白|confused/.test(text);
   const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate|identify/.test(text);
   const hasMethod = /先|第一步|步骤|方法|看|找|变化|条件|证据|除以|比较|compare|divide|change|rate|evidence/.test(text);
   const hasReason = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that|therefore/.test(text);
   const enoughDetail = text.replace(/\s+/g, "").length >= 18 || text.split(/\s+/).filter(Boolean).length >= 8;
   if (answerOnly) return { gap: "answer_only", label: "只写了答案", next: "不要先选答案，先写方法句。" };
-  if (stuck || !text) return { gap: "stuck", label: "还没形成第一步", next: "先照老师给的第一步说一遍。" };
+  if (!text) return { gap: "stuck", label: "还没形成第一步", next: "先照老师给的第一步说一遍。" };
+  if (stuck && reasonConfusion) return { gap: "reason_stuck", label: "原因说不出", next: "只补一句为什么这一步有用。" };
+  if (stuck && methodConfusion) return { gap: "method_stuck", label: "第一步不会选", next: "只选第一步动作，不用完整解释。" };
+  if (stuck && questionConfusion) return { gap: "question_goal", label: "题意没拆开", next: "先把题目翻译成一句话。" };
+  if (stuck && conceptConfusion) return { gap: "concept", label: "概念没接上", next: "先补前置概念，再做半句填空。" };
+  if (stuck) return { gap: "stuck", label: "还没形成第一步", next: "先照老师给的第一步说一遍。" };
   if (!hasGoal) return { gap: "goal", label: "题目目标不清楚", next: "先说这题要你判断什么。" };
   if (!hasMethod) return { gap: "method", label: "方法步骤不清楚", next: "补一句第一步看什么。" };
   if (!hasReason) return { gap: "reason", label: "原因说明不完整", next: "补一句为什么这一步有用。" };
@@ -129,6 +138,10 @@ export function gapSentenceFrame(gap = {}, body = {}) {
   const frames = {
     answer_only: `这题考的是 ${skill}。我第一步先看____，因为____。`,
     stuck: `这题要我判断____。我可以先看 ${hint}。`,
+    question_goal: `这题要我判断____。题目里的____是在提醒我。`,
+    concept: `先记住：${skill} 是____。这题要我判断____。`,
+    method_stuck: `我第一步先看 ${hint}。`,
+    reason_stuck: `因为这一步能帮我____，所以不能只凭感觉选。`,
     goal: `这题要我判断 ${skill} 里的____。`,
     method: `我第一步先看 ${hint}，再判断____。`,
     reason: `因为这一步能帮我____，所以不能只凭感觉选。`,
@@ -146,6 +159,26 @@ function oneStepFallbackPrompt(body = {}) {
 function diagnosedGapLine(body = {}) {
   const coachingGap = coachingGapAnalysis(body.studentReply || "");
   return `卡点判断：${coachingGap.label}。`;
+}
+
+function stuckGapTeachingAction(body = {}) {
+  const coachingGap = coachingGapAnalysis(body.studentReply || "");
+  const skill = body.skill || "这个知识点";
+  const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
+  const example = teachingMiniExampleForApi(skill, body.subject);
+  if (coachingGap.gap === "question_goal") {
+    return `${diagnosedGapLine(body)}先把题目翻译成一句话。小讲解：${shortExplanation} 现在只做一小步：${gapSentenceFrame(coachingGap, body)}`;
+  }
+  if (coachingGap.gap === "concept") {
+    return `${diagnosedGapLine(body)}这不是写作问题，先补前置概念。小讲解：${shortExplanation} 现在只做一小步：半句填空：这题要我判断____。`;
+  }
+  if (coachingGap.gap === "method_stuck") {
+    return `${diagnosedGapLine(body)}只选第一步动作。小讲解：${shortExplanation} 现在只做一小步：${gapSentenceFrame(coachingGap, body)}`;
+  }
+  if (coachingGap.gap === "reason_stuck") {
+    return `${diagnosedGapLine(body)}只补因为。想一想这一步帮你找到什么线索：${gapSentenceFrame(coachingGap, body)}`;
+  }
+  return "";
 }
 
 function buildTeachingNote({ subject, skill, explanation }) {
@@ -351,12 +384,12 @@ export function buildFallbackReply(body = {}) {
   }
 
   if (needsTeaching && cannotProduceBecauseConceptGap(body.studentReply || "")) {
-    const skill = body.skill || "这个知识点";
-    const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
-    return `${mistakePrefix}${diagnosedGapLine(body)}这不是写作问题，是前置概念没接上。先补前置概念。小讲解：${shortExplanation} ${teachingMiniExampleForApi(skill, body.subject)} 现在只做一小步：半句填空：这题要我判断____。`;
+    return `${mistakePrefix}${stuckGapTeachingAction(body)}`;
   }
 
   if (needsTeaching && (needsImmediateConceptTeaching(body.studentReply || "") || !hints.length)) {
+    const action = stuckGapTeachingAction(body);
+    if (action) return `${mistakePrefix}${action}`;
     const skill = body.skill || "这个知识点";
     const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
     return `${mistakePrefix}${diagnosedGapLine(body)}你不是不努力，是概念没接上。小讲解：${shortExplanation} ${teachingMiniExampleForApi(skill, body.subject)} 先照这句改写，现在只做一小步：这题要我判断____。`;

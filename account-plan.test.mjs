@@ -1204,6 +1204,19 @@ test("local student coach teaches stuck replies with a short diagnosed concept s
   assert.doesNotMatch(js, /小讲解：\$\{commonMistakeForQuestion\(question\)\}/);
 });
 
+test("local student coach separates stuck gaps before teaching", () => {
+  assert.match(js, /function localStuckGapTeachingAction/);
+  assert.match(js, /题意没拆开/);
+  assert.match(js, /概念没接上/);
+  assert.match(js, /第一步不会选/);
+  assert.match(js, /原因说不出/);
+  assert.match(js, /先把题目翻译成一句话/);
+  assert.match(js, /先补前置概念/);
+  assert.match(js, /只选第一步动作/);
+  assert.match(js, /只补因为/);
+  assert.match(js, /localStuckGapTeachingAction\(gap, question\)/);
+});
+
 test("mistake review opens a targeted review lesson", () => {
   assert.match(js, /openMistakeReviewLesson/);
   assert.match(js, /data-review-mistake/);

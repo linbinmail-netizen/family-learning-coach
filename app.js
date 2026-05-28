@@ -5530,12 +5530,21 @@ function sameSkillMistakeSummary(question = activeQuestions()[state.currentQuest
 function coachingGapForReply(studentReply = "") {
   const text = String(studentReply || "").trim().toLowerCase();
   const quality = evaluateGuidanceReplyQuality(studentReply);
+  const questionConfusion = /题目.*(问什么|什么意思|看不懂)|问题.*(问什么|什么意思)|不懂.*(题|问题).*问什么|看不懂.*题|what.*question|question.*ask/.test(text);
+  const methodConfusion = /第一步|先看什么|怎么开始|从哪|不知道.*步骤|不知道.*方法|first step|where.*start/.test(text);
+  const reasonConfusion = /为什么|原因|because|why|不知道.*解释|说不出.*理由/.test(text);
+  const conceptConfusion = /知识点|概念|没学过|没吃透|前置|打不出来|写不出来|说不出来|完全不会|不明白|confused/.test(text);
   if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(text)) {
     return { label: "只写了答案", next: "先不选答案，先说第一步看什么。" };
   }
-  if (quality.asksForHelp || !text) {
+  if (!text) {
     return { label: "还没形成第一步", next: "先照老师示范句，说出题目真正问什么。" };
   }
+  if (quality.asksForHelp && reasonConfusion) return { label: "原因说不出", next: "只补一句为什么这一步有用。" };
+  if (quality.asksForHelp && methodConfusion) return { label: "第一步不会选", next: "只选第一步动作，不用完整解释。" };
+  if (quality.asksForHelp && questionConfusion) return { label: "题意没拆开", next: "先把题目翻译成一句话。" };
+  if (quality.asksForHelp && conceptConfusion) return { label: "概念没接上", next: "先补前置概念，再做半句填空。" };
+  if (quality.asksForHelp) return { label: "还没形成第一步", next: "先照老师示范句，说出题目真正问什么。" };
   if (!quality.questionGoal) return { label: "题目目标不清楚", next: "补一句：这题要我判断什么。" };
   if (!quality.methodStep) return { label: "方法步骤不清楚", next: "补一句：我第一步先看什么。" };
   if (!quality.reasonWhy) return { label: "原因说明不完整", next: "补一句：为什么这一步有用。" };
@@ -5549,6 +5558,10 @@ function localGapSentenceFrame(gap = coachingGapForReply(), question = activeQue
   const frames = {
     "只写了答案": `这题考的是 ${skill}。我第一步先看____，因为____。`,
     "还没形成第一步": `这题要我判断____。我可以先看 ${hint}。`,
+    "题意没拆开": `这题要我判断____。题目里的____是在提醒我。`,
+    "概念没接上": `先记住：${skill} 是____。这题要我判断____。`,
+    "第一步不会选": `我第一步先看 ${hint}。`,
+    "原因说不出": "因为这一步能帮我____，所以不能只凭感觉选。",
     "题目目标不清楚": `这题要我判断 ${skill} 里的____。`,
     "方法步骤不清楚": `我第一步先看 ${hint}，再判断____。`,
     "原因说明不完整": "因为这一步能帮我____，所以不能只凭感觉选。",
@@ -5556,6 +5569,22 @@ function localGapSentenceFrame(gap = coachingGapForReply(), question = activeQue
     "需要更精确": "我还要点出题目里的关键词：____，它说明____。",
   };
   return frames[gap.label] || "这题要我判断____。我第一步先看____，因为____。";
+}
+
+function localStuckGapTeachingAction(gap = coachingGapForReply(), question = activeQuestions()[state.currentQuestion]) {
+  if (gap.label === "题意没拆开") {
+    return `卡点判断：${gap.label}。先把题目翻译成一句话。小讲解：${localStudentFriendlyConceptLine(question)} 现在只做一小步：${localGapSentenceFrame(gap, question)}`;
+  }
+  if (gap.label === "概念没接上") {
+    return `卡点判断：${gap.label}。这不是写作问题，先补前置概念。小讲解：${localStudentFriendlyConceptLine(question)} 现在只做一小步：半句填空：这题要我判断____。`;
+  }
+  if (gap.label === "第一步不会选") {
+    return `卡点判断：${gap.label}。只选第一步动作。小讲解：${localStudentFriendlyConceptLine(question)} 现在只做一小步：${localGapSentenceFrame(gap, question)}`;
+  }
+  if (gap.label === "原因说不出") {
+    return `卡点判断：${gap.label}。只补因为。想一想这一步帮你找到什么线索：${localGapSentenceFrame(gap, question)}`;
+  }
+  return "";
 }
 
 function localOneStepCoachPrompt(gap = coachingGapForReply(), question = activeQuestions()[state.currentQuestion]) {
@@ -5663,9 +5692,10 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
     };
   }
 
-  if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
+  if (reply.length < 8 || /不知道|不会|不懂|打不出来|说不出来|写不出来|知识点没吃透|idk/.test(reply)) {
+    const stuckAction = localStuckGapTeachingAction(gap, question);
     return {
-      reply: `${mistakePrefix}卡点判断：${gap.label}。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 现在只做一小步：${localGapSentenceFrame(gap, question)}`,
+      reply: `${mistakePrefix}${stuckAction || `卡点判断：${gap.label}。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 现在只做一小步：${localGapSentenceFrame(gap, question)}`}`,
     };
   }
 

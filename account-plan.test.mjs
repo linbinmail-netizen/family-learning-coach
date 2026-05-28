@@ -923,6 +923,15 @@ test("complete guidance restatement switches to variant immediately before remot
   assert.doesNotMatch(submitHandler, /askAiCoach\(reply[\s\S]*?const canMoveToVariant = shouldMoveToVariantAfterReply\(reply\)/);
 });
 
+test("remote AI response does not pull the student back after variant starts", () => {
+  const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  const variantThenBlock = submitHandler.match(/if \(canMoveToVariant\) \{[\s\S]*?\} else \{/)?.[0] || "";
+  assert.match(submitHandler, /if \(canMoveToVariant\) \{/);
+  assert.match(submitHandler, /AI 已记录你的方法句/);
+  assert.match(submitHandler, /继续完成当前变式验证/);
+  assert.doesNotMatch(variantThenBlock, /buildGuidedTeachingMove\(reply/);
+});
+
 test("local variant checks accept Chinese explanations for math skills", () => {
   assert.match(js, /function variantKeywordBank/);
   assert.match(js, /斜率/);

@@ -6906,11 +6906,11 @@ function bindEvents() {
     askAiCoach(reply, state.inlineCoachHistory.slice(0, -1))
       .then((data) => {
         if (!state.guidanceLock) return;
-        const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
-        if (!canMoveToVariant) state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
         if (canMoveToVariant) {
-          appendCoachSupplement(state.inlineCoachHistory, `${data.reply} ${teachingMove}`);
+          appendCoachSupplement(state.inlineCoachHistory, `AI 已记录你的方法句。${data.reply || ""} 继续完成当前变式验证。`);
         } else {
+          const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
+          state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
           appendCoachSupplement(state.inlineCoachHistory, `${data.reply} ${teachingMove}`);
         }
         saveData();
@@ -6919,15 +6919,15 @@ function bindEvents() {
       })
       .catch(() => {
         if (!state.guidanceLock) return;
-        const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
-        if (!canMoveToVariant) state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
         if (canMoveToVariant) {
-          appendCoachSupplement(state.inlineCoachHistory, `远端 AI 暂时没有返回，但你已经进入变式验证。${teachingMove}`);
+          appendCoachSupplement(state.inlineCoachHistory, "远端 AI 暂时没有返回，但你已经进入变式验证。继续完成当前变式验证。");
           saveData();
           renderDiagnostic();
           renderGuidanceNextAction();
           return;
         }
+        const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
+        state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
         state.inlineCoachHistory[state.inlineCoachHistory.length - 1].text = `先按这个提示继续：${immediateReply} ${teachingMove}`;
         saveData();
         renderDiagnostic();

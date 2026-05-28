@@ -434,6 +434,16 @@ test("student advances automatically after a correct confident answer", () => {
   assert.match(js, /state\.currentQuestion = canUsePreferred \? preferredIndex : Math\.min\(questions\.length - 1, answeredIndex \+ 1\)/);
 });
 
+test("automatic jump to a harder question explains the reason to the student", () => {
+  assert.match(js, /function advanceNoticeForNextQuestion/);
+  assert.match(js, /isExplanationFirstChallenge\(nextQuestion\)/);
+  assert.match(js, /上一题太轻松/);
+  assert.match(js, /这题会更像学校考试深度题/);
+  assert.match(js, /先写方法，再选答案/);
+  assert.match(js, /advanceNoticeForNextQuestion\(questions\[state\.currentQuestion\], mode, canUsePreferred\)/);
+  assert.doesNotMatch(js, /上一题太轻松[\s\S]*正确答案是/);
+});
+
 test("student advances automatically after guided mastery is completed", () => {
   assert.match(js, /advanceToNextQuestionAfterCompletion\(state\.guidanceLock\.questionIndex, "guided", preferredIndex\)/);
   assert.match(js, /引导完成，已进入第/);

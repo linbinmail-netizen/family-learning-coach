@@ -2637,6 +2637,19 @@ function challengeMissionCompletionNotice(completedMission = {}, remainingQueue 
   return `挑战任务完成：${completedMission.label}。下一步挑战：${remainingQueue[0].label}。`;
 }
 
+function advanceNoticeForNextQuestion(nextQuestion = {}, mode = "correct", canUsePreferred = false) {
+  const questionNumber = state.currentQuestion + 1;
+  if (canUsePreferred && isExplanationFirstChallenge(nextQuestion)) {
+    return mode === "guided"
+      ? `引导完成，系统已切到第 ${questionNumber} 题。这题会更像学校考试深度题；先写方法，再选答案。`
+      : `上一题太轻松，系统已切到第 ${questionNumber} 题。这题会更像学校考试深度题；先写方法，再选答案。`;
+  }
+  if (mode === "guided") return `引导完成，已进入第 ${questionNumber} 题。`;
+  return canUsePreferred
+    ? `上一题答对了，系统已切到更合适的第 ${questionNumber} 题。`
+    : `上一题答对了，已进入第 ${questionNumber} 题。`;
+}
+
 function recordChallengeProof(question = {}, completedMission = {}, outcome = "correct", subjectId = state.subject) {
   const student = activeStudent();
   const proof = {
@@ -2700,9 +2713,7 @@ function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuest
       state.currentQuestion = preferredIndex;
       state.lastAdvanceNotice =
         state.lastChallengeMissionNotice ||
-        (mode === "guided"
-          ? `引导完成，已为你切到更合适的第 ${state.currentQuestion + 1} 题。`
-          : `上一题答对了，已为你切到更合适的第 ${state.currentQuestion + 1} 题。`);
+        advanceNoticeForNextQuestion(questions[state.currentQuestion], mode, canUsePreferred);
       state.lastChallengeMissionNotice = "";
       return true;
     }
@@ -2717,11 +2728,7 @@ function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuest
   }
   state.currentQuestion = canUsePreferred ? preferredIndex : Math.min(questions.length - 1, answeredIndex + 1);
   state.lastAdvanceNotice = state.lastChallengeMissionNotice ||
-    (mode === "guided"
-      ? `引导完成，已进入第 ${state.currentQuestion + 1} 题。`
-      : canUsePreferred
-        ? `上一题答对了，系统已切到更合适的第 ${state.currentQuestion + 1} 题。`
-        : `上一题答对了，已进入第 ${state.currentQuestion + 1} 题。`);
+    advanceNoticeForNextQuestion(questions[state.currentQuestion], mode, canUsePreferred);
   state.lastChallengeMissionNotice = "";
   return true;
 }

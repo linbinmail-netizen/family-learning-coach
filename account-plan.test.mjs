@@ -1084,6 +1084,15 @@ test("student coach uses recent same-skill mistakes", () => {
   assert.match(js, /sameSkillMistakeSummary/);
 });
 
+test("local student coach teaches stuck replies with a short diagnosed concept step", () => {
+  assert.match(js, /function localStudentFriendlyConceptLine/);
+  assert.match(js, /卡点判断：\$\{gap\.label\}/);
+  assert.match(js, /小讲解：\$\{localStudentFriendlyConceptLine/);
+  assert.match(js, /现在只做一小步：\$\{localGapSentenceFrame/);
+  assert.match(js, /不要把英文解析原句直接给孩子/);
+  assert.doesNotMatch(js, /小讲解：\$\{commonMistakeForQuestion\(question\)\}/);
+});
+
 test("mistake review opens a targeted review lesson", () => {
   assert.match(js, /openMistakeReviewLesson/);
   assert.match(js, /data-review-mistake/);

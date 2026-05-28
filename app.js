@@ -5410,6 +5410,18 @@ function localOneStepCoachPrompt(gap = coachingGapForReply(), question = activeQ
   return `我看到你现在缺的是：${gap.label}。${gap.next} 只补这一句：${localGapSentenceFrame(gap, question)}`;
 }
 
+function localStudentFriendlyConceptLine(question = activeQuestions()[state.currentQuestion]) {
+  // 不要把英文解析原句直接给孩子，卡住时先给一条中文短概念。
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const text = `${skill} ${activeSubject().label} ${question?.explanation || ""}`.toLowerCase();
+  if (/slope|rate|linear|斜率|变化率|函数|比例/.test(text)) return "斜率就是看 y 相对 x 怎么变，不能只看数字大小。";
+  if (/evidence|claim|central|reading|english|rla|证据|主张|中心|作者/.test(text)) return "证据要支持观点，先找观点，再看证据是否直接相关。";
+  if (/equation|algebra|方程|代数|表达式|逆运算/.test(text)) return "方程题先看未知数被做了什么运算，再用相反运算解开。";
+  if (/experiment|variable|science|biology|实验|变量|数据|科学|生物/.test(text)) return "科学题先分清改变什么、测量什么，再看数据支持什么结论。";
+  if (/geometry|triangle|proof|几何|三角形|证明|角/.test(text)) return "几何题先找已知边角关系，再判断能支持哪一步证明。";
+  return `${skill} 要先分清题目目标和第一步线索。`;
+}
+
 function coachHistoryAlreadyUsed(history = [], pattern) {
   return history.some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
 }
@@ -5501,7 +5513,7 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
 
   if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
     return {
-      reply: `${mistakePrefix}我看到你现在缺的是：${gap.label}。小讲解：${commonMistakeForQuestion(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} ${gap.next}`,
+      reply: `${mistakePrefix}卡点判断：${gap.label}。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 现在只做一小步：${localGapSentenceFrame(gap, question)}`,
     };
   }
 

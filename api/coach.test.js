@@ -285,6 +285,19 @@ test("AI coach treats cannot-produce replies as a teaching problem, not a writin
   assert.match(text, /不能继续要求学生先说“问题问什么”/);
 });
 
+test("AI coach removes conflicting meta-question step when concepts are not ready", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "知识点没吃透，问我这题问什么我也打不出来",
+    history: [],
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /先教一个最小概念/);
+  assert.match(text, /只让学生补一个空/);
+  assert.doesNotMatch(text, /让学生用自己的话说出题目真正问什么/);
+});
+
 test("AI coach offers choice or fill-in scaffolds when students cannot type the idea", () => {
   const request = buildTutorRequest({
     ...baseBody,

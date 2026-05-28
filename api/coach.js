@@ -304,6 +304,13 @@ export function buildTutorRequest(body = {}) {
   const replyAnalysis = analyzeStudentReply(studentReply);
   const coachingGap = coachingGapAnalysis(studentReply);
   const sessionMemory = coachSessionMemory({ ...body, history, studentReply });
+  const currentStepForRequest = needsTeaching
+    ? {
+        ...step,
+        instruction: "先教一个最小概念，再给一个小例子，只让学生补一个空，不要求完整复述题意。",
+        fallback: "先听一句讲解，再只补半句填空。",
+      }
+    : step;
   const allHints = [...layeredHints, ...coachHints].filter(Boolean);
   const mistakeNote = recentSkillMistakes.length
     ? "Use recent same-skill mistakes to personalize the next hint, but do not mention private report details or reveal answers."
@@ -336,7 +343,7 @@ export function buildTutorRequest(body = {}) {
       "Use coachSessionMemory: 延续上一轮卡点，不要重讲已经给过的同一句提示；如果 lastCoachMove 已经给过填空，就给下一小步。",
       "Keep the reply under 110 Chinese characters.",
       mistakeNote,
-      `Current step: ${step.label}. ${step.instruction}`,
+      `Current step: ${currentStepForRequest.label}. ${currentStepForRequest.instruction}`,
       needsTeaching ? buildTeachingNote({ subject, skill, explanation }) : "",
     ].join("\n"),
     input: [
@@ -356,7 +363,7 @@ export function buildTutorRequest(body = {}) {
               availableHints: allHints,
               commonMistakes,
               recentSkillMistakes: recentSkillMistakes.slice(0, 3),
-              currentStep: step,
+              currentStep: currentStepForRequest,
               needsTeaching,
               replyAnalysis,
               coachingGap,

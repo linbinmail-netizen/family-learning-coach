@@ -706,6 +706,7 @@ test("student stuck on concepts gets a no-typing support card", () => {
   assert.match(html, /id="conceptSupportTeach"/);
   assert.match(html, /id="conceptSupportExample"/);
   assert.match(html, /data-concept-support="fill-goal"/);
+  assert.match(html, /data-concept-support="build-method"/);
   assert.match(html, /data-concept-support="reteach"/);
   assert.match(js, /function conceptSupportForLock/);
   assert.match(js, /function renderConceptSupportCard/);
@@ -715,6 +716,15 @@ test("student stuck on concepts gets a no-typing support card", () => {
   assert.match(js, /renderConceptSupportCard\(reply, quality, state\.guidanceLock\)/);
   assert.match(js, /conceptSupportCard"\)\.classList\.toggle\("hidden", !showSupport\)/);
   assert.doesNotMatch(js, /conceptSupportForLock[\s\S]*正确答案是/);
+});
+
+test("concept support can build a full method sentence without revealing answers", () => {
+  assert.match(html, /帮我拼完整方法句/);
+  assert.match(js, /choiceKey === "build-method"/);
+  assert.match(js, /guidanceTeacherModelForLock\(state\.guidanceLock\)/);
+  assert.match(js, /state\.guidanceLock\.microChoiceReady = true/);
+  assert.match(js, /可以直接提交给教练检查/);
+  assert.doesNotMatch(js, /choiceKey === "build-method"[\s\S]*正确答案是/);
 });
 
 test("student who cannot describe the question gets concept support before writing", () => {

@@ -3573,6 +3573,17 @@ function applyConceptSupportChoice(choiceKey = "fill-goal", input = $("inlineCoa
     requestConceptExampleReteach(input);
     return;
   }
+  if (choiceKey === "build-method") {
+    const sentence = guidanceTeacherModelForLock(state.guidanceLock);
+    input.value = sentence;
+    state.guidanceLock.replyDraft = sentence;
+    state.guidanceLock.forceStepBuilder = false;
+    state.guidanceLock.microChoiceReady = true;
+    state.guidanceLock.microChoiceNote = "已帮你拼好不含答案的方法句，可以直接提交给教练检查。";
+    renderReplyQuality(input.value);
+    $("inlineCoachSubmit").focus();
+    return;
+  }
   const sentence = guidanceStepBuilderSentence("goal", state.guidanceLock);
   input.value = sentence;
   state.guidanceLock.replyDraft = sentence;

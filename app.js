@@ -2605,6 +2605,16 @@ function variantSkillPracticeGuideFor(skill = "") {
   };
 }
 
+function needsSchoolLevelVerification(question, confidence = "sure") {
+  const plan = planForStudent(state.studentId);
+  const currentStats = state.adaptiveStats[state.subject] || { correctStreak: 0 };
+  const lowDifficultyChoice = difficultyScore(question?.difficulty) <= 1 && Array.isArray(question?.answers) && question.answers.length >= 3;
+  const notAlreadyExplanation = !question?.openResponse && !question?.constructedResponse && !question?.errorAnalysis;
+  const fastCorrect = secondsOnCurrentQuestion() <= 20;
+  const alreadyTooEasy = currentStats.correctStreak >= 1 || adaptiveLevelForSubject() >= 2;
+  return plan.difficultyMode !== "steady" && confidence === "sure" && lowDifficultyChoice && notAlreadyExplanation && fastCorrect && alreadyTooEasy;
+}
+
 function variantMethodChecklistFor(variant = state.guidanceLock?.variant, question = activeQuestions()[state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const guide = variantSkillPracticeGuideFor(skill);
@@ -2799,6 +2809,7 @@ function lessonMasteryStatus(skill, score) {
 function shouldStartGuidance(selectedIndex, question, confidence) {
   if (selectedIndex !== question.correct) return "answer";
   if (confidence !== "sure") return "confidence";
+  if (needsSchoolLevelVerification(question, confidence)) return "school_verification";
   return "";
 }
 
@@ -2962,15 +2973,21 @@ function requestVariantReteach() {
 function guidanceIssueText(issue) {
   if (issue === "answer") return "答案还不对，先回到题干和关键词。";
   if (issue === "confidence") return "你选择了不确定或猜测，我们用一道变式题确认你真的会了。";
+  if (issue === "school_verification") return "这题做得很快，系统加一道学校考试式验证：请证明你不是靠选项猜对。";
   return "需要先完成引导。";
 }
 
 function guidanceInsightForLock(lock = state.guidanceLock, question = activeQuestions()[state.currentQuestion]) {
   const lesson = conceptMiniLesson(question);
   const skill = question?.skill || activeDiagnostic().skills[0][0];
-  const issueType = lock?.issue === "confidence" ? "可能是猜对，还没证明掌握" : "答案不对，方法需要修正";
-  const repairAction =
+  const issueType =
     lock?.issue === "confidence"
+      ? "可能是猜对，还没证明掌握"
+      : lock?.issue === "school_verification"
+        ? "题目偏简单，需要升级到解释型验证"
+        : "答案不对，方法需要修正";
+  const repairAction =
+    lock?.issue === "confidence" || lock?.issue === "school_verification"
       ? "不显示正确答案，先说清楚为什么这样做，再完成变式验证。"
       : "不显示正确答案，先说题目真正问什么，再找关键词或已知条件。";
   return {
@@ -4766,17 +4783,25 @@ async function askMasteryEvaluation(variantReply) {
 
 function buildLocalCoachReply(studentReply) {
   const question = activeQuestions()[state.currentQuestion];
-  const reply = studentReply.toLowerCase();
+  const rawReply = String(studentReply || "").trim();
+  const reply = rawReply.toLowerCase();
   const studentTurns = state.chatHistory.filter((message) => message.role === "student").length;
   const hints = question?.coachHints || [];
   const recentSkillMistakes = mistakesForCurrentSkill(question);
   const mistakePrefix = recentSkillMistakes.length
     ? `你之前在同类题上卡过 ${recentSkillMistakes[0].attempts || 1} 次，`
     : "";
+  const lesson = conceptMiniLesson(question);
+
+  if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(rawReply)) {
+    return {
+      reply: `${mistakePrefix}先不看答案字母。请写方法：第一步看什么？为什么这一步能帮你判断？`,
+    };
+  }
 
   if (reply.length < 8 || reply.includes("不知道") || reply.includes("不会") || reply.includes("idk")) {
     return {
-      reply: `${mistakePrefix}${hints[0] || "先把题目中的关键词圈出来。"} 先不用选答案，请用自己的话说说题目真正问什么。`,
+      reply: `${mistakePrefix}小讲解：${lesson.trap || "不要先猜答案，要先找题目目标。"} ${hints[0] || "先把题目中的关键词圈出来。"} 先不用选答案，请用自己的话说说题目真正问什么。`,
     };
   }
 
@@ -5347,7 +5372,7 @@ function bindEvents() {
       markMistakeReviewed(question);
       advanceToNextQuestionAfterCompletion(state.currentQuestion, "correct");
     } else {
-      recordMistake(question, selectedIndex, guidanceIssueText(issue));
+      if (issue !== "school_verification") recordMistake(question, selectedIndex, guidanceIssueText(issue));
       startGuidedMastery(question, selectedIndex, "", confidence, issue);
     }
     saveData();

@@ -716,6 +716,16 @@ test("student mastery loop requires open explanation before moving on", () => {
   assert.doesNotMatch(html, /data-variant-index/);
 });
 
+test("easy fast correct answers trigger school-level explanation verification", () => {
+  assert.match(js, /function needsSchoolLevelVerification/);
+  assert.match(js, /correctStreak >= 1/);
+  assert.match(js, /secondsOnCurrentQuestion\(\) <= 20/);
+  assert.match(js, /return "school_verification"/);
+  assert.match(js, /学校考试式验证/);
+  assert.match(js, /题目偏简单，需要升级到解释型验证/);
+  assert.match(js, /issue !== "school_verification"/);
+});
+
 test("variant verification gives a structured method checklist", () => {
   assert.match(html, /id="variantMission"/);
   assert.match(html, /id="variantMethodChecklist"/);
@@ -833,6 +843,14 @@ test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /先给你一个提示/);
   assert.match(js, /先按这个提示继续/);
   assert.match(js, /state\.chatHistory\.slice\(0, -1\)/);
+});
+
+test("local student coach handles answer letters and stuck replies directly", () => {
+  assert.match(js, /function buildLocalCoachReply/);
+  assert.match(js, /先不看答案字母/);
+  assert.match(js, /第一步看什么/);
+  assert.match(js, /小讲解/);
+  assert.match(js, /lesson\.trap/);
 });
 
 test("student coach uses recent same-skill mistakes", () => {

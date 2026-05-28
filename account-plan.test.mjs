@@ -1386,6 +1386,16 @@ test("mistake notebook shows a three-question similar practice pack", () => {
   assert.match(css, /similar-practice-pack/);
 });
 
+test("similar practice prioritizes school-depth and explanation tasks", () => {
+  assert.match(js, /function similarQuestionRank/);
+  assert.match(js, /question\.schoolExamDepth/);
+  assert.match(js, /question\.constructedResponse \|\| question\.openResponse \|\| question\.errorAnalysis/);
+  assert.match(js, /difficultyScore\(question\.difficulty\)/);
+  assert.match(js, /similarQuestionRank\(b, item\) - similarQuestionRank\(a, item\)/);
+  assert.match(js, /function bestSimilarQuestionIndex/);
+  assert.match(js, /const similarIndex = bestSimilarQuestionIndex\(activeQuestions\(\), state\.currentQuestion\)/);
+});
+
 test("student daily plan shows next action and completion state", () => {
   assert.match(html, /id="todayNextAction"/);
   assert.match(js, /todayCompletionState/);

@@ -5191,6 +5191,23 @@ function nextReviewDateForMistake(item = {}) {
   return last.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function similarQuestionRank(question = {}, item = {}) {
+  const sameSkill = question.skill === item.skill ? 60 : 0;
+  const schoolDepth = question.schoolExamDepth ? 45 : 0;
+  const explanationTask = question.constructedResponse || question.openResponse || question.errorAnalysis ? 30 : 0;
+  const difficulty = difficultyScore(question.difficulty) * 8;
+  return sameSkill + schoolDepth + explanationTask + difficulty;
+}
+
+function bestSimilarQuestionIndex(questions = activeQuestions(), currentIndex = state.currentQuestion) {
+  const current = questions[currentIndex] || {};
+  const candidates = questions
+    .map((question, index) => ({ question, index }))
+    .filter(({ question, index }) => index !== currentIndex && (question.skill === current.skill || question.schoolExamDepth || question.constructedResponse || question.openResponse || question.errorAnalysis));
+  const best = candidates.sort((a, b) => similarQuestionRank(b.question, current) - similarQuestionRank(a.question, current))[0];
+  return best ? best.index : -1;
+}
+
 function similarPracticePackForMistake(item = {}, limit = 3) {
   const bank = mergeQuestions(
     localQuestionBank[item.subjectId] || [],
@@ -5198,7 +5215,9 @@ function similarPracticePackForMistake(item = {}, limit = 3) {
   );
   const sameSkill = bank.filter((question) => question.skill === item.skill && question.prompt !== item.prompt);
   const nearby = bank.filter((question) => question.skill !== item.skill && difficultyScore(question.difficulty) <= difficultyScore(item.difficulty || "中等") + 1);
-  return mergeQuestions(sameSkill, nearby).slice(0, limit);
+  return mergeQuestions(sameSkill, nearby)
+    .sort((a, b) => similarQuestionRank(b, item) - similarQuestionRank(a, item))
+    .slice(0, limit);
 }
 
 function renderMistakeNotebook() {
@@ -6711,8 +6730,7 @@ function bindEvents() {
     $("answerFeedback").textContent = question.explanation || "先判断题目类型，再写第一步和原因。";
   });
   $("practiceSimilarButton").addEventListener("click", () => {
-    const question = activeQuestions()[state.currentQuestion];
-    const similarIndex = activeQuestions().findIndex((item, index) => index !== state.currentQuestion && item.skill === question.skill);
+    const similarIndex = bestSimilarQuestionIndex(activeQuestions(), state.currentQuestion);
     if (similarIndex >= 0) {
       state.currentQuestion = similarIndex;
       renderDiagnostic();

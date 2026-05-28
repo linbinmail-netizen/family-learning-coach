@@ -2366,8 +2366,11 @@ function applyDifficultyMode(studentId, subjectId) {
   if (plan.difficultyMode === "steady") {
     state.adaptiveLevels[subjectId] = Math.min(adaptiveLevelForSubject(subjectId), 1);
   }
-  if (plan.difficultyMode === "challenge") {
+  if (plan.difficultyMode === "adaptive") {
     state.adaptiveLevels[subjectId] = Math.max(adaptiveLevelForSubject(subjectId), 2);
+  }
+  if (plan.difficultyMode === "challenge") {
+    state.adaptiveLevels[subjectId] = Math.max(adaptiveLevelForSubject(subjectId), 3);
   }
 }
 
@@ -3599,24 +3602,35 @@ function learningRouteBlocks(plan = planForStudent(state.studentId)) {
   ];
 }
 
-function selectAdaptiveQuestions(questions) {
-  const target = adaptiveLevelForSubject();
+function advancedQuestionRatio(plan = planForStudent(state.studentId)) {
+  if (plan.difficultyMode === "challenge") return 0.75;
+  if (plan.difficultyMode === "steady") return 0.35;
+  return 0.55;
+}
+
+function selectAdaptiveQuestions(questions, plan = planForStudent(state.studentId)) {
+  const target = Math.max(adaptiveLevelForSubject(), plan.difficultyMode === "steady" ? 1 : 2);
   const sorted = [...questions].sort((a, b) => {
     const aDistance = Math.abs(difficultyScore(a.difficulty) - target);
     const bDistance = Math.abs(difficultyScore(b.difficulty) - target);
-    return aDistance - bDistance || difficultyScore(a.difficulty) - difficultyScore(b.difficulty);
+    return aDistance - bDistance || difficultyScore(b.difficulty) - difficultyScore(a.difficulty);
   });
   const nearTarget = sorted.filter((question) => Math.abs(difficultyScore(question.difficulty) - target) <= 1);
-  return nearTarget.length >= 6 ? nearTarget : sorted;
+  const candidates = nearTarget.length >= 6 ? nearTarget : sorted;
+  const targetCount = dailyQuestionLimit(plan);
+  const advancedTarget = Math.max(2, Math.round(targetCount * advancedQuestionRatio(plan)));
+  const advancedQuestions = candidates.filter((question) => difficultyScore(question.difficulty) >= 2 || question.openResponse || question.errorAnalysis || question.constructedResponse);
+  const foundationQuestions = candidates.filter((question) => difficultyScore(question.difficulty) < 2 && !question.openResponse && !question.errorAnalysis && !question.constructedResponse);
+  return mergeQuestions(advancedQuestions.slice(0, advancedTarget), foundationQuestions.concat(candidates));
 }
 
 function selectTwoHourStructuredQuestions(questions, plan = planForStudent(state.studentId)) {
-  const adaptiveQuestions = selectAdaptiveQuestions(questions);
+  const adaptiveQuestions = selectAdaptiveQuestions(questions, plan);
   if (!isTwoHourPlan(plan)) return adaptiveQuestions;
 
   const targetQuestions = plan.questionTarget || 24;
-  const foundationTarget = Math.max(4, Math.round(targetQuestions * 0.45));
-  const reviewTarget = Math.max(2, Math.round(targetQuestions * 0.2));
+  const foundationTarget = Math.max(3, Math.round(targetQuestions * 0.3));
+  const reviewTarget = Math.max(3, Math.round(targetQuestions * 0.25));
   const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
   const foundationQuestions = adaptiveQuestions.filter((question) => difficultyScore(question.difficulty) <= 1);
   const reviewQuestions = adaptiveQuestions.filter((question) => question.spiralReview || question.errorAnalysis);

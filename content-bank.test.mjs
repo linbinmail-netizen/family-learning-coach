@@ -85,7 +85,10 @@ test("question selection adapts difficulty as students answer", () => {
   assert.match(source, /const difficultyLevels = \[/);
   assert.match(source, /function difficultyScore/);
   assert.match(source, /function adaptiveLevelForSubject/);
+  assert.match(source, /function advancedQuestionRatio/);
   assert.match(source, /function selectAdaptiveQuestions/);
+  assert.match(source, /advancedTarget/);
+  assert.match(source, /difficultyScore\(b\.difficulty\) - difficultyScore\(a\.difficulty\)/);
   assert.match(source, /function updateAdaptiveDifficulty/);
   assert.match(source, /adaptiveStats/);
   assert.match(source, /adaptiveLevels/);

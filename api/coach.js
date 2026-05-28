@@ -67,6 +67,18 @@ export function detectNeedsTeaching(studentReply = "") {
   ].some((signal) => reply.includes(signal));
 }
 
+export function analyzeStudentReply(studentReply = "") {
+  const raw = String(studentReply || "").trim();
+  const lower = raw.toLowerCase();
+  if (!raw) return { type: "empty", quality: 0, action: "ask_for_first_thought" };
+  if (detectNeedsTeaching(raw)) return { type: "stuck", quality: 1, action: "reteach_then_prompt" };
+  if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(raw)) return { type: "answer_only", quality: 1, action: "ask_for_method_not_letter" };
+  if (raw.length < 12 || /不知道|随便|maybe|应该吧|不确定/.test(lower)) return { type: "thin", quality: 2, action: "give_sentence_frame" };
+  const hasReason = /因为|所以|first|because|reason|evidence|关键词|方法|先|then|therefore/.test(lower);
+  if (!hasReason) return { type: "claim_without_reason", quality: 3, action: "ask_why" };
+  return { type: "method_attempt", quality: 4, action: "push_precision" };
+}
+
 function buildTeachingNote({ subject, skill, explanation }) {
   const concept = skill || "这个知识点";
   const base = explanation || `${concept} 是解这类题时要先弄清楚的核心概念。`;
@@ -96,6 +108,7 @@ export function buildTutorRequest(body = {}) {
   } = body;
   const step = getLearningStep(history);
   const needsTeaching = detectNeedsTeaching(studentReply);
+  const replyAnalysis = analyzeStudentReply(studentReply);
   const mistakeNote = recentSkillMistakes.length
     ? "Use recent same-skill mistakes to personalize the next hint, but do not mention private report details or reveal answers."
     : "";
@@ -110,9 +123,11 @@ export function buildTutorRequest(body = {}) {
       "不要直接说出正确选项、答案字母或最终答案。",
       "Guide with this five-step routine: 理解题意 → 找关键词 → 排除错误选项 → 写一句理由 → 总结方法.",
       "Ask exactly one short question at a time.",
+      "Respond to the student's actual reply quality: if answer-only, ask for method; if vague, give a sentence frame; if stuck, reteach briefly; if decent, push for precision.",
       "If the student is stuck, give one small hint, then ask the student to try.",
       "If the student is conceptually confused, teach briefly before asking again.",
       "教练式讲解格式：小讲解：... 例子：... 回到这题：...？",
+      "Do not say Great job for incomplete or wrong reasoning; name the missing piece kindly.",
       "Keep the reply under 110 Chinese characters.",
       mistakeNote,
       `Current step: ${step.label}. ${step.instruction}`,
@@ -136,10 +151,11 @@ export function buildTutorRequest(body = {}) {
               recentSkillMistakes: recentSkillMistakes.slice(0, 3),
               currentStep: step,
               needsTeaching,
+              replyAnalysis,
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. If needsTeaching is true, give a short explanation plus a tiny example before asking one follow-up question. Do not reveal the correct answer.",
+                "Move the student one step forward. Use replyAnalysis to choose the next coaching move. If needsTeaching is true, give a short explanation plus a tiny example before asking one follow-up question. Do not reveal the correct answer.",
             }),
           },
         ],
@@ -152,9 +168,18 @@ export function buildFallbackReply(body = {}) {
   const step = getLearningStep(body.history || []);
   const hints = body.coachHints || [];
   const needsTeaching = detectNeedsTeaching(body.studentReply || "");
+  const replyAnalysis = analyzeStudentReply(body.studentReply || "");
   const mistakePrefix = body.recentSkillMistakes?.length
     ? `你之前在同类题上卡过 ${body.recentSkillMistakes[0].attempts || 1} 次，`
     : "";
+
+  if (replyAnalysis.type === "answer_only") {
+    return `${mistakePrefix}先不看答案字母。请写方法：第一步看____，因为____。`;
+  }
+
+  if (replyAnalysis.type === "thin" || replyAnalysis.type === "claim_without_reason") {
+    return `${mistakePrefix}你有方向了，但理由还不够。用这句补完整：我先看____，因为它能说明____。`;
+  }
 
   if (needsTeaching) {
     const skill = body.skill || "这个知识点";

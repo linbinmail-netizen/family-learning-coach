@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  analyzeStudentReply,
   buildFallbackMasteryEvaluation,
   buildMasteryEvaluationRequest,
   buildFallbackReply,
@@ -48,6 +49,24 @@ test("buildTutorRequest includes the five-step rule and blocks direct answers", 
   assert.match(text, /排除错误选项/);
   assert.match(text, /不要直接说出正确选项/);
   assert.match(text, /English I/);
+  assert.match(text, /replyAnalysis/);
+  assert.match(text, /ask for method/);
+});
+
+test("student reply analysis detects low quality replies for smoother coaching", () => {
+  assert.equal(analyzeStudentReply("B").type, "answer_only");
+  assert.equal(analyzeStudentReply("我不知道").type, "stuck");
+  assert.equal(analyzeStudentReply("maybe this").type, "thin");
+  assert.equal(analyzeStudentReply("第一步先找关键词，因为证据要支持题目问的观点").type, "method_attempt");
+});
+
+test("fallback reply adapts to answer-only and vague replies", () => {
+  const answerOnly = buildFallbackReply({ ...baseBody, studentReply: "B" });
+  const vague = buildFallbackReply({ ...baseBody, studentReply: "maybe this" });
+
+  assert.match(answerOnly, /答案字母|第一步/);
+  assert.match(vague, /理由|我先看/);
+  assert.doesNotMatch(answerOnly, /The central idea or claim/);
 });
 
 test("buildTutorRequest includes recent mistakes for the same skill", () => {

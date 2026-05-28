@@ -514,6 +514,20 @@ test("student guidance has quick replies for common stuck states", () => {
   assert.match(css, /coach-quick-replies/);
 });
 
+test("student guidance offers a two-choice micro task when writing is hard", () => {
+  assert.match(html, /id="replyMicroChoiceCard"/);
+  assert.match(html, /id="replyMicroChoicePrompt"/);
+  assert.match(html, /data-micro-choice="0"/);
+  assert.match(html, /data-micro-choice="1"/);
+  assert.match(js, /function guidanceMicroChoiceForLock/);
+  assert.match(js, /renderGuidanceMicroChoice/);
+  assert.match(js, /applyGuidanceMicroChoice/);
+  assert.match(js, /const card = \$\("replyMicroChoiceCard"\)/);
+  assert.match(js, /card\.classList\.toggle\("hidden", quality\.ready\)/);
+  assert.match(js, /choice\.sentence/);
+  assert.match(css, /micro-choice-card/);
+});
+
 test("student stuck replies can submit for rescue instead of staying blocked", () => {
   const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";

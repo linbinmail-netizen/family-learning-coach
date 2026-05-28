@@ -1158,6 +1158,31 @@ textarea {
   line-height: 1.5;
 }
 
+.micro-choice-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid rgba(47, 111, 159, 0.18);
+  border-radius: 8px;
+  background: #f7fbff;
+}
+
+.micro-choice-card.hidden {
+  display: none;
+}
+
+.micro-choice-card strong,
+.micro-choice-card p {
+  margin: 0;
+}
+
+.micro-choice-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .variant-challenge {
   margin-top: 14px;
   padding-top: 14px;

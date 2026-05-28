@@ -3266,6 +3266,67 @@ function guidanceMicroDrillForLock(lock = state.guidanceLock, question = activeQ
   };
 }
 
+function guidanceMicroChoiceForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstHint = coachingHintForTurn(question, lock?.teachingTurns || 0) || "题目关键词或已知条件";
+  if (/证据|中心观点|主张|作者|文本|claim|evidence|author|theme/.test(skill)) {
+    return {
+      prompt: "先选一个最小动作：这类阅读题第一步更应该做什么？",
+      choices: [
+        { label: "找中心观点", sentence: `这题要我判断 ${skill}。我第一步先找中心观点，因为证据必须直接支持它。` },
+        { label: "看答案长度", sentence: `这题要我判断 ${skill}。我第一步不能看答案长度，要先回到文本找观点和证据。` },
+      ],
+    };
+  }
+  if (/斜率|变化率|slope|rate|线性|函数|比例/.test(skill)) {
+    return {
+      prompt: "先选一个最小动作：这类数学题第一步更应该看什么？",
+      choices: [
+        { label: "比较变化", sentence: `这题要我判断 ${skill}。我第一步先比较两个量怎么变，因为变化率要看每单位变化。` },
+        { label: "只看最大数", sentence: `这题要我判断 ${skill}。我第一步不能只看最大数，要先比较变化关系。` },
+      ],
+    };
+  }
+  if (/变量|实验|variable|experiment|数据|图表|science|biology|细胞|能量/.test(skill)) {
+    return {
+      prompt: "先选一个最小动作：这类科学题第一步更应该分清什么？",
+      choices: [
+        { label: "改变和测量", sentence: `这题要我判断 ${skill}。我第一步先分清改变什么和测量什么，因为结论要由数据支持。` },
+        { label: "先背名词", sentence: `这题要我判断 ${skill}。我第一步不能只背名词，要先看结构、过程或数据关系。` },
+      ],
+    };
+  }
+  return {
+    prompt: "先选一个最小动作：你现在第一步要补哪一句？",
+    choices: [
+      { label: "题目目标", sentence: `这题要我判断 ${skill}。我第一步先看 ${firstHint}，因为这能帮我确定方法。` },
+      { label: "方法原因", sentence: `这题要我判断 ${skill}。我第一步先看 ${firstHint}，因为这一步能把题目要求和方法连起来。` },
+    ],
+  };
+}
+
+function renderGuidanceMicroChoice(lock = state.guidanceLock, quality = evaluateGuidanceReplyQuality()) {
+  const card = $("replyMicroChoiceCard");
+  if (!card || !lock) return;
+  const micro = guidanceMicroChoiceForLock(lock);
+  card.classList.toggle("hidden", quality.ready);
+  $("replyMicroChoicePrompt").textContent = micro.prompt;
+  card.querySelectorAll("[data-micro-choice]").forEach((button) => {
+    const choice = micro.choices[Number(button.dataset.microChoice)] || micro.choices[0];
+    button.textContent = choice.label;
+  });
+}
+
+function applyGuidanceMicroChoice(choiceIndex = 0, input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock() || !input) return;
+  const micro = guidanceMicroChoiceForLock(state.guidanceLock);
+  const choice = micro.choices[Number(choiceIndex)] || micro.choices[0];
+  input.value = choice.sentence;
+  state.guidanceLock.replyDraft = input.value;
+  input.focus();
+  renderReplyQuality(input.value);
+}
+
 function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const scaffold = guidanceScaffoldForLock(lock, question);
   const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || "关键词或条件";
@@ -3409,6 +3470,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     $("replyHelperText").textContent = guidanceReplyHelpText(reply, quality);
     $("replyStarterText").textContent = starter;
     $("replyNextSentenceText").textContent = `建议下一句：${guidanceNextMissingSentence(reply, state.guidanceLock)}`;
+    renderGuidanceMicroChoice(state.guidanceLock, quality);
   }
   $("inlineCoachSubmit").disabled = !quality.ready && !canAskForHelp;
   $("inlineCoachSubmit").textContent = guidanceSubmitButtonText(quality);
@@ -6146,6 +6208,11 @@ function bindEvents() {
     if (state.guidanceLock) state.guidanceLock.replyDraft = input.value;
     input.focus();
     renderReplyQuality(input.value);
+  });
+  $("replyMicroChoiceCard").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-micro-choice]");
+    if (!button) return;
+    applyGuidanceMicroChoice(button.dataset.microChoice, $("inlineCoachReply"));
   });
   $("variantReply").addEventListener("input", () => {
     if (state.guidanceLock) {

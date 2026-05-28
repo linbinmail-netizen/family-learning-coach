@@ -22,8 +22,8 @@ const accounts = [
 ];
 
 const difficultyLevels = ["基础", "中等", "进阶", "挑战"];
-const COACH_RESPONSE_TIMEOUT_MS = 4500;
-const MASTERY_RESPONSE_TIMEOUT_MS = 5500;
+const COACH_RESPONSE_TIMEOUT_MS = 2800;
+const MASTERY_RESPONSE_TIMEOUT_MS = 3500;
 
 const learningPathCatalog = {
   math: ["Number Sense", "Fractions", "Ratios & Proportions", "Linear Equations", "Geometry", "Functions", "Algebra I Foundation"],
@@ -5458,19 +5458,19 @@ function bindEvents() {
     if (!reply) return;
     appendChat("student", reply);
     input.value = "";
-    appendChat("coach", "我在看你的思路...");
+    const localReply = buildLocalCoachReply(reply).reply;
+    appendChat("coach", `先给你一个提示：${localReply}`);
 
-    askAiCoach(reply)
+    askAiCoach(reply, state.chatHistory.slice(0, -1))
       .then((data) => {
         state.chatHistory.pop();
         $("chatWindow").lastElementChild.remove();
         appendChat("coach", data.reply);
       })
       .catch(() => {
-        state.chatHistory.pop();
-        $("chatWindow").lastElementChild.remove();
-        appendChat("coach", "AI 较慢，我先用本地引导帮你继续。");
-        appendChat("coach", buildLocalCoachReply(reply).reply);
+        const fallbackText = `先按这个提示继续：${localReply}`;
+        state.chatHistory[state.chatHistory.length - 1].text = fallbackText;
+        $("chatWindow").lastElementChild.textContent = fallbackText;
       });
   });
 
@@ -5500,9 +5500,10 @@ function bindEvents() {
     appendInlineCoach("student", reply);
     input.value = "";
     renderReplyQuality("");
-    appendInlineCoach("coach", "我在看你的解释...");
+    const immediateReply = buildLocalCoachReply(reply).reply;
+    appendInlineCoach("coach", `先给你一个提示：${immediateReply}`);
 
-    askAiCoach(reply, state.inlineCoachHistory)
+    askAiCoach(reply, state.inlineCoachHistory.slice(0, -1))
       .then((data) => {
         state.inlineCoachHistory.pop();
         if (!state.guidanceLock) return;
@@ -5522,18 +5523,13 @@ function bindEvents() {
         renderDiagnostic();
       })
       .catch(() => {
-        state.inlineCoachHistory.pop();
         if (!state.guidanceLock) return;
-        const localReply = buildLocalCoachReply(reply).reply;
         const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
         const canMoveToVariant = shouldMoveToVariantAfterReply(reply);
         state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
-        state.inlineCoachHistory.push({
-          role: "coach",
-          text: canMoveToVariant
-            ? `AI 较慢，我先用本地引导。${localReply} ${teachingMove} 现在做一道变式验证，确认你不是靠猜。`
-            : `AI 较慢，我先用本地引导。${localReply} ${teachingMove}`,
-        });
+        state.inlineCoachHistory[state.inlineCoachHistory.length - 1].text = canMoveToVariant
+          ? `先按这个提示继续：${immediateReply} ${teachingMove} 现在做一道变式验证，确认你不是靠猜。`
+          : `先按这个提示继续：${immediateReply} ${teachingMove}`;
         if (canMoveToVariant) state.guidanceLock.status = "variant";
         saveData();
         renderDiagnostic();

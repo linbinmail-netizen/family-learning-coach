@@ -825,10 +825,14 @@ test("variant verification does not reveal the expected method before the studen
 test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
   assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);
+  assert.match(js, /const COACH_RESPONSE_TIMEOUT_MS = 2800/);
+  assert.match(js, /const MASTERY_RESPONSE_TIMEOUT_MS = 3500/);
   assert.match(js, /postCoachPayload/);
   assert.match(js, /AbortController/);
   assert.match(js, /本地引导/);
-  assert.match(js, /AI 较慢/);
+  assert.match(js, /先给你一个提示/);
+  assert.match(js, /先按这个提示继续/);
+  assert.match(js, /state\.chatHistory\.slice\(0, -1\)/);
 });
 
 test("student coach uses recent same-skill mistakes", () => {

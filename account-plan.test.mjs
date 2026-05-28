@@ -1088,6 +1088,18 @@ test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /state\.chatHistory\.slice\(0, -1\)/);
 });
 
+test("student AI replies append after the instant local coach instead of replacing it", () => {
+  const chatHandler = js.match(/\$\("chatForm"\)\.addEventListener\("submit",[\s\S]*?\n  \}\);/)?.[0] || "";
+  const inlineHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  assert.match(js, /AI 正在深度检查/);
+  assert.match(js, /function appendCoachSupplement/);
+  assert.match(chatHandler, /appendCoachSupplement\(state\.chatHistory, data\.reply/);
+  assert.match(inlineHandler, /appendCoachSupplement\(state\.inlineCoachHistory,/);
+  assert.doesNotMatch(chatHandler, /state\.chatHistory\.pop\(\)/);
+  assert.doesNotMatch(inlineHandler, /state\.inlineCoachHistory\.pop\(\)/);
+  assert.doesNotMatch(chatHandler, /lastElementChild\.remove\(\)/);
+});
+
 test("local student coach handles answer letters and stuck replies directly", () => {
   assert.match(js, /function buildLocalCoachReply/);
   assert.match(js, /function coachingGapForReply/);

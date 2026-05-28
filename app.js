@@ -5389,6 +5389,15 @@ function appendInlineCoach(role, text) {
   renderInlineCoachPanel();
 }
 
+function appendCoachSupplement(history, text) {
+  const supplement = `AI 补充：${text}`;
+  if (history === state.inlineCoachHistory) {
+    appendInlineCoach("coach", supplement);
+  } else {
+    appendChat("coach", supplement);
+  }
+}
+
 function mistakesForCurrentSkill(question = activeQuestions()[state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   return mistakesForStudent()
@@ -6244,13 +6253,11 @@ function bindEvents() {
     appendChat("student", reply);
     input.value = "";
     const localReply = buildLocalCoachReply(reply, state.chatHistory).reply;
-    appendChat("coach", `先给你一个提示：${localReply}`);
+    appendChat("coach", `AI 正在深度检查，我先给你一个提示：${localReply}`);
 
     askAiCoach(reply, state.chatHistory.slice(0, -1))
       .then((data) => {
-        state.chatHistory.pop();
-        $("chatWindow").lastElementChild.remove();
-        appendChat("coach", data.reply);
+        appendCoachSupplement(state.chatHistory, data.reply);
       })
       .catch(() => {
         const fallbackText = `先按这个提示继续：${localReply}`;
@@ -6281,23 +6288,19 @@ function bindEvents() {
     input.value = "";
     renderReplyQuality("");
     const immediateReply = buildLocalCoachReply(reply, state.inlineCoachHistory).reply;
-    appendInlineCoach("coach", `先给你一个提示：${immediateReply}`);
+    appendInlineCoach("coach", `AI 正在深度检查，我先给你一个提示：${immediateReply}`);
 
     askAiCoach(reply, state.inlineCoachHistory.slice(0, -1))
       .then((data) => {
-        state.inlineCoachHistory.pop();
         if (!state.guidanceLock) return;
         const teachingMove = buildGuidedTeachingMove(reply, state.guidanceLock);
         const canMoveToVariant = shouldMoveToVariantAfterReply(reply);
         state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
         if (canMoveToVariant) {
-          state.inlineCoachHistory.push({
-            role: "coach",
-            text: `${data.reply} ${teachingMove} 现在做一道变式验证：不靠原题选项，用自己的话写出方法。`,
-          });
+          appendCoachSupplement(state.inlineCoachHistory, `${data.reply} ${teachingMove} 现在做一道变式验证：不靠原题选项，用自己的话写出方法。`);
           state.guidanceLock.status = "variant";
         } else {
-          state.inlineCoachHistory.push({ role: "coach", text: `${data.reply} ${teachingMove}` });
+          appendCoachSupplement(state.inlineCoachHistory, `${data.reply} ${teachingMove}`);
         }
         saveData();
         renderDiagnostic();

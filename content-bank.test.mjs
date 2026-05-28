@@ -96,6 +96,17 @@ test("question selection adapts difficulty as students answer", () => {
   assert.match(source, /答得很顺，下一题会提高一点难度/);
 });
 
+test("adaptive progression skips completed questions and can jump to challenge practice", () => {
+  assert.match(source, /answeredQuestionKeys/);
+  assert.match(source, /function questionStableKey/);
+  assert.match(source, /function markQuestionAnswered/);
+  assert.match(source, /function hasAnsweredQuestion/);
+  assert.match(source, /function nextAdaptiveQuestionIndex/);
+  assert.match(source, /question\.schoolExamDepth \|\| question\.constructedResponse \|\| question\.openResponse/);
+  assert.match(source, /advanceToNextQuestionAfterCompletion\(state\.currentQuestion, "correct", preferredNextIndex\)/);
+  assert.match(source, /系统已切到更合适的第/);
+});
+
 test("two-hour sessions use block-aware question sequencing", () => {
   assert.match(source, /function isTwoHourPlan/);
   assert.match(source, /function learningBlockForQuestionIndex/);

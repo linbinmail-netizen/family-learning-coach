@@ -373,13 +373,13 @@ test("student is moved to guidance after a wrong or uncertain answer", () => {
 
 test("student advances automatically after a correct confident answer", () => {
   assert.match(js, /function advanceToNextQuestionAfterCompletion/);
-  assert.match(js, /advanceToNextQuestionAfterCompletion\(state\.currentQuestion, "correct"\)/);
+  assert.match(js, /advanceToNextQuestionAfterCompletion\(state\.currentQuestion, "correct", preferredNextIndex\)/);
   assert.match(js, /上一题答对了，已进入第/);
-  assert.match(js, /state\.currentQuestion = Math\.min\(questions\.length - 1, answeredIndex \+ 1\)/);
+  assert.match(js, /state\.currentQuestion = canUsePreferred \? preferredIndex : Math\.min\(questions\.length - 1, answeredIndex \+ 1\)/);
 });
 
 test("student advances automatically after guided mastery is completed", () => {
-  assert.match(js, /advanceToNextQuestionAfterCompletion\(state\.guidanceLock\.questionIndex, "guided"\)/);
+  assert.match(js, /advanceToNextQuestionAfterCompletion\(state\.guidanceLock\.questionIndex, "guided", preferredIndex\)/);
   assert.match(js, /引导完成，已进入第/);
 });
 

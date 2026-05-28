@@ -1346,6 +1346,7 @@ let state = {
   cloudStudents: {},
   adaptiveLevels: {},
   adaptiveStats: {},
+  answeredQuestionKeys: {},
   skillMastery: {},
   practiceSessions: [],
   activePracticeSessionId: "",
@@ -1390,6 +1391,7 @@ function clearLearningStateForAccount() {
   state.mistakeLog = [];
   state.adaptiveLevels = {};
   state.adaptiveStats = {};
+  state.answeredQuestionKeys = {};
   state.skillMastery = {};
   state.practiceSessions = [];
   state.activePracticeSessionId = "";
@@ -1429,6 +1431,7 @@ function loadSavedData(key = storageKey, options = {}) {
     }
     if (saved?.adaptiveLevels) state.adaptiveLevels = saved.adaptiveLevels;
     if (saved?.adaptiveStats) state.adaptiveStats = saved.adaptiveStats;
+    if (saved?.answeredQuestionKeys) state.answeredQuestionKeys = saved.answeredQuestionKeys;
     if (saved?.skillMastery) state.skillMastery = saved.skillMastery;
     if (Array.isArray(saved?.practiceSessions)) state.practiceSessions = saved.practiceSessions;
     if (saved?.activePracticeSessionId) state.activePracticeSessionId = saved.activePracticeSessionId;
@@ -1462,6 +1465,7 @@ function saveData(key = accountDataStorageKey()) {
       planSettings: state.planSettings,
       adaptiveLevels: state.adaptiveLevels,
       adaptiveStats: state.adaptiveStats,
+      answeredQuestionKeys: state.answeredQuestionKeys,
       skillMastery: state.skillMastery,
       practiceSessions: state.practiceSessions,
       activePracticeSessionId: state.activePracticeSessionId,
@@ -2509,6 +2513,29 @@ function questionProgressKey(index = state.currentQuestion) {
   return [state.studentId, state.subject, index].join("::");
 }
 
+function questionStableKey(question = {}, subjectId = state.subject) {
+  return [state.studentId, subjectId, question.skill || "", question.prompt || ""]
+    .join("::")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function answeredQuestionBucket(subjectId = state.subject) {
+  const bucketKey = `${state.studentId}::${subjectId}`;
+  state.answeredQuestionKeys[bucketKey] = state.answeredQuestionKeys[bucketKey] || {};
+  return state.answeredQuestionKeys[bucketKey];
+}
+
+function markQuestionAnswered(question, subjectId = state.subject) {
+  const key = questionStableKey(question, subjectId);
+  if (!key) return;
+  answeredQuestionBucket(subjectId)[key] = true;
+}
+
+function hasAnsweredQuestion(question, subjectId = state.subject) {
+  return Boolean(answeredQuestionBucket(subjectId)[questionStableKey(question, subjectId)]);
+}
+
 function isReasonStrong(reason = "") {
   const text = String(reason).trim().toLowerCase();
   if (text.length < 14) return false;
@@ -2520,10 +2547,43 @@ function hasActiveGuidanceLock(index = state.currentQuestion) {
   return Boolean(state.guidanceLock && !state.guidanceLock.complete && state.guidanceLock.questionIndex === index);
 }
 
-function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuestion, mode = "correct") {
+function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex = state.currentQuestion, adaptiveResult = {}) {
+  const targetLevel = adaptiveResult.level ?? adaptiveLevelForSubject();
+  const unanswered = questions
+    .map((question, index) => ({ question, index }))
+    .filter(({ question, index }) => index !== answeredIndex && state.selectedAnswers[index] === undefined && !hasAnsweredQuestion(question));
+  if (!unanswered.length) return -1;
+
+  const challengeCandidate = unanswered
+    .filter(({ question }) => difficultyScore(question.difficulty) >= Math.max(2, targetLevel - 1) || question.schoolExamDepth || question.constructedResponse || question.openResponse)
+    .sort((a, b) => Math.abs(difficultyScore(a.question.difficulty) - targetLevel) - Math.abs(difficultyScore(b.question.difficulty) - targetLevel))[0];
+  const supportCandidate = unanswered
+    .filter(({ question }) => difficultyScore(question.difficulty) <= Math.max(1, targetLevel))
+    .sort((a, b) => difficultyScore(a.question.difficulty) - difficultyScore(b.question.difficulty))[0];
+
+  if (adaptiveResult.isCorrect && targetLevel >= 2 && challengeCandidate) return challengeCandidate.index;
+  if (adaptiveResult.isCorrect === false && supportCandidate) return supportCandidate.index;
+  return unanswered.find(({ index }) => index > answeredIndex)?.index ?? unanswered[0].index;
+}
+
+function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuestion, mode = "correct", preferredIndex = -1) {
   const questions = activeQuestions();
   if (!questions.length) return false;
+  const canUsePreferred =
+    Number.isInteger(preferredIndex)
+    && preferredIndex >= 0
+    && preferredIndex < questions.length
+    && preferredIndex !== answeredIndex
+    && state.selectedAnswers[preferredIndex] === undefined;
   if (answeredIndex >= questions.length - 1) {
+    if (canUsePreferred) {
+      state.currentQuestion = preferredIndex;
+      state.lastAdvanceNotice =
+        mode === "guided"
+          ? `引导完成，已为你切到更合适的第 ${state.currentQuestion + 1} 题。`
+          : `上一题答对了，已为你切到更合适的第 ${state.currentQuestion + 1} 题。`;
+      return true;
+    }
     state.currentQuestion = questions.length - 1;
     state.lastAdvanceNotice =
       mode === "guided"
@@ -2531,11 +2591,13 @@ function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuest
         : "这题答对了，这是本轮最后一题，可以生成学习总结。";
     return false;
   }
-  state.currentQuestion = Math.min(questions.length - 1, answeredIndex + 1);
+  state.currentQuestion = canUsePreferred ? preferredIndex : Math.min(questions.length - 1, answeredIndex + 1);
   state.lastAdvanceNotice =
     mode === "guided"
       ? `引导完成，已进入第 ${state.currentQuestion + 1} 题。`
-      : `上一题答对了，已进入第 ${state.currentQuestion + 1} 题。`;
+      : canUsePreferred
+        ? `上一题答对了，系统已切到更合适的第 ${state.currentQuestion + 1} 题。`
+        : `上一题答对了，已进入第 ${state.currentQuestion + 1} 题。`;
   return true;
 }
 
@@ -3321,7 +3383,11 @@ function completeGuidedMastery(variantReply = "") {
     ...outcome,
   };
   state.guidanceLock.complete = true;
-  advanceToNextQuestionAfterCompletion(state.guidanceLock.questionIndex, "guided");
+  const preferredIndex = nextAdaptiveQuestionIndex(activeQuestions(), state.guidanceLock.questionIndex, {
+    isCorrect: true,
+    level: adaptiveLevelForSubject(),
+  });
+  advanceToNextQuestionAfterCompletion(state.guidanceLock.questionIndex, "guided", preferredIndex);
   state.guidanceLock = null;
   state.inlineCoachHistory = [];
 }
@@ -3334,6 +3400,7 @@ function resetDiagnosticProgress() {
   state.guidanceLock = null;
   state.guidedMastery = {};
   state.inlineCoachHistory = [];
+  state.answeredQuestionKeys = {};
   state.currentQuestion = 0;
   state.activeQuestionProgressKey = "";
   state.questionStartedAt = "";
@@ -5382,7 +5449,8 @@ function bindEvents() {
     const button = event.target.closest("[data-answer-index]");
     if (!button) return;
     const selectedIndex = Number(button.dataset.answerIndex);
-    const question = activeQuestions()[state.currentQuestion];
+    const questionsAtAnswerTime = activeQuestions();
+    const question = questionsAtAnswerTime[state.currentQuestion];
     const progressKey = questionProgressKey();
     const confidence = $("confidenceSelect").value || "sure";
     state.answerConfidence[progressKey] = confidence;
@@ -5393,14 +5461,16 @@ function bindEvents() {
     state.lastAdvanceNotice = "";
     setAnswerSyncStatus("pending", "准备保存记录");
     state.selectedAnswers[state.currentQuestion] = selectedIndex;
+    markQuestionAnswered(question);
     const issue = shouldStartGuidance(selectedIndex, question, confidence);
     const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex);
+    const preferredNextIndex = nextAdaptiveQuestionIndex(questionsAtAnswerTime, state.currentQuestion, adaptiveResult);
     const practiceEvent = recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResult);
     syncAnswerSubmitToApi(question, selectedIndex, confidence, practiceEvent);
     if (!issue) {
       updateSkillMastery(question, { correct: true, seconds: practiceEvent.seconds });
       markMistakeReviewed(question);
-      advanceToNextQuestionAfterCompletion(state.currentQuestion, "correct");
+      advanceToNextQuestionAfterCompletion(state.currentQuestion, "correct", preferredNextIndex);
     } else {
       if (issue !== "school_verification") recordMistake(question, selectedIndex, guidanceIssueText(issue));
       startGuidedMastery(question, selectedIndex, "", confidence, issue);

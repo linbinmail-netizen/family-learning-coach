@@ -3463,6 +3463,7 @@ function conceptBridgeChoicesForLock(lock = state.guidanceLock, question = activ
   return {
     goal: `这题要我判断 ${skill}。我先不用猜答案。`,
     method: `这题要我判断 ${skill}。${firstStep}，因为这一步能帮我把知识点接回题目。`,
+    teach: `我知识点没吃透，请先讲概念，再让我只填一个空。`,
   };
 }
 
@@ -3476,7 +3477,7 @@ function renderConceptBridgeChoices(reply = $("inlineCoachReply")?.value || "", 
   $("conceptBridgePrompt").textContent = "知识点没吃透时，不要硬打完整思路。先点一个小句子，系统会帮你接上。";
   card.querySelectorAll("[data-concept-bridge]").forEach((button) => {
     const key = button.dataset.conceptBridge;
-    button.textContent = key === "goal" ? "先接上题目目标" : "先接上第一步";
+    button.textContent = key === "teach" ? "先补知识点" : key === "goal" ? "先接上题目目标" : "先接上第一步";
     button.setAttribute("aria-label", choices[key] || choices.goal);
   });
 }
@@ -3485,6 +3486,12 @@ function applyConceptBridgeChoice(choiceKey = "goal", input = $("inlineCoachRepl
   if (!hasActiveGuidanceLock() || !input) return;
   const choices = conceptBridgeChoicesForLock(state.guidanceLock);
   const sentence = choices[choiceKey] || choices.goal;
+  if (choiceKey === "teach") {
+    input.value = sentence;
+    state.guidanceLock.replyDraft = sentence;
+    rescueIncompleteGuidanceReply(sentence, input);
+    return;
+  }
   input.value = sentence;
   state.guidanceLock.replyDraft = sentence;
   state.guidanceLock.conceptBridgeReady = true;

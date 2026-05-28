@@ -582,6 +582,7 @@ test("knowledge gap guidance offers tappable concept bridge choices instead of r
   assert.match(html, /AI 先搭脚手架/);
   assert.match(html, /data-concept-bridge="goal"/);
   assert.match(html, /data-concept-bridge="method"/);
+  assert.match(html, /data-concept-bridge="teach"/);
   assert.match(js, /function renderConceptBridgeChoices/);
   assert.match(js, /function applyConceptBridgeChoice/);
   assert.match(js, /guidanceCannotProduceThought\(reply\) \|\| quality\.asksForHelp/);
@@ -591,6 +592,16 @@ test("knowledge gap guidance offers tappable concept bridge choices instead of r
   assert.match(js, /input\.value = sentence/);
   assert.match(css, /concept-bridge-card/);
   assert.doesNotMatch(js, /applyConceptBridgeChoice[\s\S]*正确答案是/);
+});
+
+test("concept bridge can teach first when the student cannot produce words", () => {
+  assert.match(html, /先补知识点/);
+  assert.match(js, /teach: `我知识点没吃透，请先讲概念，再让我只填一个空。`/);
+  assert.match(js, /key === "teach" \? "先补知识点"/);
+  assert.match(js, /if \(choiceKey === "teach"\) \{/);
+  assert.match(js, /rescueIncompleteGuidanceReply\(sentence, input\)/);
+  assert.match(js, /return;/);
+  assert.match(js, /不要再让孩子先完整说思路/);
 });
 
 test("concept bridge can continue by filling the next missing method sentence", () => {

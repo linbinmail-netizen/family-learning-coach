@@ -72,7 +72,7 @@ test("expanded question bank is present", () => {
 test("questions rotate answer order so correct choices are not always first", () => {
   assert.match(source, /function rotateQuestionOptions/);
   assert.match(source, /const correct = \(question\.correct - shift \+ question\.answers\.length\) % question\.answers\.length/);
-  assert.match(source, /prepareQuestionSet\(selectTwoHourStructuredQuestions\(mergeQuestions/);
+  assert.match(source, /prepareQuestionSet\(ensureDailyDepthMix\(selected\)\.slice\(0, dailyQuestionLimit\(\)\)\)/);
 });
 
 test("priority grade 8 and grade 9 subjects have deeper coverage", () => {
@@ -109,6 +109,15 @@ test("adaptive progression skips completed questions and can jump to challenge p
   assert.match(source, /questionExamDepthScore\(b\.question\) - questionExamDepthScore\(a\.question\)/);
   assert.match(source, /advanceToNextQuestionAfterCompletion\(state\.currentQuestion, "correct", preferredNextIndex\)/);
   assert.match(source, /系统已切到更合适的第/);
+});
+
+test("daily question set keeps a minimum mix of depth practice", () => {
+  assert.match(source, /function isDepthPracticeQuestion/);
+  assert.match(source, /function minimumDailyDepthQuestions/);
+  assert.match(source, /function ensureDailyDepthMix/);
+  assert.match(source, /const currentDepth = firstBatch\.filter\(isDepthPracticeQuestion\)\.length/);
+  assert.match(source, /minimumDepth - currentDepth/);
+  assert.match(source, /ensureDailyDepthMix\(selected\)\.slice\(0, dailyQuestionLimit\(\)\)/);
 });
 
 test("two-hour sessions use block-aware question sequencing", () => {

@@ -3747,6 +3747,10 @@ function questionTypeLabel(question = {}) {
   return "选择诊断题";
 }
 
+function isDepthPracticeQuestion(question = {}) {
+  return questionExamDepthScore(question) > 0 || difficultyScore(question.difficulty) >= 2;
+}
+
 function adaptiveLevelForSubject(subjectId = state.subject) {
   return Math.max(0, Math.min(difficultyLevels.length - 1, state.adaptiveLevels[subjectId] ?? 1));
 }
@@ -3827,6 +3831,37 @@ function selectTwoHourStructuredQuestions(questions, plan = planForStudent(state
 
 function dailyQuestionLimit(plan = planForStudent(state.studentId)) {
   return Math.max(1, Number(plan.questionTarget || (isTwoHourPlan(plan) ? 24 : 8)));
+}
+
+function minimumDailyDepthQuestions(plan = planForStudent(state.studentId)) {
+  const limit = dailyQuestionLimit(plan);
+  if (plan.difficultyMode === "steady") return Math.min(limit, 2);
+  if (plan.difficultyMode === "challenge") return Math.min(limit, Math.max(3, Math.round(limit * 0.45)));
+  return Math.min(limit, Math.max(2, Math.round(limit * 0.35)));
+}
+
+function ensureDailyDepthMix(questions, plan = planForStudent(state.studentId)) {
+  const limit = dailyQuestionLimit(plan);
+  const minimumDepth = minimumDailyDepthQuestions(plan);
+  const firstBatch = questions.slice(0, limit);
+  const currentDepth = firstBatch.filter(isDepthPracticeQuestion).length;
+  if (currentDepth >= minimumDepth) return questions;
+
+  const used = new Set(firstBatch.map((question) => questionStableKey(question)));
+  const depthPool = questions
+    .slice(limit)
+    .filter((question) => isDepthPracticeQuestion(question) && !used.has(questionStableKey(question)))
+    .sort((a, b) => questionExamDepthScore(b) - questionExamDepthScore(a) || difficultyScore(b.difficulty) - difficultyScore(a.difficulty));
+  if (!depthPool.length) return questions;
+
+  const adjusted = [...firstBatch];
+  let needed = minimumDepth - currentDepth;
+  for (let index = adjusted.length - 1; index >= 0 && needed > 0 && depthPool.length; index -= 1) {
+    if (isDepthPracticeQuestion(adjusted[index])) continue;
+    adjusted[index] = depthPool.shift();
+    needed -= 1;
+  }
+  return mergeQuestions(adjusted, questions);
 }
 
 function todayIsoDate() {
@@ -3963,14 +3998,15 @@ function activeQuestions() {
   const challengeQuestions = challengeQuestionBank[state.subject] || [];
   const twoHourQuestions = twoHourExpansionQuestionBank[state.subject] || [];
   if (cloudQuestions.length || localQuestions.length || expandedQuestions.length || challengeQuestions.length || twoHourQuestions.length) {
-    return prepareQuestionSet(selectTwoHourStructuredQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions))).slice(0, dailyQuestionLimit()));
+    const selected = selectTwoHourStructuredQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions)));
+    return prepareQuestionSet(ensureDailyDepthMix(selected).slice(0, dailyQuestionLimit()));
   }
 
   const diagnostic = activeDiagnostic();
-  if (diagnostic.questions) return prepareQuestionSet(selectAdaptiveQuestions(diagnostic.questions).slice(0, dailyQuestionLimit()));
+  if (diagnostic.questions) return prepareQuestionSet(ensureDailyDepthMix(selectAdaptiveQuestions(diagnostic.questions)).slice(0, dailyQuestionLimit()));
   const strongest = diagnostic.skills.reduce((best, skill) => (skill[1] > best[1] ? skill : best), diagnostic.skills[0]);
   const weakest = diagnostic.skills.reduce((low, skill) => (skill[1] < low[1] ? skill : low), diagnostic.skills[0]);
-  return prepareQuestionSet(selectAdaptiveQuestions([
+  return prepareQuestionSet(ensureDailyDepthMix(selectAdaptiveQuestions([
     {
       prompt: diagnostic.prompt,
       standard: diagnostic.standard,
@@ -4002,7 +4038,7 @@ function activeQuestions() {
       correct: 0,
       skill: weakest[0],
     },
-  ]).slice(0, dailyQuestionLimit()));
+  ])).slice(0, dailyQuestionLimit()));
 }
 
 function normalizeDifficulty(difficulty) {

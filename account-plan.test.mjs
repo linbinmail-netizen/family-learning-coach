@@ -689,6 +689,8 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(html, /id="commonTrap"/);
   assert.match(html, /id="quickCheck"/);
   assert.match(html, /id="confidenceSelect"/);
+  assert.match(html, /id="preAnswerCard"/);
+  assert.match(html, /id="preAnswerThought"/);
   assert.match(html, /id="inlineCoachPanel"/);
   assert.match(html, /id="inlineCoachForm"/);
   assert.match(html, /id="masteryStepList"/);
@@ -696,6 +698,11 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(html, /id="variantReply"/);
   assert.match(html, /id="variantFeedback"/);
   assert.match(js, /answerConfidence/);
+  assert.match(js, /preAnswerThoughts/);
+  assert.match(js, /function requiresPreAnswerThought/);
+  assert.match(js, /function isPreAnswerThoughtReady/);
+  assert.match(js, /先写一句自己的解题思路/);
+  assert.match(js, /locked-choice/);
   assert.match(js, /guidanceLock/);
   assert.match(js, /conceptMiniLesson/);
   assert.match(js, /lessonBlueprints/);
@@ -713,6 +720,18 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(js, /nextQuestion"\)\.disabled = .*hasActiveGuidanceLock/s);
   assert.doesNotMatch(html, />诊断测试</);
   assert.doesNotMatch(html, /先写一句理由/);
+});
+
+test("deep questions require a thought before answer choices unlock", () => {
+  assert.match(html, /先写思路，再看选项/);
+  assert.match(js, /requiresPreAnswerThought\(question\) && selectedAnswer === undefined/);
+  assert.match(js, /isPreAnswerThoughtReady\(preAnswerThought\)/);
+  assert.match(js, /aria-disabled=\\"true\\"/);
+  assert.match(js, /preAnswerThought"\)\.addEventListener\("input"/);
+  assert.match(js, /state\.preAnswerThoughts\[questionProgressKey\(\)\] = event\.target\.value/);
+  assert.match(js, /先写一句自己的解题思路，再选择答案/);
+  assert.match(css, /pre-answer-card/);
+  assert.match(css, /locked-choice/);
 });
 
 test("student lesson includes concept, example, steps, trap, and quick check", () => {

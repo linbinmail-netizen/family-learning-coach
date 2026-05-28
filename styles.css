@@ -841,6 +841,47 @@ textarea {
   line-height: 1.45;
 }
 
+.pre-answer-card {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid rgba(47, 111, 159, 0.24);
+  border-radius: 8px;
+  background: #f5fafc;
+}
+
+.pre-answer-card.hidden {
+  display: none;
+}
+
+.pre-answer-card > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pre-answer-card strong {
+  color: var(--ink);
+}
+
+.pre-answer-card span {
+  color: var(--blue-dark);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.pre-answer-card textarea {
+  width: 100%;
+  min-height: 64px;
+  resize: vertical;
+}
+
+.answer-option.locked-choice {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .guidance-unlock-card {
   margin: 0 0 14px;
   padding: 12px;

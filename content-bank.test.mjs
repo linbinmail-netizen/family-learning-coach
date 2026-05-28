@@ -86,6 +86,8 @@ test("question selection adapts difficulty as students answer", () => {
   assert.match(source, /function difficultyScore/);
   assert.match(source, /function questionLearningDepthScore/);
   assert.match(source, /function isShallowChoiceQuestion/);
+  assert.match(source, /function requiresPreAnswerThought/);
+  assert.match(source, /function isPreAnswerThoughtReady/);
   assert.match(source, /function adaptiveLevelForSubject/);
   assert.match(source, /function advancedQuestionRatio/);
   assert.match(source, /function questionExamDepthScore/);

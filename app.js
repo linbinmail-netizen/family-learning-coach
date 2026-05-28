@@ -1327,6 +1327,7 @@ let state = {
   subject: "english1",
   selectedAnswer: null,
   selectedAnswers: {},
+  preAnswerThoughts: {},
   answerConfidence: {},
   hintUsage: {},
   guidanceLock: null,
@@ -1379,6 +1380,7 @@ function accountDataStorageKey() {
 function clearLearningStateForAccount() {
   state.selectedAnswer = null;
   state.selectedAnswers = {};
+  state.preAnswerThoughts = {};
   state.answerConfidence = {};
   state.hintUsage = {};
   state.guidanceLock = null;
@@ -1411,6 +1413,7 @@ function loadSavedData(key = storageKey, options = {}) {
     }
     if (saved?.answerConfidence) state.answerConfidence = saved.answerConfidence;
     if (saved?.selectedAnswers) state.selectedAnswers = saved.selectedAnswers;
+    if (saved?.preAnswerThoughts) state.preAnswerThoughts = saved.preAnswerThoughts;
     if (saved?.hintUsage) state.hintUsage = saved.hintUsage;
     if (saved?.guidanceLock) state.guidanceLock = saved.guidanceLock;
     if (saved?.guidedMastery) state.guidedMastery = saved.guidedMastery;
@@ -1449,6 +1452,7 @@ function saveData(key = accountDataStorageKey()) {
       records: state.records,
       mistakeLog: state.mistakeLog,
       selectedAnswers: state.selectedAnswers,
+      preAnswerThoughts: state.preAnswerThoughts,
       answerConfidence: state.answerConfidence,
       hintUsage: state.hintUsage,
       guidanceLock: state.guidanceLock,
@@ -3816,6 +3820,24 @@ function isShallowChoiceQuestion(question = {}) {
     && questionLearningDepthScore(question) < 28;
 }
 
+function requiresPreAnswerThought(question = {}) {
+  return Boolean(
+    question.schoolExamDepth
+    || question.constructedResponse
+    || question.openResponse
+    || question.errorAnalysis
+    || question.multiStepReasoning
+    || questionLearningDepthScore(question) >= 42
+  );
+}
+
+function isPreAnswerThoughtReady(text = "") {
+  const normalized = String(text || "").trim().toLowerCase();
+  if (normalized.length < 14) return false;
+  if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$|不知道|不会|随便|guess|idk/.test(normalized)) return false;
+  return /题目|判断|比较|先|第一步|看|找|条件|关键词|证据|变化|关系|because|first|evidence|compare|change/.test(normalized);
+}
+
 function questionTypeLabel(question = {}) {
   if (question.schoolExamDepth) return "学校考试深度";
   if (question.constructedResponse || question.openResponse) return "解释型题";
@@ -4553,6 +4575,9 @@ function renderDiagnostic() {
   const confidence = state.answerConfidence[progressKey] || "sure";
   const locked = hasActiveGuidanceLock();
   const guidedComplete = Boolean(state.guidedMastery[progressKey]);
+  const preAnswerThought = state.preAnswerThoughts[progressKey] || "";
+  const needsPreAnswer = requiresPreAnswerThought(question) && selectedAnswer === undefined && !locked && !guidedComplete;
+  const preAnswerReady = !needsPreAnswer || isPreAnswerThoughtReady(preAnswerThought);
   const showLessonAfterAttempt = locked || guidedComplete;
   const lesson = conceptMiniLesson(question);
 
@@ -4573,6 +4598,12 @@ function renderDiagnostic() {
   $("miniLessonCard").classList.toggle("hidden", !showLessonAfterAttempt);
   $("questionPrompt").textContent = question.prompt;
   $("confidenceSelect").value = confidence;
+  $("preAnswerCard").classList.toggle("hidden", !needsPreAnswer);
+  $("preAnswerThought").value = preAnswerThought;
+  $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "先写一句思路，选项才会解锁。";
+  $("preAnswerHelp").textContent = preAnswerReady
+    ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
+    : "不要写答案字母。写清“题目要判断什么”或“第一步看什么”。";
   const plan = planForStudent(student.id);
   const focusSubject = subjectById(plan.focusSubject) || subject;
   $("dailySuggestion").textContent = `${student.name} 今天计划学习 ${plan.minutes} 分钟，重点完成 ${focusSubject.label}。当前目标难度：${adaptiveLabel}；系统会根据答题表现自动升降。`;
@@ -4580,7 +4611,7 @@ function renderDiagnostic() {
   $("answerGrid").innerHTML = question.answers
     .map(
       (answer, index) => `
-        <button class="answer-option ${selectedAnswer === index ? "selected" : ""} ${locked ? "locked" : ""}" data-answer-index="${index}">
+        <button class="answer-option ${selectedAnswer === index ? "selected" : ""} ${locked ? "locked" : ""} ${!preAnswerReady ? "locked-choice" : ""}" data-answer-index="${index}" ${!preAnswerReady ? "aria-disabled=\"true\"" : ""}>
           ${answer}
         </button>
       `
@@ -4592,6 +4623,8 @@ function renderDiagnostic() {
   setAnswerSyncStatus(state.answerSyncStatus.state, state.answerSyncStatus.text);
   if (locked) {
     $("answerFeedback").textContent = "这题还在 AI 引导中。完成讲解和变式验证后，下一题会自动解锁。";
+  } else if (needsPreAnswer && !preAnswerReady) {
+    $("answerFeedback").textContent = "这是一道深度题。先写一句自己的解题思路，再选择答案。";
   } else if (selectedAnswer === undefined) {
     $("answerFeedback").textContent =
       state.lastAdvanceNotice || "先独立作答。不会、不确定或猜的，提交后系统再讲解和引导。";
@@ -5677,6 +5710,12 @@ function bindEvents() {
     saveData();
   });
 
+  $("preAnswerThought").addEventListener("input", (event) => {
+    state.preAnswerThoughts[questionProgressKey()] = event.target.value;
+    saveData();
+    renderDiagnostic();
+  });
+
   $("answerGrid").addEventListener("click", (event) => {
     const button = event.target.closest("[data-answer-index]");
     if (!button) return;
@@ -5688,6 +5727,12 @@ function bindEvents() {
     state.answerConfidence[progressKey] = confidence;
     if (hasActiveGuidanceLock()) {
       $("answerFeedback").textContent = "这题正在引导中。请先完成 AI 引导和变式验证。";
+      return;
+    }
+    const preAnswerThought = state.preAnswerThoughts[progressKey] || "";
+    if (requiresPreAnswerThought(question) && state.selectedAnswers[state.currentQuestion] === undefined && !isPreAnswerThoughtReady(preAnswerThought)) {
+      $("answerFeedback").textContent = "先写一句自己的解题思路，再选择答案。不要只写答案字母。";
+      $("preAnswerThought").focus();
       return;
     }
     state.lastAdvanceNotice = "";

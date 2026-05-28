@@ -283,6 +283,14 @@
                 <span class="sync-pill" id="answerSyncStatus">记录待同步</span>
               </div>
             </div>
+            <section class="pre-answer-card hidden" id="preAnswerCard" aria-label="答题前思路">
+              <div>
+                <strong>先写思路，再看选项</strong>
+                <span id="preAnswerStatus">深度题需要先写一句方法。</span>
+              </div>
+              <textarea id="preAnswerThought" rows="2" placeholder="先写：这题要我判断什么？第一步看什么？"></textarea>
+              <p class="form-note" id="preAnswerHelp">写清题目目标或第一步后，选项会解锁。</p>
+            </section>
             <div class="answer-grid" id="answerGrid"></div>
             <section class="inline-coach-panel hidden" id="inlineCoachPanel">
               <div class="inline-coach-header">

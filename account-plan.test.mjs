@@ -1777,6 +1777,15 @@ test("local coach does not require students to invent the question goal when the
   assert.doesNotMatch(promptBlock, /说出题目真正问什么/);
 });
 
+test("parent report describes teach-first coaching instead of asking stuck students to explain first", () => {
+  const emailBlock = js.match(/function renderEmail[\s\S]*?function parentDigestEmailAddress/)?.[0] || "";
+  assert.match(emailBlock, /先补关键概念/);
+  assert.match(emailBlock, /小例子/);
+  assert.match(emailBlock, /二选一或填空/);
+  assert.match(emailBlock, /不要先要求孩子完整解释题意/);
+  assert.doesNotMatch(emailBlock, /先让孩子解释题意/);
+});
+
 test("student coach uses recent same-skill mistakes", () => {
   assert.match(js, /recentSkillMistakes/);
   assert.match(js, /mistakesForCurrentSkill/);

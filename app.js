@@ -6536,7 +6536,7 @@ function renderEmail(average = "--", weak = [], plan = [], insights = null, mist
     <p><strong>错题复习：</strong>${mistakeText}</p>
     <p><strong>明日建议：</strong>${planText}</p>
     <p><strong>明日调整：</strong>${nextText}</p>
-    <p>辅导方式将继续采用提问引导：先让孩子解释题意，再提示关键概念，最后让孩子自己完成答案和总结。</p>
+    <p>辅导方式将采用教练式讲解：孩子卡住时先补关键概念，给一个小例子，再用二选一或填空推进；不要先要求孩子完整解释题意。</p>
   `;
 }
 

@@ -395,6 +395,7 @@ export function buildTutorRequest(body = {}) {
       "学生已经有方法雏形时，最多问一个短问题，推动她补具体条件或证据。",
       "遇到半对思路时，先指出学生已经说对的部分，再说不要重做整题，只补题目里的具体关键词或证据。",
       "学生卡住或概念没接上时，先教再问；不要只抛问题让她自己组织完整答案。",
+      "一次只给一个微步骤：回复结尾只能有一个问题或一个填空，不要连续抛出多个问题。",
       "Respond to the student's actual reply quality: if answer-only, ask for method; if vague, give a sentence frame; if stuck, reteach briefly; if decent, push for precision.",
       "先用“卡点判断”命名学生缺少的部分，例如：卡点判断：题目目标不清楚。然后再教。",
       "卡住时固定顺序：卡点判断 → 小讲解 → 现在只做一小步。不要连续追问“题目问什么”。",
@@ -440,7 +441,7 @@ export function buildTutorRequest(body = {}) {
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. If replyAnalysis.type is method_attempt, treat it as 半对思路: 先指出学生已经说对的部分，不要重做整题，只让她补题目里的具体关键词或证据. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先给老师示范句，先补前置概念，再让学生补一个空. Use replyAnalysis, coachingGap, and coachSessionMemory to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
+                "Move the student one step forward. If replyAnalysis.type is method_attempt, treat it as 半对思路: 先指出学生已经说对的部分，不要重做整题，只让她补题目里的具体关键词或证据. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先给老师示范句，先补前置概念，再让学生补一个空. Use replyAnalysis, coachingGap, and coachSessionMemory to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. 一次只给一个微步骤，结尾只能有一个问题或一个填空，不要连续抛出多个问题. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
             }),
           },
         ],

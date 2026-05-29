@@ -349,6 +349,15 @@ test("AI coach removes conflicting meta-question step when concepts are not read
   assert.doesNotMatch(text, /让学生用自己的话说出题目真正问什么/);
 });
 
+test("AI coach prompt limits each reply to one micro step", () => {
+  const request = buildTutorRequest(baseBody);
+  const text = JSON.stringify(request);
+
+  assert.match(text, /一次只给一个微步骤/);
+  assert.match(text, /一个问题或一个填空/);
+  assert.match(text, /不要连续抛出多个问题/);
+});
+
 test("AI coach default first step teaches a model before asking for the question goal", () => {
   const request = buildTutorRequest({
     ...baseBody,

@@ -1454,6 +1454,13 @@ test("high-performing students get same-skill explanation challenges before unre
   assert.match(nextQuestionBlock, /sameSkillExplanationBoost\(b\.question\) - sameSkillExplanationBoost\(a\.question\)/);
 });
 
+test("high-performing fallback challenge also stays on the same skill first", () => {
+  const nextQuestionBlock = js.match(/function nextAdaptiveQuestionIndex[\s\S]*?function challengeMissionPreferredQuestion/)?.[0] || "";
+  const challengeCandidateBlock = nextQuestionBlock.match(/const challengeCandidate = unanswered[\s\S]*?const supportCandidate/)?.[0] || "";
+  assert.match(nextQuestionBlock, /sameSkillChallengeBoost/);
+  assert.match(challengeCandidateBlock, /sameSkillChallengeBoost\(b\.question\) - sameSkillChallengeBoost\(a\.question\)/);
+});
+
 test("easy streaks enter a short challenge mode with clear student feedback", () => {
   assert.match(js, /function challengeBoostForSubject/);
   assert.match(js, /function shouldEnterChallengeBoost/);

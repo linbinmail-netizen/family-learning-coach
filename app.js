@@ -2641,6 +2641,7 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
 
   const currentSkill = questions[answeredIndex]?.skill || "";
   const sameSkillExplanationBoost = (question = {}) => question.skill === currentSkill ? 100 : 0;
+  const sameSkillChallengeBoost = (question = {}) => question.skill === currentSkill ? 60 : 0;
   const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
   const challengeQueue = state.adaptiveStats[state.subject]?.challengeQueue || [];
   const missionCandidate = challengeMissionPreferredQuestion(unanswered, challengeQueue, targetLevel);
@@ -2660,7 +2661,8 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     )
     .sort(
       (a, b) =>
-        questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
+        sameSkillChallengeBoost(b.question) - sameSkillChallengeBoost(a.question)
+        || questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
         || questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
         || Math.abs(difficultyScore(a.question.difficulty) - targetLevel) - Math.abs(difficultyScore(b.question.difficulty) - targetLevel)
     )[0];

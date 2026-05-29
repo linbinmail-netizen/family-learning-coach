@@ -256,6 +256,14 @@ export function needsSmallerTaskAfterRepeatedStuck(body = {}) {
   return currentIsStuck && currentCannotProduceWords && (studentMessages.length >= 2 || stuckTurnCount >= 2);
 }
 
+function repeatedConceptStuckRescue(body = {}) {
+  const skill = body.skill || "这个知识点";
+  const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
+  const example = teachingMiniExampleForApi(skill, body.subject);
+  const hint = coachingHintForHistory(body) || mergedCoachHints(body)[0] || "题干关键词";
+  return `换一种讲法，任务再降一级：不用打完整句。小讲解：${shortExplanation} ${example} 现在二选一：先看“题目目标”，还是先看“${hint}”？只完成一个空：我先看____。`;
+}
+
 function teachingMiniExampleForApi(skill = "", subject = "") {
   const text = `${skill} ${subject}`.toLowerCase();
   if (/slope|rate|linear|斜率|变化率|函数|比例/.test(text)) {
@@ -401,6 +409,9 @@ export function buildFallbackReply(body = {}) {
     : "";
 
   if (needsSmallerTaskAfterRepeatedStuck(body)) {
+    if (cannotProduceBecauseConceptGap(body.studentReply || "")) {
+      return `${mistakePrefix}${repeatedConceptStuckRescue(body)}`;
+    }
     return `${mistakePrefix}延续刚才的卡点，我来把任务再降一级：现在不要写完整解释，下一小步只完成一个空：我先看____，因为这一步能帮我判断方法。`;
   }
 

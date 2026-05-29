@@ -355,6 +355,26 @@ test("fallback for cannot-produce replies teaches before asking for a tiny fill-
   assert.doesNotMatch(reply, /答案是/);
 });
 
+test("fallback changes teaching style after repeated concept stuck replies", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "知识点没吃透，人家也打不出来",
+    history: [
+      { role: "student", text: "我不知道这题问什么" },
+      { role: "coach", text: "卡点判断：题意没拆开。现在只做一小步：这题要我判断____。" },
+      { role: "student", text: "还是不会，打不出来" },
+      { role: "coach", text: "下一小步只补一个空：我先看____。" },
+    ],
+  });
+
+  assert.match(reply, /换一种讲法/);
+  assert.match(reply, /小例子/);
+  assert.match(reply, /二选一/);
+  assert.match(reply, /不用打完整句/);
+  assert.doesNotMatch(reply, /你能用自己的话说说.*题目真正问/);
+  assert.doesNotMatch(reply, /正确答案|答案是/);
+});
+
 test("fallback reteaching uses concrete subject examples", () => {
   const reply = buildFallbackReply({
     ...baseBody,

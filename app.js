@@ -4750,14 +4750,18 @@ function isSchoolExamPracticeQuestion(question = {}) {
   );
 }
 
-function isExplanationFirstChallenge(question = {}) {
+function isChallengeProofQuestion(question = {}) {
   return Boolean(
-    question.schoolExamDepth
-    || question.constructedResponse
+    question.expectedMethod
     || question.openResponse
+    || question.constructedResponse
     || question.errorAnalysis
     || question.multiStepReasoning
-  ) && difficultyScore(question.difficulty) >= 2;
+  );
+}
+
+function isExplanationFirstChallenge(question = {}) {
+  return isChallengeProofQuestion(question) && difficultyScore(question.difficulty) >= 2;
 }
 
 function adaptiveLevelForSubject(subjectId = state.subject) {

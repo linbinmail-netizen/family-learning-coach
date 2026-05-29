@@ -225,6 +225,14 @@ test("priority subjects have at least two school-level challenge questions", () 
   assert.match(source, /multiStepReasoning/);
 });
 
+test("challenge-priority questions require written reasoning, not just harder choices", () => {
+  assert.match(source, /function isChallengeProofQuestion/);
+  assert.match(source, /question\.expectedMethod/);
+  assert.match(source, /question\.openResponse/);
+  assert.match(source, /question\.constructedResponse/);
+  assert.match(source, /isChallengeProofQuestion\(question\) && difficultyScore\(question\.difficulty\) >= 2/);
+});
+
 test("question bank has a two-hour daily learning expansion target", () => {
   assert.match(source, /const twoHourLearningTargets = {/);
   assert.match(source, /dailyMinutes: 120/);

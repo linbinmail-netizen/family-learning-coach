@@ -155,6 +155,16 @@ test("student can manually raise difficulty when questions feel too easy", () =>
   assert.match(js, /state\.lastAdvanceNotice = "你觉得太简单，系统已切到更高难度的解释型或挑战题。"/);
 });
 
+test("manual too-easy boost forces the next question to require written method proof", () => {
+  assert.match(js, /forcedChallengeQuestionKeys: \{\}/);
+  assert.match(js, /state\.forcedChallengeQuestionKeys\[questionStableKey\(questions\[preferredIndex\]\)\] = true/);
+  assert.match(js, /manualTooEasyChallenge/);
+  assert.match(js, /你说太简单后，这题必须先写方法证明/);
+  assert.match(js, /不再做基础选择题/);
+  assert.match(js, /state\.forcedChallengeQuestionKeys\?\.hasOwnProperty\(questionStableKey\(question\)\)/);
+  assert.match(js, /requiresPreAnswerThought\(question\)/);
+});
+
 test("student sees why the difficulty is changing and what comes next", () => {
   assert.match(html, /id="difficultyCoachCard"/);
   assert.match(html, /id="difficultyCoachLevel"/);

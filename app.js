@@ -1352,6 +1352,7 @@ let state = {
   skillMastery: {},
   practiceSessions: [],
   challengeProofs: [],
+  forcedChallengeQuestionKeys: {},
   activePracticeSessionId: "",
   activeQuestionProgressKey: "",
   questionStartedAt: "",
@@ -1399,6 +1400,7 @@ function clearLearningStateForAccount() {
   state.skillMastery = {};
   state.practiceSessions = [];
   state.challengeProofs = [];
+  state.forcedChallengeQuestionKeys = {};
   state.activePracticeSessionId = "";
   state.activeQuestionProgressKey = "";
   state.questionStartedAt = "";
@@ -1451,6 +1453,7 @@ function loadSavedData(key = storageKey, options = {}) {
     if (saved?.skillMastery) state.skillMastery = saved.skillMastery;
     if (Array.isArray(saved?.practiceSessions)) state.practiceSessions = saved.practiceSessions;
     if (Array.isArray(saved?.challengeProofs)) state.challengeProofs = saved.challengeProofs;
+    if (saved?.forcedChallengeQuestionKeys) state.forcedChallengeQuestionKeys = saved.forcedChallengeQuestionKeys;
     if (saved?.activePracticeSessionId) state.activePracticeSessionId = saved.activePracticeSessionId;
     if (saved?.activeQuestionProgressKey) state.activeQuestionProgressKey = saved.activeQuestionProgressKey;
     if (saved?.questionStartedAt) state.questionStartedAt = saved.questionStartedAt;
@@ -1487,6 +1490,7 @@ function saveData(key = accountDataStorageKey()) {
       skillMastery: state.skillMastery,
       practiceSessions: state.practiceSessions,
       challengeProofs: state.challengeProofs,
+      forcedChallengeQuestionKeys: state.forcedChallengeQuestionKeys,
       activePracticeSessionId: state.activePracticeSessionId,
       activeQuestionProgressKey: state.activeQuestionProgressKey,
       questionStartedAt: state.questionStartedAt,
@@ -4572,9 +4576,14 @@ function isChallengePreAnswerQuestion(question = {}) {
   return difficultyScore(question.difficulty) >= 2 || question.constructedResponse || question.openResponse || question.errorAnalysis || question.multiStepReasoning;
 }
 
+function manualTooEasyChallenge(question = {}) {
+  return Boolean(state.forcedChallengeQuestionKeys?.hasOwnProperty(questionStableKey(question)));
+}
+
 function isPreAnswerThoughtReady(text = "", question = {}) {
   const quality = preAnswerThoughtQuality(text);
   if (!quality.enoughLength || quality.blocked) return false;
+  if (manualTooEasyChallenge(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason;
   if (isSchoolExamPracticeQuestion(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason;
   if (isChallengePreAnswerQuestion(question)) return quality.hasGoal && quality.hasMethod;
   return quality.hasGoal || quality.hasMethod;
@@ -4607,7 +4616,8 @@ function preAnswerGateState(question = activeQuestions()[state.currentQuestion],
   const locked = hasActiveGuidanceLock();
   const guidedComplete = Boolean(state.guidedMastery[progressKey]);
   const thought = state.preAnswerThoughts[progressKey] || "";
-  const needsPreAnswer = requiresPreAnswerThought(question) && selectedAnswer === undefined && !locked && !guidedComplete;
+  const needsPreAnswer = requiresPreAnswerThought(question) && selectedAnswer === undefined && !locked && !guidedComplete
+    || manualTooEasyChallenge(question) && selectedAnswer === undefined && !locked && !guidedComplete;
   const preAnswerReady = !needsPreAnswer || isPreAnswerThoughtReady(thought, question);
   return { thought, needsPreAnswer, preAnswerReady };
 }
@@ -4682,6 +4692,13 @@ function questionTypeLabel(question = {}) {
 
 function questionRequirementState(question = {}) {
   const type = questionTypeLabel(question);
+  if (manualTooEasyChallenge(question)) {
+    return {
+      title: "挑战确认要求",
+      body: "你说太简单后，这题必须先写方法证明；系统会减少基础选择题。",
+      proof: "不再做基础选择题：先写题目目标、第一步和原因，再选择答案。",
+    };
+  }
   if (isSchoolExamPracticeQuestion(question)) {
     return {
       title: `${type}要求`,
@@ -5175,7 +5192,10 @@ function raiseDifficultyOnDemand() {
   };
   const questions = activeQuestions();
   const preferredIndex = nextAdaptiveQuestionIndex(questions, state.currentQuestion, { isCorrect: true, level: nextLevel, challengeMode: true, raisedLevel: true });
-  if (preferredIndex >= 0) state.currentQuestion = preferredIndex;
+  if (preferredIndex >= 0) {
+    state.forcedChallengeQuestionKeys[questionStableKey(questions[preferredIndex])] = true;
+    state.currentQuestion = preferredIndex;
+  }
   state.lastAdvanceNotice = "你觉得太简单，系统已切到更高难度的解释型或挑战题。";
   $("answerFeedback").textContent = `${state.lastAdvanceNotice} 当前目标难度：${difficultyLevels[nextLevel]}。`;
   $("dailySuggestion").textContent = `${state.lastAdvanceNotice} 接下来优先做学校考试深度题。`;

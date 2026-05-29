@@ -4818,6 +4818,33 @@ function frontloadSchoolExamPractice(questions, plan = planForStudent(state.stud
   return adjusted;
 }
 
+function ensureEarlyDepthCadence(questions, plan = planForStudent(state.studentId)) {
+  const limit = Math.min(dailyQuestionLimit(plan), questions.length);
+  if (plan.difficultyMode === "steady" || limit < 4) return questions;
+  const earlyWindowSize = Math.min(6, limit);
+  const minimumEarlyDepth = plan.difficultyMode === "challenge" ? Math.min(3, earlyWindowSize) : Math.min(2, earlyWindowSize);
+  const earlyBatch = questions.slice(0, earlyWindowSize);
+  const currentEarlyDepth = earlyBatch.filter((question) => isSchoolExamPracticeQuestion(question) || isExplanationFirstChallenge(question)).length;
+  if (currentEarlyDepth >= minimumEarlyDepth) return questions;
+
+  const used = new Set(earlyBatch.map((question) => questionStableKey(question)));
+  const depthPool = questions
+    .map((question, index) => ({ question, index }))
+    .filter(({ question, index }) => index >= earlyWindowSize && index < limit && (isSchoolExamPracticeQuestion(question) || isExplanationFirstChallenge(question)) && !used.has(questionStableKey(question)))
+    .sort((a, b) => depthFirstQuestionSort(a.question, b.question))
+    .map(({ question }) => question);
+  if (!depthPool.length) return questions;
+
+  const adjusted = [...questions];
+  let needed = minimumEarlyDepth - currentEarlyDepth;
+  for (let index = earlyWindowSize - 1; index >= 0 && needed > 0 && depthPool.length; index -= 1) {
+    if (isSchoolExamPracticeQuestion(adjusted[index]) || isExplanationFirstChallenge(adjusted[index])) continue;
+    adjusted[index] = depthPool.shift();
+    needed -= 1;
+  }
+  return mergeQuestions(adjusted.slice(0, limit), questions);
+}
+
 function limitEasyWarmupQuestions(questions, plan = planForStudent(state.studentId)) {
   const limit = Math.min(dailyQuestionLimit(plan), questions.length);
   if (plan.difficultyMode === "steady" || limit < 3) return questions;
@@ -5025,13 +5052,13 @@ function activeQuestions() {
   const twoHourQuestions = twoHourExpansionQuestionBank[state.subject] || [];
   if (cloudQuestions.length || localQuestions.length || expandedQuestions.length || challengeQuestions.length || twoHourQuestions.length) {
     const selected = selectTwoHourStructuredQuestions(mergeQuestions(cloudQuestions, localQuestions.concat(expandedQuestions, challengeQuestions, twoHourQuestions)));
-    const depthBalanced = ensureDepthStartQuestion(limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selected)))));
+    const depthBalanced = ensureEarlyDepthCadence(ensureDepthStartQuestion(limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selected))))));
     return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
   }
 
   const diagnostic = activeDiagnostic();
   if (diagnostic.questions) {
-    const depthBalanced = ensureDepthStartQuestion(limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selectAdaptiveQuestions(diagnostic.questions))))));
+    const depthBalanced = ensureEarlyDepthCadence(ensureDepthStartQuestion(limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(selectAdaptiveQuestions(diagnostic.questions)))))));
     return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
   }
   const strongest = diagnostic.skills.reduce((best, skill) => (skill[1] > best[1] ? skill : best), diagnostic.skills[0]);
@@ -5069,7 +5096,7 @@ function activeQuestions() {
       skill: weakest[0],
     },
   ]);
-  const depthBalanced = ensureDepthStartQuestion(limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(generatedQuestions)))));
+  const depthBalanced = ensureEarlyDepthCadence(ensureDepthStartQuestion(limitEasyWarmupQuestions(frontloadSchoolExamPractice(ensureDailyDepthMix(ensureDailySchoolExamMix(generatedQuestions))))));
   return prepareQuestionSet(depthBalanced.slice(0, dailyQuestionLimit()));
 }
 

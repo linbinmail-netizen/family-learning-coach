@@ -140,6 +140,15 @@ test("daily question set frontloads school exam depth", () => {
   assert.match(source, /frontloadSchoolExamPractice\(ensureDailyDepthMix\(ensureDailySchoolExamMix\(selected\)\)\)/);
 });
 
+test("adaptive sessions keep two depth checks inside the first six questions", () => {
+  assert.match(source, /function ensureEarlyDepthCadence/);
+  assert.match(source, /const earlyWindowSize = Math\.min\(6, limit\)/);
+  assert.match(source, /const minimumEarlyDepth = plan\.difficultyMode === "challenge" \? Math\.min\(3, earlyWindowSize\) : Math\.min\(2, earlyWindowSize\)/);
+  assert.match(source, /earlyBatch\.filter\(\(question\) => isSchoolExamPracticeQuestion\(question\) \|\| isExplanationFirstChallenge\(question\)\)\.length/);
+  assert.match(source, /index >= earlyWindowSize && index < limit/);
+  assert.match(source, /ensureEarlyDepthCadence\(ensureDepthStartQuestion\(limitEasyWarmupQuestions\(frontloadSchoolExamPractice/);
+});
+
 test("adaptive and challenge modes limit easy warmup at the start", () => {
   assert.match(source, /function limitEasyWarmupQuestions/);
   assert.match(source, /plan\.difficultyMode === "steady"/);

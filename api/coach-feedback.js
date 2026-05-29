@@ -38,22 +38,39 @@ function detectMistakeType(body = {}) {
   return "concept_gap";
 }
 
+function needsTeachFirstMicroTask(body = {}) {
+  const text = `${body.studentExplanation || ""} ${body.studentAnswer || ""}`.toLowerCase();
+  return /知识点没吃透|打不出来|写不出来|说不出来|不知道|不会|不懂|idk|stuck|confused/.test(text);
+}
+
+function studentFriendlyConceptLine(skill = "this skill") {
+  const text = String(skill || "").toLowerCase();
+  if (/evidence|claim|support|证据|主张|支持/.test(text)) return "小讲解：证据必须直接支持题目里的主张，不能只选看起来相关的句子。";
+  if (/linear|slope|rate|函数|斜率|变化率|比例/.test(text)) return "小讲解：这类题先分清起点和每一步怎么变化，不能只看哪个数字大。";
+  if (/equation|方程|代数/.test(text)) return "小讲解：解方程就是用相反操作把变量一步步单独留下。";
+  if (/experiment|variable|实验|变量/.test(text)) return "小讲解：实验题先分清改变什么、测量什么、保持什么不变。";
+  return `小讲解：${skill} 这类题先抓核心概念，再把概念接回题目。`;
+}
+
 function buildFallbackCoachFeedback(body = {}) {
   const answerLabel = normalizeChoiceLabel(body.studentAnswer);
   const commonMistakes = body.commonMistakes || {};
   const specificMistake = commonMistakes[answerLabel] || commonMistakes[body.studentAnswer] || "";
   const mistakeType = detectMistakeType(body);
   const skill = body.skill || "this skill";
+  const teachFirst = needsTeachFirstMicroTask(body);
   const hintSteps = Array.isArray(body.hintSteps) ? body.hintSteps : [];
-  const hintLevel1 = hintSteps[0] || "先找题目中不变的量或最关键的证据。";
-  const hintLevel2 = hintSteps[1] || "再找会变化的量，并说明它为什么影响答案。";
+  const hintLevel1 = teachFirst ? studentFriendlyConceptLine(skill) : hintSteps[0] || "先找题目中不变的量或最关键的证据。";
+  const hintLevel2 = teachFirst ? "现在不用写完整解释，只做一小步：先找题目里的关键词或最关键证据。" : hintSteps[1] || "再找会变化的量，并说明它为什么影响答案。";
 
   return {
     mistakeType,
     diagnosis: specificMistake || `Student needs more support with ${skill}.`,
     hintLevel1,
     hintLevel2,
-    restatePrompt: `请不要只写答案。用一句话说明：这题第一步要看什么，为什么？`,
+    restatePrompt: teachFirst
+      ? "先不要完整解释，只做一小步：补一个空或二选一。我第一步先看____。"
+      : `请不要只写答案。用一句话说明：这题第一步要看什么，为什么？`,
     variantPrompt:
       body.variantPrompt ||
       body.variantQuestion?.question_text ||
@@ -75,7 +92,9 @@ function buildCoachFeedbackRequest(body = {}) {
       "Use short, age-appropriate language.",
       "Ask one question at a time.",
       "Require the student to explain the method in their own words.",
-      "Use Socratic hints before giving explanations.",
+      "If the student says the knowledge point is not solid, they cannot type, or they do not know how to explain, first teach the concept briefly, then give a tiny micro-task.",
+      "知识点没吃透、打不出来、说不出来时，先讲清概念，再让学生只补一个空或做二选一；不要先追问完整题意。",
+      "Use questions after the short explanation, not before it, when the gap is conceptual.",
       "Return strict JSON only.",
       `mistakeType must be one of: ${allowedMistakeTypes.join(", ")}.`,
       "Do not include markdown.",

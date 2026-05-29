@@ -38,6 +38,26 @@ test("coach feedback OpenAI request requires JSON and blocks final answers", () 
   assert.match(payload.instructions, /mistakeType must be one of/);
 });
 
+test("coach feedback teaches first when a student cannot explain the concept", () => {
+  const feedback = buildFallbackCoachFeedback({
+    question: "Which evidence best supports the claim?",
+    studentAnswer: "我知识点没吃透，打不出来",
+    studentExplanation: "我知识点没吃透，打不出来",
+    confidence: "unsure",
+    skill: "evidence support",
+  });
+  const payload = buildCoachFeedbackRequest({
+    studentExplanation: "知识点没吃透，人家也打不出来",
+    skill: "evidence support",
+  });
+
+  assert.match(feedback.hintLevel1, /小讲解|先讲|证据|支持/);
+  assert.match(feedback.restatePrompt, /只做一小步|补一个空|二选一/);
+  assert.match(payload.instructions, /知识点没吃透/);
+  assert.match(payload.instructions, /先讲清概念/);
+  assert.doesNotMatch(payload.instructions, /Use Socratic hints before giving explanations/);
+});
+
 test("coach feedback parser normalizes invalid mistake types", () => {
   const parsed = parseCoachFeedback({
     output_text: JSON.stringify({

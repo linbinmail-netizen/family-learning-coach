@@ -1393,3 +1393,22 @@ Object.entries(systematicExpansionBlueprints).forEach(([subjectId, blueprint]) =
     buildSystematicExpansionQuestions(subjectId, blueprint)
   );
 });
+
+function enforceChallengeErrorAnalysisQuality(bank = window.twoHourExpansionQuestionBank) {
+  Object.entries(bank).forEach(([subjectId, questions]) => {
+    bank[subjectId] = questions.map((question) => {
+      if (!String(question.difficulty || "").includes("挑战")) return question;
+      const mistakes = question.commonMistakes || [];
+      const hasConcreteTrap = mistakes.some((mistake) => /trap|mistake|错误|猜|keyword|关键词/i.test(mistake));
+      return {
+        ...question,
+        errorAnalysis: true,
+        commonMistakes: hasConcreteTrap
+          ? mistakes
+          : mistakes.concat("Challenge trap: guessing from keywords or answer length instead of explaining the first step."),
+      };
+    });
+  });
+}
+
+enforceChallengeErrorAnalysisQuality();

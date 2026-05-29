@@ -349,3 +349,21 @@ test("core subjects have enough advanced open practice for sustained two-hour le
   }
   assert.match(questionBankSource, /systematic original expansion v2/);
 });
+
+test("systematic challenge questions include error analysis so they are not just harder choices", () => {
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(questionBankSource, context);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    const questions = context.window.twoHourExpansionQuestionBank[subject] || [];
+    const challengeQuestions = questions.filter((question) => String(question.difficulty).includes("挑战"));
+    assert.ok(challengeQuestions.length >= 12, `${subject} should have enough challenge questions to audit`);
+    for (const question of challengeQuestions) {
+      assert.equal(question.errorAnalysis, true, `${subject} challenge question should force error analysis: ${question.prompt}`);
+      assert.ok(
+        (question.commonMistakes || []).some((mistake) => /trap|mistake|错误|猜|keyword|关键词/i.test(mistake)),
+        `${subject} challenge question should name a concrete trap or misconception`
+      );
+    }
+  }
+});

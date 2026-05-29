@@ -181,6 +181,11 @@ function stuckGapTeachingAction(body = {}) {
   return "";
 }
 
+function methodAttemptContinuation(body = {}) {
+  const frame = "题目里的____说明____。";
+  return `你已经说出方法雏形了，别重新开始。下一步只补具体条件：${frame}`;
+}
+
 function buildTeachingNote({ subject, skill, explanation }) {
   const concept = skill || "这个知识点";
   const base = explanation || `${concept} 是解这类题时要先弄清楚的核心概念。`;
@@ -414,6 +419,10 @@ export function buildFallbackReply(body = {}) {
       return `${mistakePrefix}换一种更小的任务：${gapSentenceFrame({ gap: "reason" }, body)}`;
     }
     return `${mistakePrefix}${nextHint ? `${nextHint} ` : ""}${oneStepFallbackPrompt(body)}`;
+  }
+
+  if (replyAnalysis.type === "method_attempt") {
+    return `${mistakePrefix}${methodAttemptContinuation(body)}`;
   }
 
   if (needsTeaching && cannotProduceBecauseConceptGap(body.studentReply || "")) {

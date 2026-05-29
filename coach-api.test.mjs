@@ -140,3 +140,16 @@ test("coach fallback lowers repeated stuck students to one blank instead of repe
   assert.match(reply, /我先看____/);
   assert.doesNotMatch(reply, /题目真正问你找什么吗|正确答案|答案是|选项\s*[A-D]/);
 });
+
+test("coach fallback continues from a real method attempt instead of restarting", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "这题要我判断变化率，我第一步先比较 x 和 y 怎么变，因为斜率看变化关系。",
+    history: [{ role: "coach", text: "先说题目问什么。" }],
+  });
+
+  assert.match(reply, /你已经说出方法雏形/);
+  assert.match(reply, /下一步只补具体条件/);
+  assert.match(reply, /题目里的____说明____/);
+  assert.doesNotMatch(reply, /真正问你找什么|先把题目翻译成一句话|正确答案|答案是|选项\s*[A-D]/);
+});

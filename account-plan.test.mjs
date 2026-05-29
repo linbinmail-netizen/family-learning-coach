@@ -1788,6 +1788,7 @@ test("student daily plan includes a wrap-up summary action", () => {
 });
 
 test("practice sessions track time hints accuracy and learning behavior", () => {
+  const recordBlock = js.match(/function recordPracticeAttempt[\s\S]*?function todayPracticeSessionSummary/)?.[0] || "";
   assert.match(js, /practiceSessions: \[\]/);
   assert.match(js, /function currentPracticeSession/);
   assert.match(js, /function recordPracticeAttempt/);
@@ -1798,6 +1799,8 @@ test("practice sessions track time hints accuracy and learning behavior", () => 
   assert.match(js, /guessingCount/);
   assert.match(js, /state\.hintUsage\[questionProgressKey\(\)\] = true/);
   assert.match(js, /recordPracticeAttempt\(question, selectedIndex, confidence, adaptiveResult\)/);
+  assert.match(recordBlock, /const guessedOrUnsure = confidence !== "sure" \|\| \(!correct && seconds <= 12\)/);
+  assert.match(recordBlock, /session\.guessingCount \+= guessedOrUnsure \? 1 : 0/);
 });
 
 test("practice sessions can sync with Supabase without blocking student answers", () => {

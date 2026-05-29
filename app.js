@@ -4972,6 +4972,7 @@ function recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResu
   const session = currentPracticeSession();
   const seconds = secondsOnCurrentQuestion();
   const correct = selectedIndex === question.correct;
+  const guessedOrUnsure = confidence !== "sure" || (!correct && seconds <= 12);
   const event = {
     questionKey: mistakeKey(state.studentId, state.subject, question),
     skill: question.skill || activeDiagnostic().skills[0][0],
@@ -4990,7 +4991,7 @@ function recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResu
   session.hintsUsed += event.usedHint ? 1 : 0;
   session.difficultyEnd = adaptiveResult?.level ?? adaptiveLevelForSubject();
   session.slowCount += correct && seconds > 90 ? 1 : 0;
-  session.guessingCount += !correct && seconds <= 12 ? 1 : 0;
+  session.guessingCount += guessedOrUnsure ? 1 : 0;
   session.endedAt = event.answeredAt;
   session.events = [event, ...(session.events || [])].slice(0, 80);
   savePracticeSessionToCloud(session).catch((error) => console.warn("Practice session cloud save skipped.", error));

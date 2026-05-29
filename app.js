@@ -3105,6 +3105,7 @@ function lessonMasteryStatus(skill, score) {
 function shouldStartGuidance(selectedIndex, question, confidence) {
   if (selectedIndex !== question.correct) return "answer";
   if (confidence !== "sure") return "confidence";
+  if (isObviousEasyCorrect(question, selectedIndex, confidence)) return "school_verification";
   if (needsSchoolLevelVerification(question, confidence)) return "school_verification";
   return "";
 }
@@ -5129,7 +5130,7 @@ function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") 
     if (!message) message = "答得很顺，下一题会提高一点难度。";
   } else if (obviousEasyCorrect && !message) {
     level = Math.max(level, 2);
-    message = "这题太轻松，下一题直接切到解释型或学校考试深度题。";
+    message = "这题太轻松，马上做一道学校考试式验证；通过后下一题再切到解释型或学校考试深度题。";
   } else if (nextStats.missedStreak >= 2 && level > 0) {
     level -= 1;
     nextStats.missedStreak = 0;
@@ -7090,7 +7091,7 @@ function bindEvents() {
     } else {
       if (issue !== "school_verification") recordMistake(question, selectedIndex, guidanceIssueText(issue));
       startGuidedMastery(question, selectedIndex, "", confidence, issue);
-      requestCoachFeedbackForGuidance(question, selectedIndex, confidence, issue);
+      if (issue !== "school_verification") requestCoachFeedbackForGuidance(question, selectedIndex, confidence, issue);
     }
     saveData();
     renderDiagnostic();

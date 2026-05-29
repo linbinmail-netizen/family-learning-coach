@@ -1387,6 +1387,12 @@ test("correct but unsure answers start with method verification instead of retea
   assert.doesNotMatch(startBlock, /issue === "confidence"[\s\S]{0,260}我不会直接告诉你答案/);
 });
 
+test("school verification skips wrong-answer diagnosis so correct students are not mislabeled", () => {
+  const answerHandler = js.match(/\$\("answerGrid"\)\.addEventListener\("click",[\s\S]*?\n  \}\);/)?.[0] || "";
+  assert.match(answerHandler, /if \(issue !== "school_verification"\) recordMistake/);
+  assert.match(answerHandler, /if \(issue !== "school_verification"\) requestCoachFeedbackForGuidance/);
+});
+
 test("high-performing students are routed to explanation-first challenge questions", () => {
   assert.match(js, /function isExplanationFirstChallenge/);
   assert.match(js, /const highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.obviousEasyCorrect \|\| adaptiveResult\.raisedLevel \|\| adaptiveResult\.challengeMode \|\| targetLevel >= 2\)/);
@@ -1422,10 +1428,12 @@ test("one obvious easy correct answer immediately promotes to depth practice", (
   assert.match(js, /function isObviousEasyCorrect/);
   assert.match(js, /isCorrect && confidence === "sure"/);
   assert.match(js, /secondsOnCurrentQuestion\(\) <= 20/);
+  assert.match(js, /if \(isObviousEasyCorrect\(question, selectedIndex, confidence\)\) return "school_verification"/);
   assert.match(js, /adaptiveResult\.obviousEasyCorrect/);
   assert.match(js, /highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.obviousEasyCorrect/);
   assert.match(js, /这题太轻松/);
-  assert.match(js, /下一题直接切到解释型或学校考试深度题/);
+  assert.match(js, /通过后下一题再切到解释型或学校考试深度题/);
+  assert.match(js, /马上做一道学校考试式验证/);
 });
 
 test("easy streaks create a visible challenge mission queue", () => {

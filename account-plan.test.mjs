@@ -1387,6 +1387,15 @@ test("variant retry stays in the proof panel and preserves the student draft", (
   assert.doesNotMatch(js, /variantTargetedRetryText[\s\S]*正确答案是/);
 });
 
+test("variant retry keeps next-step help visible even after rubric is complete", () => {
+  assert.match(js, /const needsRetryDetail = Boolean\(state\.guidanceLock\?\.variantFeedback\)/);
+  assert.match(js, /help\.classList\.toggle\("hidden", ready && !needsRetryDetail\)/);
+  assert.match(js, /variantNextStepStarterFor\(reply, variant, undefined, needsRetryDetail\)/);
+  assert.match(js, /具体来说，题目里的____说明我的方法____/);
+  assert.match(js, /不要重做整题，只补一句具体证据或条件/);
+  assert.doesNotMatch(js, /needsRetryDetail[\s\S]*正确答案是/);
+});
+
 test("variant explanation offers non-answer sentence starters", () => {
   assert.match(html, /id="variantStarterBar"/);
   assert.match(js, /function variantSentenceStartersFor/);

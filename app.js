@@ -2848,8 +2848,9 @@ function applyVariantStarter(text = "") {
   input.focus();
 }
 
-function variantNextStepStarterFor(reply = "", variant = state.guidanceLock?.variant, question = activeQuestions()[state.guidanceLock?.questionIndex ?? state.currentQuestion]) {
+function variantNextStepStarterFor(reply = "", variant = state.guidanceLock?.variant, question = activeQuestions()[state.guidanceLock?.questionIndex ?? state.currentQuestion], forceSpecificDetail = false) {
   const missing = variantRubricItems(reply, variant).find((item) => !item.ready);
+  if (!missing && forceSpecificDetail) return "具体来说，题目里的____说明我的方法____。";
   if (!missing) return "";
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   if (missing.label === "题目类型") {
@@ -3175,12 +3176,15 @@ function renderVariantNextHelp(reply = $("variantReply")?.value || "", variant =
   const help = $("variantNextHelp");
   if (!help) return;
   const ready = isVariantRubricReady(reply, variant);
-  const starter = variantNextStepStarterFor(reply, variant);
-  help.classList.toggle("hidden", ready);
+  const needsRetryDetail = Boolean(state.guidanceLock?.variantFeedback);
+  const starter = variantNextStepStarterFor(reply, variant, undefined, needsRetryDetail);
+  help.classList.toggle("hidden", ready && !needsRetryDetail);
   $("variantNextHelpText").textContent = ready
-    ? "说明已经完整，可以提交给 AI 教练检查。"
+    ? needsRetryDetail
+      ? "不要重做整题，只补一句具体证据或条件，让解释更像学校考试答案。"
+      : "说明已经完整，可以提交给 AI 教练检查。"
     : `${variantNextActionText(reply, variant)} 卡住时点“补下一句”；完全不懂就点“换种讲法”。`;
-  $("applyVariantNextStepButton").disabled = ready || !starter;
+  $("applyVariantNextStepButton").disabled = (ready && !needsRetryDetail) || !starter;
   $("variantReteachButton").disabled = ready;
 }
 

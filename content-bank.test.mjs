@@ -297,6 +297,20 @@ test("systematic expansion brings core subjects to at least thirty structured qu
   }
 });
 
+test("systematic expansion has enough volume for sustained two-hour practice", () => {
+  assert.match(questionBankSource, /Array\.from\(\{ length: 40 \}/);
+  const counts = runtimeTwoHourQuestionCounts();
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    assert.ok(counts[subject] >= 52, `${subject} should have at least fifty-two runtime expansion questions`);
+  }
+});
+
+test("systematic AI hints are scaffold-first instead of asking students to invent the question goal", () => {
+  assert.match(questionBankSource, /先看小讲解/);
+  assert.match(questionBankSource, /只补一个空/);
+  assert.doesNotMatch(questionBankSource, /先说题目真正问什么/);
+});
+
 test("systematic expansion marks enough school-depth tasks for exam-level practice", () => {
   const context = { window: {} };
   vm.createContext(context);

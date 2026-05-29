@@ -1350,7 +1350,7 @@ const systematicExpansionBlueprints = {
 
 function buildSystematicExpansionQuestions(subjectId, blueprint) {
   const difficulties = ["中等", "进阶", "挑战", "进阶", "挑战"];
-  return Array.from({ length: 30 }, (_, index) => {
+  return Array.from({ length: 40 }, (_, index) => {
     const patternIndex = index % blueprint.stems.length;
     const cycle = Math.floor(index / blueprint.stems.length) + 1;
     const skill = blueprint.skillCycle[index % blueprint.skillCycle.length];
@@ -1377,9 +1377,9 @@ function buildSystematicExpansionQuestions(subjectId, blueprint) {
       skill,
       explanation: `${blueprint.explanation} Focus skill: ${skill}.`,
       commonMistakes: [blueprint.mistake, "Guessing from keywords instead of explaining the first step."],
-      aiHintLevel1: "先说题目真正问什么，不要先选答案。",
-      aiHintLevel2: "圈出关键词，并说明它和当前技能点有什么关系。",
-      aiHintLevel3: "把方法写成一句完整话：我第一步先____，因为____。",
+      aiHintLevel1: "先看小讲解：这类题先判断题目目标和第一步线索，不要先选答案。",
+      aiHintLevel2: "只补一个空：我第一步先看____。",
+      aiHintLevel3: "再把方法接完整：我第一步先____，因为____。",
       coachHints: [
         "What is the question asking you to identify first?",
         "Which clue connects directly to the skill being practiced?",

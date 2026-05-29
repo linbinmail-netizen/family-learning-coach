@@ -2211,6 +2211,10 @@ async function requestCoachFeedbackForGuidance(question, selectedIndex, confiden
         hintLevel2: "先不用等远端 AI，直接按下面的小步骤继续。",
         restatePrompt: "只补一个空：我第一步先看____。",
       };
+      appendInlineCoach(
+        "coach",
+        `本地诊断：远端 AI 暂时没有返回，但你不用等。${state.guidanceLock.coachFeedback.hintLevel1} 下一小步：${state.guidanceLock.coachFeedback.restatePrompt}`
+      );
       saveData();
       renderDiagnostic();
     }

@@ -1665,6 +1665,7 @@ test("wrong-answer coach feedback uses a short timeout and keeps local guidance 
   assert.match(feedbackBlock, /signal: controller\.signal/);
   assert.match(feedbackBlock, /clearTimeout\(timeoutId\)/);
   assert.match(feedbackBlock, /本地诊断/);
+  assert.match(feedbackBlock, /appendInlineCoach\(\s*"coach",\s*`本地诊断/);
 });
 
 test("student AI replies append after the instant local coach instead of replacing it", () => {

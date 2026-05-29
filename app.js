@@ -4114,9 +4114,11 @@ function twoHourBlockMinutes(totalMinutes = 120) {
 
 function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount, guidedCount, report, openMistakes }) {
   const targetQuestions = plan.questionTarget || Math.max(4, Math.min(24, Math.round(plan.minutes / 5)));
-  const foundationTarget = Math.max(4, Math.round(targetQuestions * 0.45));
+  const foundationTarget = plan.difficultyMode === "adaptive"
+    ? Math.max(3, Math.round(targetQuestions * 0.25))
+    : Math.max(4, Math.round(targetQuestions * 0.45));
   const reviewTarget = Math.max(2, Math.round(targetQuestions * 0.2));
-  const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
+  const challengeTarget = Math.max(6, targetQuestions - foundationTarget - reviewTarget);
   const twoHourMode = plan.minutes >= 90 || targetQuestions >= 18;
   const blockMinutes = twoHourBlockMinutes(plan.minutes);
 
@@ -4169,7 +4171,7 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
       step: "第二步",
       title: "基础练习",
       minutes: blockMinutes.foundation,
-      detail: `完成约 ${foundationTarget} 道基础和中等题，目标是把方法做稳，而不是追求速度。`,
+      detail: `完成约 ${foundationTarget} 道基础和中等题；基础题只保留热身，不占用主要时间。`,
       done: Math.min(answeredCount, foundationTarget),
       total: foundationTarget,
     },
@@ -4187,7 +4189,7 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
       step: "第四步",
       title: "挑战拔高",
       minutes: blockMinutes.challenge,
-      detail: `完成约 ${challengeTarget} 道挑战题或解释题，每题都要能说出理由。`,
+      detail: `完成约 ${challengeTarget} 道挑战题或解释题，学校考试深度题和解释题占主要比例，每题都要能说出理由。`,
       done: Math.min(Math.max(answeredCount - foundationTarget - reviewTarget, 0), challengeTarget),
       total: challengeTarget,
     },
@@ -4647,6 +4649,7 @@ function minimumDailyDepthQuestions(plan = planForStudent(state.studentId)) {
   const limit = dailyQuestionLimit(plan);
   if (plan.difficultyMode === "steady") return Math.min(limit, 2);
   if (plan.difficultyMode === "challenge") return Math.min(limit, Math.max(3, Math.round(limit * 0.45)));
+  if (plan.difficultyMode === "adaptive") return Math.min(limit, Math.max(4, Math.round(limit * 0.42)));
   return Math.min(limit, Math.max(2, Math.round(limit * 0.35)));
 }
 

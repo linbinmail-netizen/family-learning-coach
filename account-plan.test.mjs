@@ -369,6 +369,14 @@ test("default student plans are two-hour sessions, not short templates", () => {
   assert.match(js, /完成约 \$\{challengeTarget\} 道挑战题或解释题/);
 });
 
+test("default two-hour plans reduce easy practice and favor school-depth work", () => {
+  assert.match(js, /const foundationTarget = plan\.difficultyMode === "adaptive"\s*\? Math\.max\(3, Math\.round\(targetQuestions \* 0\.25\)\)/);
+  assert.match(js, /const challengeTarget = Math\.max\(6, targetQuestions - foundationTarget - reviewTarget\)/);
+  assert.match(js, /基础题只保留热身，不占用主要时间/);
+  assert.match(js, /学校考试深度题和解释题占主要比例/);
+  assert.match(js, /if \(plan\.difficultyMode === "adaptive"\) return Math\.min\(limit, Math\.max\(4, Math\.round\(limit \* 0\.42\)\)\)/);
+});
+
 test("saved old short default plans migrate to two-hour sessions without overwriting custom plans", () => {
   assert.match(js, /function upgradeSavedShortPlanSettings/);
   assert.match(js, /plan\.minutes === 30 && plan\.questionTarget === 8/);

@@ -587,6 +587,17 @@ test("safeTutorReply rewrites full-restatement demands when the student is stuck
   assert.doesNotMatch(reply, /用自己的话完整解释/);
 });
 
+test("safeTutorReply rewrites vague write-more demands when the student is stuck", () => {
+  const reply = safeTutorReply("再写详细一点，把你的想法多说一点。", {
+    ...baseBody,
+    studentReply: "我不会，知识点没吃透，打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /小讲解|前置概念|半句填空|现在只做一小步/);
+  assert.doesNotMatch(reply, /再写详细一点|多说一点/);
+});
+
 test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {
   const request = buildMasteryEvaluationRequest({
     ...baseBody,

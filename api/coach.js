@@ -72,6 +72,9 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (studentCannotProduce && /用自己的话|完整解释|完整复述|先解释|先复述|总结一下|explain.*own words|restate.*own words/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
     return "demands_full_restatement_when_stuck";
   }
+  if (studentCannotProduce && /再写|写详细|多写|多说|说详细|补充一下|展开说|more detail|say more|write more/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
+    return "vague_write_more_when_stuck";
+  }
   if (text.length > 180) return "too_long";
   return "";
 }

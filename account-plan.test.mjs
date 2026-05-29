@@ -562,7 +562,7 @@ test("student guidance shows next-question unlock conditions", () => {
   assert.match(js, /function guidanceUnlockItemsForLock/);
   assert.match(js, /function renderGuidanceUnlockProgress/);
   assert.match(js, /听懂错因和方法/);
-  assert.match(js, /用自己的话复述方法/);
+  assert.match(js, /跟着支架补方法/);
   assert.match(js, /renderGuidanceUnlockProgress\(lock\)/);
   assert.match(js, /renderGuidanceUnlockProgress\(\)/);
   assert.match(css, /guidance-unlock-card/);
@@ -575,7 +575,7 @@ test("student guidance includes a three-part method restatement scaffold", () =>
   assert.match(html, /id="scaffoldReasonStarter"/);
   assert.match(js, /function guidanceScaffoldForLock/);
   assert.match(js, /renderGuidanceScaffold/);
-  assert.match(js, /题目问什么/);
+  assert.match(js, /题目目标：系统先帮你翻译/);
   assert.match(js, /第一步看什么/);
   assert.match(js, /为什么这样做/);
   assert.match(css, /guidance-scaffold-card/);
@@ -612,6 +612,15 @@ test("student guidance entry copy does not ask stuck students to explain the que
   assert.match(html, /先听讲解，再做一小步/);
   assert.doesNotMatch(html, /placeholder="用自己的话写：这题真正问什么/);
   assert.doesNotMatch(html, /<strong id="guidanceTaskTitle">先说题目问什么<\/strong>/);
+});
+
+test("student stuck guidance copy uses scaffolds instead of full restatement demands", () => {
+  assert.match(js, /跟着支架补方法/);
+  assert.match(js, /先看讲解，再点按钮或补半句/);
+  assert.match(js, /用按钮或半句确认/);
+  assert.doesNotMatch(js, /label: "用自己的话复述方法"/);
+  assert.doesNotMatch(js, /先用自己的话说出方法。通过变式验证后，系统会解锁下一题。/);
+  assert.doesNotMatch(js, /系统会先讲清概念，再让你复述和做变式。/);
 });
 
 test("guidance next missing sentence becomes subject specific for thin replies", () => {

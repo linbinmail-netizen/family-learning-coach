@@ -3434,8 +3434,8 @@ function guidanceUnlockItemsForLock(lock = state.guidanceLock) {
       active: Boolean(lock) && !hasStudentReply && !inVariant,
     },
     {
-      label: "用自己的话复述方法",
-      detail: "写清题目目标、第一步和原因。",
+      label: "跟着支架补方法",
+      detail: "先看讲解，再点按钮或补半句：题目目标、第一步、原因。",
       done: restatementReady,
       active: Boolean(lock) && !inVariant,
     },
@@ -3482,7 +3482,7 @@ function guidanceScaffoldForLock(lock = state.guidanceLock, question = activeQue
       ? "因为我要证明自己不是猜的，而是知道这个方法为什么能用。"
       : "因为这一步能帮我把题目要求和解题方法连起来。";
   return {
-    questionFocus: "题目问什么：先用一句话说出题目要找什么。",
+    questionFocus: "题目目标：系统先帮你翻译，你只补关键空。",
     firstStep: `第一步看什么：${firstHint}`,
     reasonStarter: `为什么这样做：${reasonFocus}`,
   };
@@ -5846,7 +5846,7 @@ function studentNextStepState({ selectedAnswer, question, locked, guidedComplete
       tone: "warning",
       badge: "AI 引导中",
       title: status,
-      body: "先用自己的话说出方法。通过变式验证后，系统会解锁下一题。",
+      body: "先看讲解，再点按钮或补半句。通过变式验证后，系统会解锁下一题。",
     };
   }
   if (selectedAnswer === undefined) {
@@ -5894,14 +5894,14 @@ function studentNextStepState({ selectedAnswer, question, locked, guidedComplete
       tone: "warning",
       badge: "需要确认",
       title: "答对了，但要证明不是猜的",
-      body: "请进入 AI 引导，用自己的话说清楚为什么这样做，再做一道变式题。",
+      body: "请进入 AI 引导，按支架补出为什么这样做，再做一道变式题。",
     };
   }
   return {
     tone: "warning",
     badge: "需要补会",
     title: "先别跳过，完成 AI 引导",
-    body: "这题暴露了一个知识点缺口。系统会先讲清概念，再让你复述和做变式。",
+    body: "这题暴露了一个知识点缺口。系统会先讲清概念，再让你用按钮或半句确认，然后做变式。",
   };
 }
 

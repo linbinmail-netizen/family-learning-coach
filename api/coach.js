@@ -53,6 +53,9 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (/^\s*(答案|answer)?\s*[A-D]\s*[。.!]?\s*$/i.test(text) || /^\s*[A-D]\s*(是|because|因为|,|，)/i.test(text)) return "reveals_answer_letter";
   if (/正确答案|答案是|选项\s*[A-D]|choose\s*[A-D]|correct answer|the answer is/i.test(text)) return "reveals_answer_language";
   if (answerTexts.some((answer) => lowerText.includes(answer.toLowerCase()))) return "reveals_answer_text";
+  if (/题目.*问什么|问题.*问.*什么|先说.*题目|真正问你找什么|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
+    return "meta_question_without_scaffold";
+  }
   if (studentCannotProduce && /题目.*问什么|问题.*问.*什么|先说.*题目|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念/.test(text)) {
     return "repeats_meta_question_when_stuck";
   }
@@ -63,6 +66,12 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
 export function safeTutorReply(aiReply = "", body = {}) {
   const reason = unsafeTutorReplyReason(aiReply, body);
   if (!reason) return String(aiReply || "").trim();
+  if (reason === "meta_question_without_scaffold") {
+    const skill = body.skill || "这个知识点";
+    const coachingGap = coachingGapAnalysis(body.studentReply || "");
+    const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
+    return `老师先示范一个小讲解：${shortExplanation} 现在只补一个空：${gapSentenceFrame(coachingGap, body)}`;
+  }
   return buildFallbackReply(body);
 }
 

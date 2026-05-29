@@ -528,10 +528,11 @@ test("safeTutorReply blocks bare answer-letter explanations", () => {
   assert.doesNotMatch(reply, /^B because|The central idea or claim/);
 });
 
-test("safeTutorReply keeps normal short coaching questions", () => {
+test("safeTutorReply rewrites meta-question-only coaching into a scaffold", () => {
   const reply = safeTutorReply("先说题目真正问你找什么，不用选答案。", baseBody);
 
-  assert.equal(reply, "先说题目真正问你找什么，不用选答案。");
+  assert.match(reply, /老师先示范|只补一个空|小讲解/);
+  assert.doesNotMatch(reply, /先说题目真正问你找什么/);
 });
 
 test("safeTutorReply rejects repeated meta questions when the student cannot produce an explanation", () => {

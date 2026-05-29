@@ -598,6 +598,21 @@ test("safeTutorReply rewrites vague write-more demands when the student is stuck
   assert.doesNotMatch(reply, /再写详细一点|多说一点/);
 });
 
+test("safeTutorReply rewrites restart demands when the student is stuck", () => {
+  const reply = safeTutorReply("我们重新来一遍，你先从头再想一次。", {
+    ...baseBody,
+    studentReply: "还是不会，知识点没吃透，打不出来",
+    history: [
+      { role: "student", text: "我不会，知识点没吃透" },
+      { role: "coach", text: "先补一个空：这题要我判断____。" },
+    ],
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /延续刚才的卡点|小讲解|前置概念|半句填空|现在只做一小步/);
+  assert.doesNotMatch(reply, /重新来一遍|从头再想/);
+});
+
 test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {
   const request = buildMasteryEvaluationRequest({
     ...baseBody,

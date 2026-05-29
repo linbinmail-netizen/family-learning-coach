@@ -75,6 +75,9 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (studentCannotProduce && /再写|写详细|多写|多说|说详细|补充一下|展开说|more detail|say more|write more/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
     return "vague_write_more_when_stuck";
   }
+  if (studentCannotProduce && /重新来|重来|从头|再想一次|重新想|重做|restart|start over/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
+    return "restart_demand_when_stuck";
+  }
   if (text.length > 180) return "too_long";
   return "";
 }

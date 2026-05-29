@@ -68,6 +68,7 @@ export function safeTutorReply(aiReply = "", body = {}) {
 
 export function detectNeedsTeaching(studentReply = "") {
   const reply = String(studentReply).toLowerCase();
+  if (metaQuestionComplaint(reply)) return true;
   return [
     "不懂",
     "不会",
@@ -94,6 +95,13 @@ export function detectNeedsTeaching(studentReply = "") {
   ].some((signal) => reply.includes(signal));
 }
 
+export function metaQuestionComplaint(studentReply = "") {
+  const text = String(studentReply || "").replace(/\s+/g, "").toLowerCase();
+  const mentionsMetaQuestion = /让.*(自己)?去说|问.*(题|问题).*什么|这问题问的什么|这题问什么|题目问什么|question.*ask/.test(text);
+  const cannotBridgeConcept = /别人知识点没吃透|人家也打不出来|知识点没吃透|打不出来|写不出来|说不出来|没吃透|概念没接上|概念没懂/.test(text);
+  return mentionsMetaQuestion && cannotBridgeConcept;
+}
+
 export function analyzeStudentReply(studentReply = "") {
   const raw = String(studentReply || "").trim();
   const lower = raw.toLowerCase();
@@ -113,7 +121,7 @@ export function coachingGapAnalysis(studentReply = "") {
   const questionConfusion = /题目.*(问什么|什么意思|看不懂)|问题.*(问什么|什么意思)|不懂.*(题|问题).*问什么|看不懂.*题|what.*question|question.*ask/.test(text);
   const methodConfusion = /第一步|先看什么|怎么开始|从哪|不知道.*步骤|不知道.*方法|first step|where.*start/.test(text);
   const reasonConfusion = /为什么|原因|because|why|不知道.*解释|说不出.*理由/.test(text);
-  const conceptConfusion = /知识点|概念|没学过|没吃透|前置|打不出来|写不出来|说不出来|完全不会|不明白|confused/.test(text);
+  const conceptConfusion = metaQuestionComplaint(text) || /知识点|概念|没学过|没吃透|前置|打不出来|写不出来|说不出来|完全不会|不明白|confused/.test(text);
   const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate|identify/.test(text);
   const hasMethod = /先|第一步|步骤|方法|看|找|变化|条件|证据|除以|比较|compare|divide|change|rate|evidence/.test(text);
   const hasReason = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that|therefore/.test(text);
@@ -250,7 +258,7 @@ function needsImmediateConceptTeaching(studentReply = "") {
 }
 
 function cannotProduceBecauseConceptGap(studentReply = "") {
-  return /别人知识点没吃透|人家也打不出来|打不出来|写不出来|说不出来|没吃透|概念没接上|概念没懂/i.test(String(studentReply || ""));
+  return metaQuestionComplaint(studentReply) || /别人知识点没吃透|人家也打不出来|打不出来|写不出来|说不出来|没吃透|概念没接上|概念没懂/i.test(String(studentReply || ""));
 }
 
 export function needsSmallerTaskAfterRepeatedStuck(body = {}) {

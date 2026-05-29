@@ -12,6 +12,7 @@ import {
   extractOpenAIText,
   fetchOpenAIWithTimeout,
   getLearningStep,
+  metaQuestionComplaint,
   mergeMasteryEvaluation,
   safeTutorReply,
 } from "./coach.js";
@@ -256,6 +257,14 @@ test("detectNeedsTeaching recognizes student knowledge-gap wording", () => {
   assert.equal(detectNeedsTeaching("知识点没吃透，人家也打不出来"), true);
   assert.equal(detectNeedsTeaching("我说不出来这题问什么"), true);
   assert.equal(detectNeedsTeaching("不是不想答，是这个概念没接上"), true);
+});
+
+test("meta question complaints are recognized as a concept support problem", () => {
+  const quote = "引导你让你自己去说比如说这问题问的什么之类的但这些如果是别人知识点没吃透人家也打不出来";
+
+  assert.equal(metaQuestionComplaint(quote), true);
+  assert.equal(detectNeedsTeaching(quote), true);
+  assert.equal(coachingGapAnalysis(quote).gap, "concept");
 });
 
 test("buildTutorRequest switches to teach-then-ask mode for concept confusion", () => {

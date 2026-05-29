@@ -1567,6 +1567,9 @@ test("student sees a clear notice after each challenge mission is completed", ()
   assert.match(js, /挑战任务完成/);
   assert.match(js, /下一步挑战/);
   assert.match(js, /挑战三步已完成/);
+  assert.match(js, /因为上一题太顺/);
+  assert.match(js, /继续用同一个知识点证明掌握/);
+  assert.match(js, /不是随机加难/);
   assert.match(js, /state\.lastAdvanceNotice = state\.lastChallengeMissionNotice \|\|/);
   assert.match(js, /state\.lastChallengeMissionNotice = ""/);
 });

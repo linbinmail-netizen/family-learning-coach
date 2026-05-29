@@ -2722,9 +2722,9 @@ function questionCompletesChallengeMission(question = {}, mission = {}, subjectI
 function challengeMissionCompletionNotice(completedMission = {}, remainingQueue = []) {
   if (!completedMission?.label) return "";
   if (!remainingQueue.length) {
-    return `挑战任务完成：${completedMission.label}。挑战三步已完成，可以生成学习总结，或继续选择更高难度。`;
+    return `挑战任务完成：${completedMission.label}。因为上一题太顺，系统让你继续用同一个知识点证明掌握；这不是随机加难。挑战三步已完成，可以生成学习总结，或继续选择更高难度。`;
   }
-  return `挑战任务完成：${completedMission.label}。下一步挑战：${remainingQueue[0].label}。`;
+  return `挑战任务完成：${completedMission.label}。因为上一题太顺，系统让你继续用同一个知识点证明掌握；这不是随机加难。下一步挑战：${remainingQueue[0].label}。`;
 }
 
 function adaptivePromotionEvidence(adaptiveResult = {}) {

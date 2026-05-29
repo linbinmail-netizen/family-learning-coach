@@ -734,7 +734,7 @@ test("student stuck replies can submit for rescue instead of staying blocked", (
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";
   assert.match(js, /const canAskForHelp = quality\.asksForHelp \|\| Boolean\(String\(reply \|\| ""\)\.trim\(\)\)/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
-  assert.match(js, /\$\("inlineCoachSubmit"\)\.textContent = guidanceSubmitButtonText\(quality\)/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.textContent = guidanceSubmitButtonText\(quality, state\.guidanceLock\)/);
   assert.match(js, /if \(quality\.asksForHelp\) return "帮我开头"/);
   assert.match(js, /if \(quality\.ready\) return "提交给教练"/);
   assert.match(js, /return "让教练帮我补"/);
@@ -856,6 +856,9 @@ test("cannot-produce replies auto-fill a teacher model instead of asking for mor
   assert.match(js, /state\.guidanceLock\.microChoiceReady = true/);
   assert.match(js, /先把老师示范句读一遍/);
   assert.match(js, /不用再写完整解释/);
+  assert.match(js, /lock\?\.microChoiceReady/);
+  assert.match(js, /提交示范句检查/);
+  assert.match(js, /直接点“提交示范句检查”/);
   assert.doesNotMatch(js, /guidanceCannotProduceThought\(reply\)[\s\S]*正确答案是/);
 });
 

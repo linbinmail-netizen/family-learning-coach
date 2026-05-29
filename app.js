@@ -3776,7 +3776,8 @@ function guidanceReplyProgressText(quality = evaluateGuidanceReplyQuality()) {
   return `已完成 ${completed}/3：${next}。`;
 }
 
-function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality()) {
+function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality(), lock = state.guidanceLock) {
+  if (lock?.microChoiceReady && quality.ready) return "提交示范句检查";
   if (quality.conceptBridgeReady) return "继续补下一句";
   if (quality.asksForHelp) return "帮我开头";
   if (quality.ready) return "提交给教练";
@@ -3793,7 +3794,9 @@ function guidanceNextActionForReply(reply = "", quality = evaluateGuidanceReplyQ
       : "完成变式验证：先写题型、第一步和原因；卡住就点“补下一句”。";
   }
   if (quality.ready || lock?.microChoiceReady) {
-    return "提交给教练：方法句已够完整，系统会检查后进入变式验证。";
+    return lock?.microChoiceReady
+      ? "直接点“提交示范句检查”：系统会确认你是否理解，再进入变式验证。"
+      : "提交给教练：方法句已够完整，系统会检查后进入变式验证。";
   }
   if (guidanceCannotProduceThought(reply) || quality.asksForHelp || lock?.forceStepBuilder) {
     return "不用先打完整解释：点“帮我填第一小句”只补第一小句，或点“先补知识点”“帮我拼完整方法句”；还是不懂就点“再讲一遍”。";
@@ -3860,7 +3863,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     renderConceptBridgeChoices(reply, quality, state.guidanceLock);
   }
   $("inlineCoachSubmit").disabled = !quality.ready && !canAskForHelp;
-  $("inlineCoachSubmit").textContent = guidanceSubmitButtonText(quality);
+  $("inlineCoachSubmit").textContent = guidanceSubmitButtonText(quality, state.guidanceLock);
   renderGuidanceUnlockProgress();
 }
 

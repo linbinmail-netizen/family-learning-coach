@@ -62,6 +62,10 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (/^((很好|对的|差不多|不错|good|yes|correct)[，,。.! ]*)+(继续|继续吧|go on)?[。.! ]*$/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范|第一步|因为|方法/.test(text)) {
     return "vague_praise_without_action";
   }
+  const questionMarkCount = (text.match(/[?？]/g) || []).length;
+  if (questionMarkCount >= 2 && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范|现在只/.test(text)) {
+    return "too_many_questions_without_scaffold";
+  }
   if (studentCannotProduce && /题目.*问什么|问题.*问.*什么|先说.*题目|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念/.test(text)) {
     return "repeats_meta_question_when_stuck";
   }
@@ -72,7 +76,7 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
 export function safeTutorReply(aiReply = "", body = {}) {
   const reason = unsafeTutorReplyReason(aiReply, body);
   if (!reason) return String(aiReply || "").trim();
-  if (reason === "meta_question_without_scaffold" || reason === "generic_encouragement_without_action" || reason === "vague_praise_without_action") {
+  if (reason === "meta_question_without_scaffold" || reason === "generic_encouragement_without_action" || reason === "vague_praise_without_action" || reason === "too_many_questions_without_scaffold") {
     const skill = body.skill || "这个知识点";
     const coachingGap = coachingGapAnalysis(body.studentReply || "");
     const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);

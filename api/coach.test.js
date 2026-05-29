@@ -549,6 +549,13 @@ test("safeTutorReply rewrites vague praise into a concrete next action", () => {
   assert.doesNotMatch(reply, /很好，对的，继续/);
 });
 
+test("safeTutorReply rewrites multi-question coaching into one micro step", () => {
+  const reply = safeTutorReply("这题问什么？关键词是什么？为什么它重要？", baseBody);
+
+  assert.match(reply, /老师先示范|只补一个空|小讲解|现在只/);
+  assert.doesNotMatch(reply, /这题问什么？关键词是什么？为什么它重要？/);
+});
+
 test("safeTutorReply rejects repeated meta questions when the student cannot produce an explanation", () => {
   const reply = safeTutorReply("你先说题目问什么，然后再想第一步。", {
     ...baseBody,

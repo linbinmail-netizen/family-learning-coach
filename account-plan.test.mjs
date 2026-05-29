@@ -964,11 +964,23 @@ test("student guidance coach gives teaching feedback before variant verification
 test("complete guidance restatement opens variant verification without a second coach turn", () => {
   assert.match(js, /function shouldMoveToVariantAfterReply/);
   assert.match(js, /evaluateGuidanceReplyQuality\(reply\)\.ready/);
+  assert.match(js, /if \(state\.guidanceLock\?\.microChoiceReady && !state\.guidanceLock\?\.teacherModelConfirmed\) return false/);
   assert.doesNotMatch(
     js,
     /isReasonStrong\(reply\) && \(state\.guidanceLock\.teachingTurns \|\| 0\) >= 1/
   );
   assert.match(js, /现在做一道变式验证/);
+});
+
+test("teacher model submission checks understanding before variant verification", () => {
+  const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  assert.match(js, /teacherModelConfirmed/);
+  assert.match(js, /function confirmTeacherModelUnderstanding/);
+  assert.match(js, /先确认你真的看懂了老师示范句/);
+  assert.match(js, /请把这句里的“第一步”换成自己的话/);
+  assert.match(submitHandler, /if \(state\.guidanceLock\?\.microChoiceReady && !state\.guidanceLock\?\.teacherModelConfirmed\) \{/);
+  assert.match(submitHandler, /confirmTeacherModelUnderstanding\(reply, input\)/);
+  assert.doesNotMatch(submitHandler, /microChoiceReady[\s\S]{0,240}transitionGuidanceToVariantImmediately/);
 });
 
 test("complete guidance restatement switches to variant immediately before remote AI returns", () => {

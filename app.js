@@ -3993,6 +3993,24 @@ function requestConceptExampleReteach(input = $("inlineCoachReply")) {
   focusGuidancePanel();
 }
 
+function confirmTeacherModelUnderstanding(reply = "", input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock()) return;
+  appendInlineCoach("student", reply);
+  appendInlineCoach(
+    "coach",
+    "先确认你真的看懂了老师示范句。请把这句里的“第一步”换成自己的话：我第一步先看____，因为____。"
+  );
+  state.guidanceLock.teacherModelConfirmed = true;
+  state.guidanceLock.microChoiceReady = false;
+  state.guidanceLock.microChoiceNote = "先用自己的话改写第一步；改完再提交，系统再进入变式验证。";
+  state.guidanceLock.replyDraft = "我第一步先看____，因为____。";
+  input.value = state.guidanceLock.replyDraft;
+  renderReplyQuality(input.value);
+  saveData();
+  renderDiagnostic();
+  focusGuidancePanel();
+}
+
 function submitGuidanceQuickReply(text = "", input = $("inlineCoachReply")) {
   if (!hasActiveGuidanceLock() || !text.trim()) return;
   input.value = text.trim();
@@ -4006,6 +4024,7 @@ function submitGuidanceQuickReply(text = "", input = $("inlineCoachReply")) {
 }
 
 function shouldMoveToVariantAfterReply(reply = "") {
+  if (state.guidanceLock?.microChoiceReady && !state.guidanceLock?.teacherModelConfirmed) return false;
   return evaluateGuidanceReplyQuality(reply).ready || (isReasonStrong(reply) && (state.guidanceLock?.teachingTurns || 0) >= 1);
 }
 
@@ -6928,6 +6947,10 @@ function bindEvents() {
     }
     if (!quality.ready) {
       rescueIncompleteGuidanceReply(reply, input);
+      return;
+    }
+    if (state.guidanceLock?.microChoiceReady && !state.guidanceLock?.teacherModelConfirmed) {
+      confirmTeacherModelUnderstanding(reply, input);
       return;
     }
     appendInlineCoach("student", reply);

@@ -576,6 +576,17 @@ test("safeTutorReply rejects repeated meta questions when the student cannot pro
   assert.doesNotMatch(reply, /你先说题目问什么/);
 });
 
+test("safeTutorReply rewrites full-restatement demands when the student is stuck", () => {
+  const reply = safeTutorReply("请你先用自己的话完整解释一下这个知识点，然后再继续。", {
+    ...baseBody,
+    studentReply: "知识点没吃透，人家也打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /小讲解|前置概念|半句填空|现在只做一小步/);
+  assert.doesNotMatch(reply, /用自己的话完整解释/);
+});
+
 test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {
   const request = buildMasteryEvaluationRequest({
     ...baseBody,

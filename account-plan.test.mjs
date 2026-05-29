@@ -623,9 +623,11 @@ test("student can ask for another example without typing a perfect restatement",
 
 test("student guidance has quick replies for common stuck states", () => {
   assert.match(html, /id="coachQuickReplies"/);
+  assert.match(html, /不会写也可以继续/);
+  assert.match(html, /不用先组织完整答案，先点一个卡住状态/);
   assert.match(html, /data-guidance-quick-reply="我不懂这题问什么。"/);
   assert.match(html, /data-guidance-quick-reply="我懂一点概念，但不知道第一步看什么。"/);
-  assert.match(html, /data-guidance-quick-reply="我知识点没吃透，先讲给我听，再让我只填一个空。"/);
+  assert.match(html, /class="secondary-button small-button recommended-reply" type="button" data-guidance-quick-reply="我知识点没吃透，先讲给我听，再让我只填一个空。"/);
   assert.match(html, /data-guidance-quick-reply="我还是没懂，换个例子讲。"/);
   assert.match(html, />先讲知识点</);
   assert.match(js, /function submitGuidanceQuickReply/);
@@ -633,6 +635,8 @@ test("student guidance has quick replies for common stuck states", () => {
   assert.match(js, /submitGuidanceQuickReply\(button\.dataset\.guidanceQuickReply, \$\("inlineCoachReply"\)\)/);
   assert.match(js, /rescueIncompleteGuidanceReply\(input\.value, input\)/);
   assert.match(css, /coach-quick-replies/);
+  assert.match(css, /quick-replies-title/);
+  assert.match(css, /recommended-reply/);
 });
 
 test("initial guidance task teaches before asking students to produce the question goal", () => {

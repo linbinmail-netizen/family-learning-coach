@@ -152,7 +152,7 @@ test("student can manually raise difficulty when questions feel too easy", () =>
   assert.match(js, /手动升难度/);
   assert.match(js, /nextAdaptiveQuestionIndex\(questions, state\.currentQuestion, \{ isCorrect: true, level: nextLevel, challengeMode: true, raisedLevel: true \}\)/);
   assert.match(js, /raiseDifficultyButton"\)\.addEventListener\("click", raiseDifficultyOnDemand\)/);
-  assert.match(js, /state\.lastAdvanceNotice = "你觉得太简单，系统已切到更高难度的解释型或挑战题。"/);
+  assert.match(js, /state\.lastAdvanceNotice = "你觉得太简单，系统已切到同一个知识点的更高难度解释题或挑战题，证明不是靠选项猜对。"/);
 });
 
 test("manual too-easy boost forces the next question to require written method proof", () => {
@@ -177,6 +177,14 @@ test("student sees why the difficulty is changing and what comes next", () => {
   assert.match(js, /下一题会优先安排解释型或学校考试深度题/);
   assert.match(js, /前 6 题会穿插至少 2 道深度题/);
   assert.match(css, /difficulty-coach-card/);
+});
+
+test("manual too-easy message explains same-skill depth verification", () => {
+  const boostBlock = js.match(/function raiseDifficultyOnDemand[\s\S]*?function activeQuestions/)?.[0] || "";
+
+  assert.match(boostBlock, /同一个知识点/);
+  assert.match(boostBlock, /解释题/);
+  assert.match(boostBlock, /证明不是靠选项猜对/);
 });
 
 test("voice coach input is available as an optional browser feature", () => {

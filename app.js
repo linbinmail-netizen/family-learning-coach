@@ -5201,9 +5201,9 @@ function raiseDifficultyOnDemand() {
     state.forcedChallengeQuestionKeys[questionStableKey(questions[preferredIndex])] = true;
     state.currentQuestion = preferredIndex;
   }
-  state.lastAdvanceNotice = "你觉得太简单，系统已切到更高难度的解释型或挑战题。";
+  state.lastAdvanceNotice = "你觉得太简单，系统已切到同一个知识点的更高难度解释题或挑战题，证明不是靠选项猜对。";
   $("answerFeedback").textContent = `${state.lastAdvanceNotice} 当前目标难度：${difficultyLevels[nextLevel]}。`;
-  $("dailySuggestion").textContent = `${state.lastAdvanceNotice} 接下来优先做学校考试深度题。`;
+  $("dailySuggestion").textContent = `${state.lastAdvanceNotice} 接下来优先做同知识点的学校考试深度题。`;
   saveData();
   renderDiagnostic();
 }

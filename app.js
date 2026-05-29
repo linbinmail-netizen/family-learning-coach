@@ -2160,6 +2160,49 @@ async function syncAnswerSubmitToApi(question, selectedIndex, confidence, practi
   }
 }
 
+async function requestCoachFeedbackForGuidance(question, selectedIndex, confidence, issue) {
+  if (!state.guidanceLock || state.guidanceLock.questionIndex !== state.currentQuestion) return;
+  const selectedLabel = String.fromCharCode(65 + selectedIndex);
+  const selectedAnswer = question.answers?.[selectedIndex] || selectedLabel;
+  state.guidanceLock.coachFeedback = {
+    diagnosis: "AI 正在诊断卡点...",
+    hintLevel1: "",
+    hintLevel2: "",
+    restatePrompt: "",
+  };
+  try {
+    const response = await fetch("/api/coach-feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        studentId: state.studentId,
+        question: question.prompt,
+        choices: question.answers || [],
+        correctAnswer: question.answers?.[question.correct] || String.fromCharCode(65 + question.correct),
+        studentAnswer: selectedAnswer,
+        studentExplanation: guidanceIssueText(issue),
+        confidence,
+        skill: question.skill || activeDiagnostic().skills[0][0],
+        gradeLevel: state.grade,
+        commonMistakes: question.commonMistakes || {},
+        hintSteps: question.coachHints || [],
+      }),
+    });
+    if (!response.ok) throw new Error("coach feedback failed");
+    const feedback = await response.json();
+    if (!state.guidanceLock || state.guidanceLock.questionIndex !== state.currentQuestion) return;
+    state.guidanceLock.coachFeedback = feedback;
+    appendInlineCoach(
+      "coach",
+      `AI 诊断：${feedback.diagnosis || "先补核心概念。"} ${feedback.hintLevel1 || ""} 下一小步：${feedback.restatePrompt || "我第一步先看____。"}`
+    );
+    saveData();
+    renderDiagnostic();
+  } catch (error) {
+    console.warn("Coach feedback diagnosis skipped.", error);
+  }
+}
+
 async function loadAuthProfile() {
   if (!state.authSession?.user?.id) return;
   await supabaseRpc("ensure_my_profile");
@@ -3246,14 +3289,19 @@ function guidanceIssueText(issue) {
 function guidanceInsightForLock(lock = state.guidanceLock, question = activeQuestions()[state.currentQuestion]) {
   const lesson = conceptMiniLesson(question);
   const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const coachFeedback = lock?.coachFeedback || {};
   const issueType =
-    lock?.issue === "confidence"
+    lock && lock.coachFeedback?.diagnosis
+      ? coachFeedback.diagnosis
+      : lock?.issue === "confidence"
       ? "可能是猜对，还没证明掌握"
       : lock?.issue === "school_verification"
         ? "题目偏简单，需要升级到解释型验证"
         : "答案不对，方法需要修正";
   const repairAction =
-    lock?.issue === "confidence" || lock?.issue === "school_verification"
+    lock && lock.coachFeedback?.hintLevel1
+      ? `${coachFeedback.hintLevel1} 下一步：${coachFeedback.restatePrompt || "只补一个空：我第一步先看____。"}`
+      : lock?.issue === "confidence" || lock?.issue === "school_verification"
       ? "不显示正确答案，先说清楚为什么这样做，再完成变式验证。"
       : "不显示正确答案，先看 AI 拆题和小讲解，再只补关键词或第一步。";
   return {
@@ -7018,6 +7066,7 @@ function bindEvents() {
     } else {
       if (issue !== "school_verification") recordMistake(question, selectedIndex, guidanceIssueText(issue));
       startGuidedMastery(question, selectedIndex, "", confidence, issue);
+      requestCoachFeedbackForGuidance(question, selectedIndex, confidence, issue);
     }
     saveData();
     renderDiagnostic();

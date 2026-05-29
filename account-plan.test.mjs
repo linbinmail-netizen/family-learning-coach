@@ -495,6 +495,18 @@ test("student guidance starts with a structured mistake insight card", () => {
   assert.match(css, /guidance-insight-card/);
 });
 
+test("wrong-answer guidance uses coach feedback diagnosis in the student panel", () => {
+  assert.match(js, /function requestCoachFeedbackForGuidance/);
+  assert.match(js, /\/api\/coach-feedback/);
+  assert.match(js, /coachFeedback/);
+  assert.match(js, /diagnosis/);
+  assert.match(js, /hintLevel1/);
+  assert.match(js, /restatePrompt/);
+  assert.match(js, /requestCoachFeedbackForGuidance\(question, selectedIndex, confidence, issue\)/);
+  assert.match(js, /lock\.coachFeedback\?\.diagnosis/);
+  assert.match(js, /lock\.coachFeedback\?\.hintLevel1/);
+});
+
 test("student guidance shows a single current task card", () => {
   assert.match(html, /id="guidanceTaskCard"/);
   assert.match(html, /id="guidanceTaskBadge"/);

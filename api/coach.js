@@ -206,7 +206,7 @@ function stuckGapTeachingAction(body = {}) {
   const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
   const example = teachingMiniExampleForApi(skill, body.subject);
   if (coachingGap.gap === "question_goal") {
-    return `${diagnosedGapLine(body)}先把题目翻译成一句话。小讲解：${shortExplanation} 现在只做一小步：${gapSentenceFrame(coachingGap, body)}`;
+    return `${diagnosedGapLine(body)}不用自己翻译题意，老师先替你拆半句。小讲解：${shortExplanation} 现在只做一小步：二选一，先看题干关键词，还是先看答案长短？半句填空：${gapSentenceFrame(coachingGap, body)}`;
   }
   if (coachingGap.gap === "concept") {
     return `${diagnosedGapLine(body)}这不是写作问题，先补前置概念。老师先说给你听。小讲解：${shortExplanation} 现在只做一小步，你只需要选一个按钮或补一个空：二选一，先看题干关键词，还是先看答案长短？半句填空：这题要我判断____。`;

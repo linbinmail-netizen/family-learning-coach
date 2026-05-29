@@ -32,7 +32,7 @@ test("coach fallback uses different teaching actions for different stuck gaps", 
   const reasonReply = buildFallbackReply({ ...baseBody, studentReply: "我知道第一步，但是不知道为什么" });
 
   assert.match(questionReply, /卡点判断：题意没拆开/);
-  assert.match(questionReply, /先把题目翻译成一句话/);
+  assert.match(questionReply, /老师先替你拆半句/);
   assert.match(conceptReply, /卡点判断：概念没接上/);
   assert.match(conceptReply, /先补前置概念/);
   assert.match(methodReply, /卡点判断：第一步不会选/);
@@ -68,8 +68,11 @@ test("coach fallback teaches before asking when student cannot state the questio
     explanation: "斜率表示 y 相对于 x 的变化率。",
   });
   assert.match(reply, /卡点判断：题意没拆开/);
-  assert.match(reply, /先把题目翻译成一句话/);
+  assert.match(reply, /不用自己翻译题意/);
+  assert.match(reply, /老师先替你拆半句/);
+  assert.match(reply, /二选一/);
   assert.match(reply, /这题要我判断____/);
+  assert.doesNotMatch(reply, /先把题目翻译成一句话/);
   assert.doesNotMatch(reply, /题目要你找哪一类信息/);
   assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
 });

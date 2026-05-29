@@ -36,3 +36,20 @@ test("parent report can summarize session records when individual answers are no
   assert.equal(report.accuracy, 83);
   assert.match(report.nextSteps.join(" "), /难度合适/);
 });
+
+test("parent report treats frequent unsure correct answers as a verification need", () => {
+  const report = buildParentReport({
+    studentName: "MIA",
+    answers: [
+      { is_correct: true, confidence: "guess" },
+      { is_correct: true, confidence: "unsure" },
+      { is_correct: true, confidence: "sure" },
+    ],
+    sessions: [{ questions_answered: 3, correct_count: 3, guessing_count: 2, slow_count: 0 }],
+  });
+
+  const nextSteps = report.nextSteps.join(" ");
+  assert.match(nextSteps, /减少纯选择题/);
+  assert.match(nextSteps, /解释验证|方法复述/);
+  assert.doesNotMatch(nextSteps, /难度偏高/);
+});

@@ -21,8 +21,14 @@ function topCounts(items = [], key) {
 }
 
 function difficultyAdvice({ accuracy = 0, guessingCount = 0, slowCount = 0 }) {
-  if (accuracy >= 85 && guessingCount === 0) return "当前难度略低，明天可以加入 1-2 道挑战题。";
-  if (accuracy < 60 || guessingCount >= 2 || slowCount >= 2) return "当前难度偏高，明天先复习薄弱技能，再做同类变式题。";
+  if (guessingCount >= 2 && accuracy >= 70) {
+    return "正确率不低但猜题信号明显，明天减少纯选择题，增加解释验证和方法复述，确认孩子不是靠排除选项猜对。";
+  }
+  if (guessingCount >= 2) {
+    return "猜题信号明显，明天先补薄弱概念，再用少量解释验证题确认方法。";
+  }
+  if (accuracy >= 85) return "当前难度略低，明天可以加入 1-2 道挑战题。";
+  if (accuracy < 60 || slowCount >= 2) return "当前难度偏高，明天先复习薄弱技能，再做同类变式题。";
   return "当前难度合适，明天保持同级难度并加入少量复习题。";
 }
 
@@ -49,7 +55,7 @@ export function buildParentReport({
     .map((item) => item.skill)
     .filter(Boolean);
   const weakSkills = [...new Set(weakSkillCounts.map((item) => item.name).concat(weakMastery))].slice(0, 5);
-  const guessingCount = answers.filter((answer) => answer.confidence === "guess").length +
+  const guessingCount = answers.filter((answer) => answer.confidence === "guess" || answer.confidence === "unsure").length +
     sessions.reduce((sum, item) => sum + (item.guessing_count || item.guessingCount || 0), 0);
   const slowCount = sessions.reduce((sum, item) => sum + (item.slow_count || item.slowCount || 0), 0);
   const nextFocus = weakSkills[0] || "today's main skill";

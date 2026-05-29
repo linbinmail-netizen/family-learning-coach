@@ -1203,6 +1203,20 @@ test("challenge pre-answer gives a live writing checklist before answer choices 
   assert.match(css, /pre-answer-checklist/);
 });
 
+test("school-depth questions show a clear requirement card before students answer", () => {
+  assert.match(html, /id="questionRequirementCard"/);
+  assert.match(html, /id="questionRequirementTitle"/);
+  assert.match(html, /id="questionRequirementBody"/);
+  assert.match(html, /id="questionRequirementProof"/);
+  assert.match(js, /function questionRequirementState/);
+  assert.match(js, /function renderQuestionRequirementCard/);
+  assert.match(js, /isSchoolExamPracticeQuestion\(question\)/);
+  assert.match(js, /证明你不是靠选项猜对/);
+  assert.match(js, /写出题目目标、第一步和原因/);
+  assert.match(js, /renderQuestionRequirementCard\(question\)/);
+  assert.match(css, /question-requirement-card/);
+});
+
 test("student lesson includes concept, example, steps, trap, and quick check", () => {
   assert.match(html, /方法步骤/);
   assert.match(html, /易错提醒/);

@@ -1007,6 +1007,38 @@ textarea {
   color: var(--green-dark);
 }
 
+.question-requirement-card {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid rgba(47, 111, 159, 0.18);
+  border-radius: 8px;
+  background: #f8fbfd;
+}
+
+.question-requirement-card span {
+  color: var(--blue-dark);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.question-requirement-card p {
+  margin: 0;
+  color: var(--ink);
+}
+
+.question-requirement-card strong {
+  color: var(--green-dark);
+  font-size: 13px;
+}
+
+.question-requirement-card.school-depth {
+  border-color: rgba(32, 111, 87, 0.24);
+  background: #f3faf6;
+}
+
 .answer-option.locked-choice {
   opacity: 0.55;
   cursor: not-allowed;

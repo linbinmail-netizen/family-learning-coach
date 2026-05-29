@@ -4526,6 +4526,39 @@ function questionTypeLabel(question = {}) {
   return "选择诊断题";
 }
 
+function questionRequirementState(question = {}) {
+  const type = questionTypeLabel(question);
+  if (isSchoolExamPracticeQuestion(question)) {
+    return {
+      title: `${type}要求`,
+      body: "这题比普通选择题更接近学校考试：不能只看选项排除，要先说明题目考什么、第一步怎么做。",
+      proof: "证明你不是靠选项猜对：写出题目目标、第一步和原因。",
+    };
+  }
+  if (isChallengePreAnswerQuestion(question)) {
+    return {
+      title: `${type}要求`,
+      body: "这题用来检查你会不会讲方法，不只是选出答案。",
+      proof: "先写题目目标和第一步，再看选项。",
+    };
+  }
+  return {
+    title: "选择诊断题要求",
+    body: "先独立判断。答错或不确定后，系统会讲解并引导。",
+    proof: "选答案前先想：这题问什么？第一步看什么？",
+  };
+}
+
+function renderQuestionRequirementCard(question = activeQuestions()[state.currentQuestion]) {
+  const card = $("questionRequirementCard");
+  if (!card) return;
+  const requirement = questionRequirementState(question);
+  $("questionRequirementTitle").textContent = requirement.title;
+  $("questionRequirementBody").textContent = requirement.body;
+  $("questionRequirementProof").textContent = requirement.proof;
+  card.classList.toggle("school-depth", isSchoolExamPracticeQuestion(question));
+}
+
 function isDepthPracticeQuestion(question = {}) {
   return questionExamDepthScore(question) > 0 || difficultyScore(question.difficulty) >= 2 || questionLearningDepthScore(question) >= 36;
 }
@@ -5519,6 +5552,7 @@ function renderDiagnostic() {
   $("commonTrap").textContent = lesson.trap;
   $("quickCheck").textContent = lesson.quickCheck;
   $("miniLessonCard").classList.toggle("hidden", !showLessonAfterAttempt);
+  renderQuestionRequirementCard(question);
   $("questionPrompt").textContent = question.prompt;
   $("confidenceSelect").value = confidence;
   const plan = planForStudent(student.id);

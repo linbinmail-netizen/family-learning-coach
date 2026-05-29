@@ -349,6 +349,19 @@ test("AI coach removes conflicting meta-question step when concepts are not read
   assert.doesNotMatch(text, /让学生用自己的话说出题目真正问什么/);
 });
 
+test("AI coach default first step teaches a model before asking for the question goal", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "我不知道怎么写",
+    history: [],
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /先给老师示范句/);
+  assert.match(text, /再让学生补一个空/);
+  assert.doesNotMatch(text, /让学生用自己的话说出题目真正问什么/);
+});
+
 test("AI coach offers choice or fill-in scaffolds when students cannot type the idea", () => {
   const request = buildTutorRequest({
     ...baseBody,

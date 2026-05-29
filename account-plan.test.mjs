@@ -1599,6 +1599,17 @@ test("student AI replies append after the instant local coach instead of replaci
   assert.doesNotMatch(chatHandler, /lastElementChild\.remove\(\)/);
 });
 
+test("remote AI supplement keeps the child on the current partial-method step", () => {
+  const sanitizeBlock = js.match(/function sanitizeCoachSupplement[\s\S]*?function appendCoachSupplement/)?.[0] || "";
+  assert.match(sanitizeBlock, /latestCoachMove/);
+  assert.match(sanitizeBlock, /这部分保留|直接接下一句/);
+  assert.match(sanitizeBlock, /远端 AI 回到旧问题/);
+  assert.match(sanitizeBlock, /按刚才的小步骤继续/);
+  assert.match(sanitizeBlock, /题目里的____说明____/);
+  assert.match(sanitizeBlock, /题目.*问什么|先说.*题目/);
+  assert.doesNotMatch(sanitizeBlock, /远端 AI 回到旧问题[\s\S]{0,180}先说题目问什么/);
+});
+
 test("inline coach waiting state tells the student the next concrete step", () => {
   const inlineHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   assert.match(js, /function setGuidanceWaitingAction/);
@@ -1645,6 +1656,15 @@ test("local student coach continues partial method attempts instead of restartin
   assert.match(js, /题目里的____说明____/);
   assert.match(js, /localMethodAttemptContinuation\(rawReply, question\)/);
   assert.doesNotMatch(js, /localMethodAttemptContinuation[\s\S]*正确答案是/);
+});
+
+test("local coach does not require students to invent the question goal when they are stuck", () => {
+  const gapBlock = js.match(/function coachingGapForReply[\s\S]*?function localGapSentenceFrame/)?.[0] || "";
+  const promptBlock = js.match(/function localOneStepCoachPrompt[\s\S]*?function localPartialMethodAnchors/)?.[0] || "";
+  assert.match(gapBlock, /先看老师示范，再补一个空/);
+  assert.match(promptBlock, /如果说不出来，就直接补空/);
+  assert.doesNotMatch(gapBlock, /说出题目真正问什么/);
+  assert.doesNotMatch(promptBlock, /说出题目真正问什么/);
 });
 
 test("student coach uses recent same-skill mistakes", () => {

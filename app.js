@@ -6118,12 +6118,20 @@ function appendInlineCoach(role, text) {
 function sanitizeCoachSupplement(text = "", history = [], question = activeQuestions()[state.currentQuestion]) {
   const raw = String(text || "").trim();
   const recentStudent = [...history].reverse().find((message) => message.role === "student")?.text || "";
+  const latestCoachMove = [...history].reverse().find((message) => message.role === "coach")?.text || "";
   const tooLong = raw.length > 180;
+  const restartsOldQuestion =
+    /题目.*问什么|问题.*问.*什么|先说.*题目|先.*题目目标|真正问你找什么|describe.*question|what.*question/i.test(raw);
+  const alreadyOnPartialMethodStep =
+    /这部分保留|直接接下一句|下一句只补|题目里的____说明____|当前变式验证/.test(latestCoachMove);
   const repeatsMetaQuestion =
-    /题目.*问什么|问题.*问.*什么|先说.*题目|describe.*question|what.*question/i.test(raw)
+    restartsOldQuestion
     && /不知道|不会|不懂|打不出来|说不出来|写不出来|知识点没吃透|没思路|idk|stuck/i.test(recentStudent);
   if (guidanceMetaQuestionComplaint(recentStudent)) {
     return `别再追问“这题问什么”。先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 接着做二选一判断，最后只填一个空：${localGapSentenceFrame(coachingGapForReply(recentStudent), question)}`;
+  }
+  if (alreadyOnPartialMethodStep && restartsOldQuestion) {
+    return "远端 AI 回到旧问题，先不用理会。按刚才的小步骤继续：题目里的____说明____。";
   }
   if (tooLong || repeatsMetaQuestion) {
     const gap = coachingGapForReply(recentStudent);
@@ -6170,13 +6178,13 @@ function coachingGapForReply(studentReply = "") {
     return { label: "只写了答案", next: "先不选答案，先说第一步看什么。" };
   }
   if (!text) {
-    return { label: "还没形成第一步", next: "先照老师示范句，说出题目真正问什么。" };
+    return { label: "还没形成第一步", next: "先看老师示范，再补一个空。" };
   }
   if (quality.asksForHelp && reasonConfusion) return { label: "原因说不出", next: "只补一句为什么这一步有用。" };
   if (quality.asksForHelp && methodConfusion) return { label: "第一步不会选", next: "只选第一步动作，不用完整解释。" };
-  if (quality.asksForHelp && questionConfusion) return { label: "题意没拆开", next: "先把题目翻译成一句话。" };
+  if (quality.asksForHelp && questionConfusion) return { label: "题意没拆开", next: "先看老师怎么拆题，再补一个空。" };
   if (quality.asksForHelp && conceptConfusion) return { label: "概念没接上", next: "先补前置概念，再做半句填空。" };
-  if (quality.asksForHelp) return { label: "还没形成第一步", next: "先照老师示范句，说出题目真正问什么。" };
+  if (quality.asksForHelp) return { label: "还没形成第一步", next: "先看老师示范，再补一个空。" };
   if (!quality.questionGoal) return { label: "题目目标不清楚", next: "补一句：这题要我判断什么。" };
   if (!quality.methodStep) return { label: "方法步骤不清楚", next: "补一句：我第一步先看什么。" };
   if (!quality.reasonWhy) return { label: "原因说明不完整", next: "补一句：为什么这一步有用。" };
@@ -6220,7 +6228,7 @@ function localStuckGapTeachingAction(gap = coachingGapForReply(), question = act
 }
 
 function localOneStepCoachPrompt(gap = coachingGapForReply(), question = activeQuestions()[state.currentQuestion]) {
-  return `我看到你现在缺的是：${gap.label}。${gap.next} 只补这一句：${localGapSentenceFrame(gap, question)}`;
+  return `我看到你现在缺的是：${gap.label}。${gap.next} 如果说不出来，就直接补空。只补这一句：${localGapSentenceFrame(gap, question)}`;
 }
 
 function localPartialMethodAnchors(reply = "", question = activeQuestions()[state.currentQuestion]) {

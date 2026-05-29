@@ -2,8 +2,8 @@ const learningSteps = [
   {
     id: "understand",
     label: "理解题意",
-    instruction: "让学生用自己的话说出题目真正问什么，不要讨论选项对错。",
-    fallback: "我们先从题意开始。你能用自己的话说说：这道题真正问你找什么吗？",
+    instruction: "先给老师示范句，再让学生补一个空，不要求学生凭空说出题目目标。",
+    fallback: "先听老师示范一句，再只补一个空：这题要我判断____。",
   },
   {
     id: "keywords",
@@ -127,12 +127,12 @@ export function coachingGapAnalysis(studentReply = "") {
   const hasReason = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that|therefore/.test(text);
   const enoughDetail = text.replace(/\s+/g, "").length >= 18 || text.split(/\s+/).filter(Boolean).length >= 8;
   if (answerOnly) return { gap: "answer_only", label: "只写了答案", next: "不要先选答案，先写方法句。" };
-  if (!text) return { gap: "stuck", label: "还没形成第一步", next: "先照老师给的第一步说一遍。" };
+  if (!text) return { gap: "stuck", label: "还没形成第一步", next: "先看老师示范，再补一个空。" };
   if (stuck && reasonConfusion) return { gap: "reason_stuck", label: "原因说不出", next: "只补一句为什么这一步有用。" };
   if (stuck && methodConfusion) return { gap: "method_stuck", label: "第一步不会选", next: "只选第一步动作，不用完整解释。" };
-  if (stuck && questionConfusion) return { gap: "question_goal", label: "题意没拆开", next: "先把题目翻译成一句话。" };
+  if (stuck && questionConfusion) return { gap: "question_goal", label: "题意没拆开", next: "先看老师怎么拆题，再补一个空。" };
   if (stuck && conceptConfusion) return { gap: "concept", label: "概念没接上", next: "先补前置概念，再做半句填空。" };
-  if (stuck) return { gap: "stuck", label: "还没形成第一步", next: "先照老师给的第一步说一遍。" };
+  if (stuck) return { gap: "stuck", label: "还没形成第一步", next: "先看老师示范，再补一个空。" };
   if (!hasGoal) return { gap: "goal", label: "题目目标不清楚", next: "先说这题要你判断什么。" };
   if (!hasMethod) return { gap: "method", label: "方法步骤不清楚", next: "补一句第一步看什么。" };
   if (!hasReason) return { gap: "reason", label: "原因说明不完整", next: "补一句为什么这一步有用。" };
@@ -355,7 +355,7 @@ export function buildTutorRequest(body = {}) {
   const currentStepForRequest = needsTeaching
     ? {
         ...step,
-        instruction: "先教一个最小概念，再给一个小例子，只让学生补一个空，不要求完整复述题意。",
+        instruction: "先给老师示范句：先教一个最小概念，再给一个小例子，只让学生补一个空，不要求完整复述题意。",
         fallback: "先听一句讲解，再只补半句填空。",
       }
     : step;
@@ -421,7 +421,7 @@ export function buildTutorRequest(body = {}) {
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. If replyAnalysis.type is method_attempt, treat it as 半对思路: 先指出学生已经说对的部分，不要重做整题，只让她补题目里的具体关键词或证据. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先补前置概念，再给半句填空. Use replyAnalysis, coachingGap, and coachSessionMemory to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
+                "Move the student one step forward. If replyAnalysis.type is method_attempt, treat it as 半对思路: 先指出学生已经说对的部分，不要重做整题，只让她补题目里的具体关键词或证据. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先给老师示范句，先补前置概念，再让学生补一个空. Use replyAnalysis, coachingGap, and coachSessionMemory to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
             }),
           },
         ],

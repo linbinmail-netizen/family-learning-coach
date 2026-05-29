@@ -542,6 +542,13 @@ test("safeTutorReply rewrites generic encouragement into a concrete next action"
   assert.doesNotMatch(reply, /再想想，认真读题，你可以的/);
 });
 
+test("safeTutorReply rewrites vague praise into a concrete next action", () => {
+  const reply = safeTutorReply("很好，对的，继续。", baseBody);
+
+  assert.match(reply, /老师先示范|只补一个空|小讲解|第一步/);
+  assert.doesNotMatch(reply, /很好，对的，继续/);
+});
+
 test("safeTutorReply rejects repeated meta questions when the student cannot produce an explanation", () => {
   const reply = safeTutorReply("你先说题目问什么，然后再想第一步。", {
     ...baseBody,

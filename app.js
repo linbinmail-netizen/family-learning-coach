@@ -2647,12 +2647,21 @@ function challengeMissionCompletionNotice(completedMission = {}, remainingQueue 
   return `挑战任务完成：${completedMission.label}。下一步挑战：${remainingQueue[0].label}。`;
 }
 
-function advanceNoticeForNextQuestion(nextQuestion = {}, mode = "correct", canUsePreferred = false) {
+function adaptivePromotionEvidence(adaptiveResult = {}) {
+  const signals = [];
+  if (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect) signals.push("答得快");
+  if (adaptiveResult.raisedLevel || adaptiveResult.challengeMode) signals.push("连续答对");
+  if (adaptiveResult.isCorrect) signals.push("自己选择了“确定”");
+  return signals.length ? signals.join("、") : "这题已经通过";
+}
+
+function advanceNoticeForNextQuestion(nextQuestion = {}, mode = "correct", canUsePreferred = false, adaptiveResult = state.lastAdaptiveResult || {}) {
   const questionNumber = state.currentQuestion + 1;
   if (canUsePreferred && isExplanationFirstChallenge(nextQuestion)) {
+    const evidence = adaptivePromotionEvidence(adaptiveResult);
     return mode === "guided"
       ? `引导完成，系统已切到第 ${questionNumber} 题。这题会更像学校考试深度题；先写方法，再选答案。`
-      : `上一题太轻松，系统已切到第 ${questionNumber} 题。这题会更像学校考试深度题；先写方法，再选答案。`;
+      : `上一题太轻松，因为${evidence}，系统已切到第 ${questionNumber} 题。下一题会更像学校考试深度题；先写方法，再选答案。`;
   }
   if (mode === "guided") return `引导完成，已进入第 ${questionNumber} 题。`;
   return canUsePreferred
@@ -6855,6 +6864,7 @@ function bindEvents() {
     markQuestionAnswered(question);
     const issue = shouldStartGuidance(selectedIndex, question, confidence);
     const adaptiveResult = updateAdaptiveDifficulty(question, selectedIndex, confidence);
+    state.lastAdaptiveResult = adaptiveResult;
     const preferredNextIndex = nextAdaptiveQuestionIndex(questionsAtAnswerTime, state.currentQuestion, adaptiveResult);
     const practiceEvent = recordPracticeAttempt(question, selectedIndex, confidence, adaptiveResult);
     syncAnswerSubmitToApi(question, selectedIndex, confidence, practiceEvent);

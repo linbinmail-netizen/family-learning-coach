@@ -467,6 +467,17 @@ test("automatic jump to a harder question explains the reason to the student", (
   assert.doesNotMatch(js, /上一题太轻松[\s\S]*正确答案是/);
 });
 
+test("easy correct promotion explains the evidence behind the harder next question", () => {
+  assert.match(js, /function adaptivePromotionEvidence/);
+  assert.match(js, /答得快/);
+  assert.match(js, /连续答对/);
+  assert.match(js, /自己选择了“确定”/);
+  assert.match(js, /adaptivePromotionEvidence\(adaptiveResult\)/);
+  assert.match(js, /因为\$\{evidence\}/);
+  assert.match(js, /下一题会更像学校考试深度题/);
+  assert.doesNotMatch(js, /adaptivePromotionEvidence[\s\S]*正确答案是/);
+});
+
 test("student advances automatically after guided mastery is completed", () => {
   assert.match(js, /advanceToNextQuestionAfterCompletion\(state\.guidanceLock\.questionIndex, "guided", preferredIndex\)/);
   assert.match(js, /引导完成，已进入第/);

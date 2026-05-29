@@ -1498,6 +1498,19 @@ test("challenge mission queue directly steers the next question type", () => {
   assert.match(js, /if \(adaptiveResult\.challengeMode && missionCandidate\) return missionCandidate\.index/);
 });
 
+test("challenge fallback avoids hard choice-only questions", () => {
+  const nextQuestionBlock = js.match(/function nextAdaptiveQuestionIndex[\s\S]*?function challengeMissionPreferredQuestion/)?.[0] || "";
+  const challengeCandidateBlock = nextQuestionBlock.match(/const challengeCandidate = unanswered[\s\S]*?const supportCandidate/)?.[0] || "";
+
+  assert.match(challengeCandidateBlock, /isChallengeProofQuestion\(question\)/);
+  assert.match(challengeCandidateBlock, /isSchoolExamPracticeQuestion\(question\)/);
+  assert.doesNotMatch(
+    challengeCandidateBlock,
+    /difficultyScore\(question\.difficulty\) >= Math\.max\(2, targetLevel - 1\) \|\| question\.schoolExamDepth/
+  );
+  assert.doesNotMatch(challengeCandidateBlock, /question\.schoolExamDepth \|\| question\.constructedResponse/);
+});
+
 test("challenge mission explanation step prefers same-skill depth questions", () => {
   const missionBlock = js.match(/function challengeMissionPreferredQuestion[\s\S]*?function questionCompletesChallengeMission/)?.[0] || "";
 

@@ -2654,7 +2654,10 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
         || difficultyScore(b.question.difficulty) - difficultyScore(a.question.difficulty)
     )[0];
   const challengeCandidate = unanswered
-    .filter(({ question }) => difficultyScore(question.difficulty) >= Math.max(2, targetLevel - 1) || question.schoolExamDepth || question.constructedResponse || question.openResponse)
+    .filter(({ question }) =>
+      isChallengeProofQuestion(question)
+      || (isSchoolExamPracticeQuestion(question) && requiresPreAnswerThought(question))
+    )
     .sort(
       (a, b) =>
         questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)

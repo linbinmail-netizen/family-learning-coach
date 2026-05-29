@@ -3581,9 +3581,9 @@ function applyConceptBridgeChoice(choiceKey = "goal", input = $("inlineCoachRepl
 function conceptSupportForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   return {
-    teach: `先听一句讲解，再点按钮补第一小句：${localStudentFriendlyConceptLine(question)}`,
+    teach: `先听一句讲解，再点按钮补第一小句。不会表达不是问题，不用先证明自己会说。老师先说给你听：${localStudentFriendlyConceptLine(question)}`,
     example: `同类小例子：${teachingMiniExampleForSkill(skill)}`,
-    action: `现在不用先打完整解释，不用打字也能继续。只点“帮我填第一小句”，再把这句读一遍：${guidanceStepBuilderSentence("goal", lock, question)}`,
+    action: `现在不用先打完整解释，不用打字也能继续，可直接点按钮，不用打字。你只需要选一个按钮或补一个空：点“帮我填第一小句”，再把这句读一遍：${guidanceStepBuilderSentence("goal", lock, question)}`,
   };
 }
 
@@ -3976,7 +3976,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
           ? "原因"
           : "具体内容";
   if (guidanceMetaQuestionComplaint(reply)) {
-    return `你说得对，知识点没吃透时，继续问“这题问什么”会让人卡住。别再追问“这题问什么”。我们改成三步：先讲一个小知识点：${localStudentFriendlyConceptLine(question)}；二选一判断：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)} 可直接点按钮，不用自己打完整解释。`;
+    return `你说得对，知识点没吃透时，继续问“这题问什么”会让人卡住。不会表达不是问题，不用先证明自己会说。老师先说给你听：${localStudentFriendlyConceptLine(question)} 你只需要选一个按钮或补一个空：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`;
   }
   if (guidanceNeedsWorkedMiniExample(lock)) {
     return thirdStuckMiniExampleRescue(lock, question, skill);
@@ -3985,7 +3985,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
     return repeatedStuckAlternativeExplanation(lock, question, skill);
   }
   if (guidanceCannotProduceThought(reply)) {
-    return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，我们先帮你拆题和补概念。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 可直接点按钮，不用打字。二选一先判断：先看题干关键词，还是先看答案长短？我先帮你写好第一小句：${guidanceStepBuilderSentence("goal", lock, question)}`;
+    return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，不会表达不是问题，不用先证明自己会说。老师先说给你听：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 你只需要选一个按钮或补一个空，可直接点按钮，不用打字。二选一先判断：先看题干关键词，还是先看答案长短？我先帮你写好第一小句：${guidanceStepBuilderSentence("goal", lock, question)}`;
   }
   return `你说得对，知识点没吃透时确实很难自己说题意，也会打不出来、说不出来。先教会，再让你只答一小步，不用自己组织完整答案。老师先示范怎么拆题：1. 题目要判断 ${skill}；2. 第一眼看关键词或条件；3. 用二选一或填空说出第一步。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
 }
@@ -5743,14 +5743,14 @@ function difficultyCoachState(question = activeQuestions()[state.currentQuestion
     return {
       level: `${currentLevel} · 挑战模式`,
       reason: "答得太顺或手动升难度，系统正在确认你是否真的掌握。",
-      next: "下一题会优先安排解释型或学校考试深度题，需要写清方法和原因。",
+      next: "前 6 题会穿插至少 2 道深度题；下一题会优先安排解释型或学校考试深度题，需要写清方法和原因。",
     };
   }
   if ((stats.correctStreak || 0) >= 1 && adaptiveLevel >= 2) {
     return {
       level: `${currentLevel} · 正在拔高`,
       reason: "最近正确率和速度较好，系统减少基础选择题。",
-      next: "下一题会优先安排解释型或学校考试深度题，避免只靠排除选项猜对。",
+      next: "前 6 题会穿插至少 2 道深度题；下一题会优先安排解释型或学校考试深度题，避免只靠排除选项猜对。",
     };
   }
   if ((stats.wrongStreak || 0) >= 1) {
@@ -5763,7 +5763,7 @@ function difficultyCoachState(question = activeQuestions()[state.currentQuestion
   return {
     level: `${currentLevel} · ${questionType}`,
     reason: "系统会看正确率、答题速度和是否能说出理由来调节难度。",
-    next: "保持当前节奏；如果答得太顺，下一题会升到解释型或学校考试深度题。",
+    next: "保持当前节奏；前 6 题会穿插至少 2 道深度题，答得太顺会继续升到解释型或学校考试深度题。",
   };
 }
 
@@ -6204,7 +6204,7 @@ function localStuckGapTeachingAction(gap = coachingGapForReply(), question = act
     return `卡点判断：${gap.label}。先把题目翻译成一句话。小讲解：${localStudentFriendlyConceptLine(question)} 现在只做一小步：${localGapSentenceFrame(gap, question)}`;
   }
   if (gap.label === "概念没接上") {
-    return `卡点判断：${gap.label}。这不是写作问题，先补前置概念。小讲解：${localStudentFriendlyConceptLine(question)} 现在只做一小步：半句填空：这题要我判断____。`;
+    return `卡点判断：${gap.label}。这不是写作问题，先补前置概念。老师先说给你听：${localStudentFriendlyConceptLine(question)} 现在只做一小步：你只需要选一个按钮或补一个空，半句填空：这题要我判断____。`;
   }
   if (gap.label === "第一步不会选") {
     return `卡点判断：${gap.label}。只选第一步动作。小讲解：${localStudentFriendlyConceptLine(question)} 现在只做一小步：${localGapSentenceFrame(gap, question)}`;
@@ -6322,7 +6322,7 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
 
   if (guidanceMetaQuestionComplaint(rawReply)) {
     return {
-      reply: `${mistakePrefix}别再追问“这题问什么”。先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 二选一判断：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`,
+      reply: `${mistakePrefix}别再追问“这题问什么”。不会表达不是问题。老师先说给你听：${localStudentFriendlyConceptLine(question)} 你只需要选一个按钮或补一个空：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`,
     };
   }
 

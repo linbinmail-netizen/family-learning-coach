@@ -165,6 +165,7 @@ test("student sees why the difficulty is changing and what comes next", () => {
   assert.match(js, /renderDifficultyCoachCard\(question, adaptiveLevel, challengeMode\)/);
   assert.match(js, /答得太顺/);
   assert.match(js, /下一题会优先安排解释型或学校考试深度题/);
+  assert.match(js, /前 6 题会穿插至少 2 道深度题/);
   assert.match(css, /difficulty-coach-card/);
 });
 
@@ -867,6 +868,14 @@ test("student who cannot describe the question gets concept support before writi
   assert.match(js, /只填一个空/);
   assert.match(js, /buildConceptBridgeMove[\s\S]*guidanceCannotProduceThought\(reply\)/);
   assert.doesNotMatch(cannotProduceBlock, /正确答案是/);
+});
+
+test("student complaint copy promises teacher-first support and no long typing", () => {
+  assert.match(js, /老师先说给你听/);
+  assert.match(js, /你只需要选一个按钮或补一个空/);
+  assert.match(js, /不会表达不是问题/);
+  assert.match(js, /不用先证明自己会说/);
+  assert.doesNotMatch(js, /老师先说给你听[\s\S]*正确答案是/);
 });
 
 test("student complaint about meta questions switches to teach-choice-fill mode", () => {

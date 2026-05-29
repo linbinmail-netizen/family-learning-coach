@@ -178,7 +178,7 @@ function stuckGapTeachingAction(body = {}) {
     return `${diagnosedGapLine(body)}先把题目翻译成一句话。小讲解：${shortExplanation} 现在只做一小步：${gapSentenceFrame(coachingGap, body)}`;
   }
   if (coachingGap.gap === "concept") {
-    return `${diagnosedGapLine(body)}这不是写作问题，先补前置概念。小讲解：${shortExplanation} 现在只做一小步：二选一：先看题干关键词，还是先看答案长短？再做半句填空：这题要我判断____。`;
+    return `${diagnosedGapLine(body)}这不是写作问题，先补前置概念。老师先说给你听。小讲解：${shortExplanation} 现在只做一小步，你只需要选一个按钮或补一个空：二选一，先看题干关键词，还是先看答案长短？半句填空：这题要我判断____。`;
   }
   if (coachingGap.gap === "method_stuck") {
     return `${diagnosedGapLine(body)}只选第一步动作。小讲解：${shortExplanation} 现在只做一小步：${gapSentenceFrame(coachingGap, body)}`;

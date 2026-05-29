@@ -392,6 +392,20 @@ test("fallback for cannot-produce replies teaches before asking for a tiny fill-
   assert.doesNotMatch(reply, /答案是/);
 });
 
+test("exact student complaint gets teacher-first support instead of another meta question", () => {
+  const quote = "引导你让你自己去说比如说这问题问的什么之类的但这些如果是别人知识点没吃透人家也打不出来";
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: quote,
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /老师先说给你听/);
+  assert.match(reply, /你只需要选一个按钮或补一个空/);
+  assert.doesNotMatch(reply, /你能用自己的话说.*题目/);
+  assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
+});
+
 test("fallback changes teaching style after repeated concept stuck replies", () => {
   const reply = buildFallbackReply({
     ...baseBody,

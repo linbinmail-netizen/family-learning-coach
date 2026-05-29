@@ -3917,6 +3917,13 @@ function repeatedStuckCoachNotice() {
   return "第二次卡住时，不用继续打字；点“帮我拼完整方法句”或“小台阶”，系统先帮你接上方法。";
 }
 
+function repeatedStuckAlternativeExplanation(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex || state.currentQuestion], skill = question?.skill || activeDiagnostic().skills[0][0]) {
+  const lesson = conceptMiniLesson(question);
+  const firstStep = coachingHintForTurn(question, 0) || lesson.steps?.[0] || "题干里的关键词";
+  const mistake = commonMistakeForQuestion(question);
+  return `换一种讲法：你不用再打完整句，先点下面的小台阶按钮，只完成一个空。类比：这题像先看路标再选路，先看题目问你判断什么，再决定看哪条线索。错因对比：不要先看答案长短，也不要急着猜；容易错在${mistake}。现在只选一个动作：先看“题目目标”，还是先看“${firstStep}”？`;
+}
+
 function shouldUseTeachFirstLadder(reply = "", lock = state.guidanceLock) {
   const quality = evaluateGuidanceReplyQuality(reply);
   return guidanceCannotProduceThought(reply) || quality.asksForHelp || guidanceNeedsLowerStep(lock);
@@ -3944,7 +3951,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
           ? "原因"
           : "具体内容";
   if (guidanceNeedsLowerStep(lock)) {
-    return `你已经第二次卡住，这说明任务太大，不是你不努力。我们不用再打完整句，先点下面的小台阶按钮，只完成一个空：题目问什么。系统会帮你把后面的第一步和原因慢慢接上。`;
+    return repeatedStuckAlternativeExplanation(lock, question, skill);
   }
   if (guidanceCannotProduceThought(reply)) {
     return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，我们先帮你拆题和补概念。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 可直接点按钮，不用打字。二选一先判断：先看题干关键词，还是先看答案长短？我先帮你写好第一小句：${guidanceStepBuilderSentence("goal", lock, question)}`;

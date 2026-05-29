@@ -905,6 +905,16 @@ test("second stuck reply switches to no-typing micro support", () => {
   assert.doesNotMatch(js, /repeatedStuckCoachNotice[\s\S]*正确答案是/);
 });
 
+test("repeated stuck guidance switches explanation style instead of repeating fill-in", () => {
+  assert.match(js, /function repeatedStuckAlternativeExplanation/);
+  assert.match(js, /换一种讲法/);
+  assert.match(js, /类比/);
+  assert.match(js, /错因对比/);
+  assert.match(js, /只选一个动作/);
+  assert.match(js, /repeatedStuckAlternativeExplanation\(lock, question, skill\)/);
+  assert.doesNotMatch(js, /repeatedStuckAlternativeExplanation[\s\S]*正确答案是/);
+});
+
 test("student guidance keeps the suggested rescue draft after re-render", () => {
   assert.match(js, /if \(lock\.replyDraft && !replyInput\.value\.trim\(\)\) replyInput\.value = lock\.replyDraft/);
   assert.match(js, /state\.guidanceLock\.replyDraft = ""/);

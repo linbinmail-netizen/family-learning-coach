@@ -576,6 +576,17 @@ test("safeTutorReply rejects repeated meta questions when the student cannot pro
   assert.doesNotMatch(reply, /你先说题目问什么/);
 });
 
+test("safeTutorReply rewrites disguised question-goal demands when concepts are not ready", () => {
+  const reply = safeTutorReply("先告诉我这道题在考什么，再说题目要你找什么信息。", {
+    ...baseBody,
+    studentReply: "引导你让我自己去说这问题问的什么，但知识点没吃透就打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /小讲解|前置概念|只补一个空|现在只做一小步|老师先示范/);
+  assert.doesNotMatch(reply, /这道题在考什么|题目要你找什么信息/);
+});
+
 test("safeTutorReply rewrites full-restatement demands when the student is stuck", () => {
   const reply = safeTutorReply("请你先用自己的话完整解释一下这个知识点，然后再继续。", {
     ...baseBody,

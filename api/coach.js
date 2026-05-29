@@ -53,7 +53,7 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (/^\s*(答案|answer)?\s*[A-D]\s*[。.!]?\s*$/i.test(text) || /^\s*[A-D]\s*(是|because|因为|,|，)/i.test(text)) return "reveals_answer_letter";
   if (/正确答案|答案是|选项\s*[A-D]|choose\s*[A-D]|correct answer|the answer is/i.test(text)) return "reveals_answer_language";
   if (answerTexts.some((answer) => lowerText.includes(answer.toLowerCase()))) return "reveals_answer_text";
-  if (/题目.*问什么|问题.*问.*什么|先说.*题目|真正问你找什么|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
+  if (/题目.*问什么|问题.*问.*什么|这道题.*(考什么|在考什么)|题目要你找什么|先说.*题目|真正问你找什么|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
     return "meta_question_without_scaffold";
   }
   if (/再想想|认真读题|仔细读题|你可以的|加油|try again|think.*again|read.*carefully/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范|第一步/.test(text)) {
@@ -66,7 +66,7 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (questionMarkCount >= 2 && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范|现在只/.test(text)) {
     return "too_many_questions_without_scaffold";
   }
-  if (studentCannotProduce && /题目.*问什么|问题.*问.*什么|先说.*题目|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念/.test(text)) {
+  if (studentCannotProduce && /题目.*问什么|问题.*问.*什么|这道题.*(考什么|在考什么)|题目要你找什么|先说.*题目|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念/.test(text)) {
     return "repeats_meta_question_when_stuck";
   }
   if (studentCannotProduce && /用自己的话|完整解释|完整复述|先解释|先复述|总结一下|explain.*own words|restate.*own words/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {

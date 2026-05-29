@@ -312,6 +312,20 @@ test("AI coach offers choice or fill-in scaffolds when students cannot type the 
   assert.match(text, /再过渡到完整方法句/);
 });
 
+test("AI coach does not use a question-only instruction when teaching is needed", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "知识点没吃透，打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+  const text = JSON.stringify(request);
+
+  assert.doesNotMatch(text, /Ask exactly one short question at a time/);
+  assert.match(text, /学生已经有方法雏形时，最多问一个短问题/);
+  assert.match(text, /学生卡住或概念没接上时，先教再问/);
+  assert.match(text, /卡点判断：\.\.\. 小讲解：\.\.\. 小例子：\.\.\. 现在只做一小步/);
+});
+
 test("fallback teaches briefly when the student is conceptually stuck", () => {
   const reply = buildFallbackReply({
     ...baseBody,

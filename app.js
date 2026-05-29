@@ -3722,6 +3722,13 @@ function guidanceTeacherModelForLock(lock = state.guidanceLock, question = activ
   return `题目要我判断 ${skill}。第一步我先${firstStep}，因为${reason}。`;
 }
 
+function guidanceMetaQuestionComplaint(reply = "") {
+  const text = String(reply || "").replace(/\s+/g, "");
+  const mentionsMetaQuestion = /让.*(自己)?去说|问.*(题|问题).*什么|这问题问的什么|这题问什么|题目问什么/.test(text);
+  const cannotBridgeConcept = /别人知识点没吃透|人家也打不出来|知识点没吃透|打不出来|说不出来|写不出来|不懂/.test(text);
+  return mentionsMetaQuestion && cannotBridgeConcept;
+}
+
 function evaluateGuidanceReplyQuality(reply = "") {
   const text = reply.trim().toLowerCase();
   const compactText = text.replace(/\s+/g, "");
@@ -3731,7 +3738,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
   const hasQuestionGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate/.test(text);
   const hasMethodStep = /先|第一步|步骤|方法|看|找|变化|条件|证据|除以|比较|compare|divide|change|rate/.test(text);
   const hasReasonWhy = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that/.test(text);
-  const asksForHelp = /不知道|不会|不懂|写什么|怎么写|没思路|知识点没吃透|打不出来|说不出来|help|stuck|idk|not sure/.test(text);
+  const asksForHelp = guidanceMetaQuestionComplaint(reply) || /不知道|不会|不懂|写什么|怎么写|没思路|知识点没吃透|打不出来|说不出来|help|stuck|idk|not sure/.test(text);
   const hasPlaceholder = /\[.*?\]|_{2,}/.test(reply);
   const conceptNotReady = asksForHelp || (Boolean(text) && !hasQuestionGoal && !hasMethodStep);
   return {
@@ -3748,7 +3755,7 @@ function evaluateGuidanceReplyQuality(reply = "") {
 }
 
 function guidanceCannotProduceThought(reply = "") {
-  return /别人知识点没吃透|人家也打不出来|打不出来|说不出来|写不出来|不知道这题问什么|不懂这题问什么|不知道要写什么|不会说思路|没思路|不要再让我先说题目问什么|问我.*题目问什么.*打不出来/.test(String(reply || ""));
+  return guidanceMetaQuestionComplaint(reply) || /别人知识点没吃透|人家也打不出来|打不出来|说不出来|写不出来|不知道这题问什么|不懂这题问什么|不知道要写什么|不会说思路|没思路|不要再让我先说题目问什么|问我.*题目问什么.*打不出来/.test(String(reply || ""));
 }
 
 function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQuality(reply)) {
@@ -3959,6 +3966,9 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
         : !quality.reasonWhy
           ? "原因"
           : "具体内容";
+  if (guidanceMetaQuestionComplaint(reply)) {
+    return `你说得对，知识点没吃透时，继续问“这题问什么”会让人卡住。别再追问“这题问什么”。我们改成三步：先讲一个小知识点：${localStudentFriendlyConceptLine(question)}；二选一判断：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)} 可直接点按钮，不用自己打完整解释。`;
+  }
   if (guidanceNeedsLowerStep(lock)) {
     return repeatedStuckAlternativeExplanation(lock, question, skill);
   }
@@ -6069,6 +6079,9 @@ function sanitizeCoachSupplement(text = "", history = [], question = activeQuest
   const repeatsMetaQuestion =
     /题目.*问什么|问题.*问.*什么|先说.*题目|describe.*question|what.*question/i.test(raw)
     && /不知道|不会|不懂|打不出来|说不出来|写不出来|知识点没吃透|没思路|idk|stuck/i.test(recentStudent);
+  if (guidanceMetaQuestionComplaint(recentStudent)) {
+    return `别再追问“这题问什么”。先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 接着做二选一判断，最后只填一个空：${localGapSentenceFrame(coachingGapForReply(recentStudent), question)}`;
+  }
   if (tooLong || repeatsMetaQuestion) {
     const gap = coachingGapForReply(recentStudent);
     const reason = tooLong ? "AI 补充太长" : "重复追问题目";
@@ -6265,6 +6278,12 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
       reply: repeatedAnswerPrompt
         ? `${mistakePrefix}我们不重复刚才那句，直接做微练习：${localGapSentenceFrame(gap, question)}`
         : `${mistakePrefix}${localOneStepCoachPrompt(gap, question)}`,
+    };
+  }
+
+  if (guidanceMetaQuestionComplaint(rawReply)) {
+    return {
+      reply: `${mistakePrefix}别再追问“这题问什么”。先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 二选一判断：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`,
     };
   }
 

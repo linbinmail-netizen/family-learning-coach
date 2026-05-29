@@ -869,6 +869,19 @@ test("student who cannot describe the question gets concept support before writi
   assert.doesNotMatch(cannotProduceBlock, /正确答案是/);
 });
 
+test("student complaint about meta questions switches to teach-choice-fill mode", () => {
+  assert.match(js, /function guidanceMetaQuestionComplaint/);
+  assert.match(js, /这问题问的什么/);
+  assert.match(js, /别人知识点没吃透/);
+  assert.match(js, /别再追问“这题问什么”/);
+  assert.match(js, /先讲一个小知识点/);
+  assert.match(js, /二选一判断/);
+  assert.match(js, /最后只填一个空/);
+  assert.match(js, /guidanceMetaQuestionComplaint\(reply\)/);
+  assert.match(js, /guidanceMetaQuestionComplaint\(recentStudent\)/);
+  assert.doesNotMatch(js, /guidanceMetaQuestionComplaint[\s\S]*正确答案是/);
+});
+
 test("cannot-produce replies auto-fill a teacher model instead of asking for more typing", () => {
   assert.match(js, /guidanceCannotProduceThought\(reply\)/);
   assert.match(js, /state\.guidanceLock\.replyDraft = guidanceTeacherModelForLock\(state\.guidanceLock\)/);

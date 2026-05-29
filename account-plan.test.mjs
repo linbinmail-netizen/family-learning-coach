@@ -1657,6 +1657,16 @@ test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /state\.chatHistory\.slice\(0, -1\)/);
 });
 
+test("wrong-answer coach feedback uses a short timeout and keeps local guidance visible", () => {
+  const feedbackBlock = js.match(/async function requestCoachFeedbackForGuidance[\s\S]*?async function loadAuthProfile/)?.[0] || "";
+  assert.match(js, /COACH_FEEDBACK_TIMEOUT_MS/);
+  assert.match(feedbackBlock, /AbortController/);
+  assert.match(feedbackBlock, /setTimeout\(\(\) => controller\.abort\(\), COACH_FEEDBACK_TIMEOUT_MS\)/);
+  assert.match(feedbackBlock, /signal: controller\.signal/);
+  assert.match(feedbackBlock, /clearTimeout\(timeoutId\)/);
+  assert.match(feedbackBlock, /本地诊断/);
+});
+
 test("student AI replies append after the instant local coach instead of replacing it", () => {
   const chatHandler = js.match(/\$\("chatForm"\)\.addEventListener\("submit",[\s\S]*?\n  \}\);/)?.[0] || "";
   const inlineHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";

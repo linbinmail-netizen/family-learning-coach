@@ -24,6 +24,7 @@ const accounts = [
 const difficultyLevels = ["基础", "中等", "进阶", "挑战"];
 const COACH_RESPONSE_TIMEOUT_MS = 2800;
 const MASTERY_RESPONSE_TIMEOUT_MS = 3500;
+const COACH_FEEDBACK_TIMEOUT_MS = 2200;
 
 const learningPathCatalog = {
   math: ["Number Sense", "Fractions", "Ratios & Proportions", "Linear Equations", "Geometry", "Functions", "Algebra I Foundation"],
@@ -2164,6 +2165,8 @@ async function requestCoachFeedbackForGuidance(question, selectedIndex, confiden
   if (!state.guidanceLock || state.guidanceLock.questionIndex !== state.currentQuestion) return;
   const selectedLabel = String.fromCharCode(65 + selectedIndex);
   const selectedAnswer = question.answers?.[selectedIndex] || selectedLabel;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), COACH_FEEDBACK_TIMEOUT_MS);
   state.guidanceLock.coachFeedback = {
     diagnosis: "AI 正在诊断卡点...",
     hintLevel1: "",
@@ -2187,6 +2190,7 @@ async function requestCoachFeedbackForGuidance(question, selectedIndex, confiden
         commonMistakes: question.commonMistakes || {},
         hintSteps: question.coachHints || [],
       }),
+      signal: controller.signal,
     });
     if (!response.ok) throw new Error("coach feedback failed");
     const feedback = await response.json();
@@ -2200,6 +2204,18 @@ async function requestCoachFeedbackForGuidance(question, selectedIndex, confiden
     renderDiagnostic();
   } catch (error) {
     console.warn("Coach feedback diagnosis skipped.", error);
+    if (state.guidanceLock && state.guidanceLock.questionIndex === state.currentQuestion) {
+      state.guidanceLock.coachFeedback = {
+        diagnosis: "本地诊断：先补当前题的核心概念。",
+        hintLevel1: localStudentFriendlyConceptLine(question),
+        hintLevel2: "先不用等远端 AI，直接按下面的小步骤继续。",
+        restatePrompt: "只补一个空：我第一步先看____。",
+      };
+      saveData();
+      renderDiagnostic();
+    }
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

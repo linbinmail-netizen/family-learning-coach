@@ -3173,6 +3173,13 @@ function coachingHintForTurn(question, turn = 0) {
   return hints[Math.min(turn, Math.max(0, hints.length - 1))] || question?.coachHints?.[0] || "先说题目真正问什么。";
 }
 
+function studentSafePracticeHint(question = activeQuestions()[state.currentQuestion]) {
+  const rawHint = question?.coachHints?.[0] || coachingHintForTurn(question, 0) || "";
+  const asksForMetaGoal = /先说题目|题目.*问什么|题目真正问|问题.*问什么|what.*question|question.*ask/i.test(rawHint);
+  const safeHint = asksForMetaGoal ? localStudentFriendlyConceptLine(question) : rawHint;
+  return `老师先帮你拆一小步：${safeHint} 只补一个空：我第一步先看____。`;
+}
+
 function commonMistakeForQuestion(question) {
   const lesson = conceptMiniLesson(question);
   return lesson.commonMistakes?.[0] || lesson.trap || "容易错在先猜答案，没有说明第一步。";
@@ -7169,7 +7176,7 @@ function bindEvents() {
     const question = activeQuestions()[state.currentQuestion];
     state.hintUsage[questionProgressKey()] = true;
     saveData();
-    $("answerFeedback").textContent = question.coachHints?.[0] || "先说题目真正问什么，再圈关键词。";
+    $("answerFeedback").textContent = studentSafePracticeHint(question);
   });
   $("practiceExplainButton").addEventListener("click", () => {
     if (!state.selectedAnswers[state.currentQuestion] && state.selectedAnswers[state.currentQuestion] !== 0) {

@@ -1786,6 +1786,16 @@ test("parent report describes teach-first coaching instead of asking stuck stude
   assert.doesNotMatch(emailBlock, /先让孩子解释题意/);
 });
 
+test("practice hint button gives a teacher-first micro hint instead of asking the student to invent the goal", () => {
+  const hintHandler = js.match(/\$\("practiceHintButton"\)\.addEventListener\("click",[\s\S]*?\n  \}\);/)?.[0] || "";
+  assert.match(js, /function studentSafePracticeHint/);
+  assert.match(js, /老师先帮你拆一小步/);
+  assert.match(js, /只补一个空/);
+  assert.match(hintHandler, /studentSafePracticeHint\(question\)/);
+  assert.doesNotMatch(hintHandler, /先说题目真正问什么/);
+  assert.doesNotMatch(js, /studentSafePracticeHint[\s\S]*正确答案是/);
+});
+
 test("student coach uses recent same-skill mistakes", () => {
   assert.match(js, /recentSkillMistakes/);
   assert.match(js, /mistakesForCurrentSkill/);

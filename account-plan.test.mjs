@@ -1381,6 +1381,14 @@ test("high-performing students are routed to explanation-first challenge questio
   assert.match(js, /return \{ isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20, obviousEasyCorrect, raisedLevel, challengeMode \}/);
 });
 
+test("high-performing students get same-skill explanation challenges before unrelated hard questions", () => {
+  const nextQuestionBlock = js.match(/function nextAdaptiveQuestionIndex[\s\S]*?function challengeMissionPreferredQuestion/)?.[0] || "";
+  assert.match(nextQuestionBlock, /const currentSkill = questions\[answeredIndex\]\?\.skill \|\| ""/);
+  assert.match(nextQuestionBlock, /sameSkillExplanationBoost/);
+  assert.match(nextQuestionBlock, /question\.skill === currentSkill/);
+  assert.match(nextQuestionBlock, /sameSkillExplanationBoost\(b\.question\) - sameSkillExplanationBoost\(a\.question\)/);
+});
+
 test("easy streaks enter a short challenge mode with clear student feedback", () => {
   assert.match(js, /function challengeBoostForSubject/);
   assert.match(js, /function shouldEnterChallengeBoost/);

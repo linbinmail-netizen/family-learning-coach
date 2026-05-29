@@ -2572,6 +2572,8 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .filter(({ question, index }) => index !== answeredIndex && state.selectedAnswers[index] === undefined && !hasAnsweredQuestion(question));
   if (!unanswered.length) return -1;
 
+  const currentSkill = questions[answeredIndex]?.skill || "";
+  const sameSkillExplanationBoost = (question = {}) => question.skill === currentSkill ? 100 : 0;
   const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
   const challengeQueue = state.adaptiveStats[state.subject]?.challengeQueue || [];
   const missionCandidate = challengeMissionPreferredQuestion(unanswered, challengeQueue, targetLevel);
@@ -2579,7 +2581,8 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .filter(({ question }) => isExplanationFirstChallenge(question))
     .sort(
       (a, b) =>
-        questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
+        sameSkillExplanationBoost(b.question) - sameSkillExplanationBoost(a.question)
+        || questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
         || questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
         || difficultyScore(b.question.difficulty) - difficultyScore(a.question.difficulty)
     )[0];

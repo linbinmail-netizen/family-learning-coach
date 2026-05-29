@@ -1475,6 +1475,15 @@ test("challenge mission queue directly steers the next question type", () => {
   assert.match(js, /if \(adaptiveResult\.challengeMode && missionCandidate\) return missionCandidate\.index/);
 });
 
+test("challenge mission explanation step prefers same-skill depth questions", () => {
+  const missionBlock = js.match(/function challengeMissionPreferredQuestion[\s\S]*?function questionCompletesChallengeMission/)?.[0] || "";
+
+  assert.match(missionBlock, /const currentSkill = activeQuestions\(\)\[state\.currentQuestion\]\?\.skill \|\| ""/);
+  assert.match(missionBlock, /sameSkillExplanation/);
+  assert.match(missionBlock, /question\.skill === currentSkill/);
+  assert.match(missionBlock, /return sameSkillExplanation \|\| ranked\.find/);
+});
+
 test("completed challenge missions advance the queue instead of staying stuck", () => {
   assert.match(js, /function completeChallengeMissionForQuestion/);
   assert.match(js, /function questionCompletesChallengeMission/);

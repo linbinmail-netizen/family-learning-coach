@@ -56,6 +56,9 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (/题目.*问什么|问题.*问.*什么|先说.*题目|真正问你找什么|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
     return "meta_question_without_scaffold";
   }
+  if (/再想想|认真读题|仔细读题|你可以的|加油|try again|think.*again|read.*carefully/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范|第一步/.test(text)) {
+    return "generic_encouragement_without_action";
+  }
   if (studentCannotProduce && /题目.*问什么|问题.*问.*什么|先说.*题目|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念/.test(text)) {
     return "repeats_meta_question_when_stuck";
   }
@@ -66,7 +69,7 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
 export function safeTutorReply(aiReply = "", body = {}) {
   const reason = unsafeTutorReplyReason(aiReply, body);
   if (!reason) return String(aiReply || "").trim();
-  if (reason === "meta_question_without_scaffold") {
+  if (reason === "meta_question_without_scaffold" || reason === "generic_encouragement_without_action") {
     const skill = body.skill || "这个知识点";
     const coachingGap = coachingGapAnalysis(body.studentReply || "");
     const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);

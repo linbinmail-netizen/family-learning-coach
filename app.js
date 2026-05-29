@@ -2674,6 +2674,7 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
 
 function challengeMissionPreferredQuestion(unanswered = [], challengeQueue = [], targetLevel = adaptiveLevelForSubject()) {
   const queueHead = challengeQueue[0] || {};
+  const currentSkill = activeQuestions()[state.currentQuestion]?.skill || "";
   const ranked = [...unanswered].sort(
     (a, b) =>
       questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
@@ -2682,13 +2683,17 @@ function challengeMissionPreferredQuestion(unanswered = [], challengeQueue = [],
       || Math.abs(difficultyScore(a.question.difficulty) - targetLevel) - Math.abs(difficultyScore(b.question.difficulty) - targetLevel)
   );
   if (queueHead.label === "解释型题") {
-    return ranked.find(({ question }) => question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning);
+    const sameSkillExplanation = ranked.find(
+      ({ question }) =>
+        question.skill === currentSkill
+        && (question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning)
+    );
+    return sameSkillExplanation || ranked.find(({ question }) => question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning);
   }
   if (queueHead.label === "学校考试深度题") {
     return ranked.find(({ question }) => question.schoolExamDepth);
   }
   if (queueHead.label === "同技能变式题") {
-    const currentSkill = activeQuestions()[state.currentQuestion]?.skill || "";
     return ranked.find(({ question }) => question.skill === currentSkill && isDepthPracticeQuestion(question));
   }
   return ranked.find(({ question }) => isExplanationFirstChallenge(question));

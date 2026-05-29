@@ -535,6 +535,13 @@ test("safeTutorReply rewrites meta-question-only coaching into a scaffold", () =
   assert.doesNotMatch(reply, /先说题目真正问你找什么/);
 });
 
+test("safeTutorReply rewrites generic encouragement into a concrete next action", () => {
+  const reply = safeTutorReply("再想想，认真读题，你可以的。", baseBody);
+
+  assert.match(reply, /老师先示范|只补一个空|小讲解|第一步/);
+  assert.doesNotMatch(reply, /再想想，认真读题，你可以的/);
+});
+
 test("safeTutorReply rejects repeated meta questions when the student cannot produce an explanation", () => {
   const reply = safeTutorReply("你先说题目问什么，然后再想第一步。", {
     ...baseBody,

@@ -939,6 +939,17 @@ test("repeated stuck guidance switches explanation style instead of repeating fi
   assert.doesNotMatch(js, /repeatedStuckAlternativeExplanation[\s\S]*正确答案是/);
 });
 
+test("third stuck guidance switches to a worked mini example without using the original answer", () => {
+  assert.match(js, /function thirdStuckMiniExampleRescue/);
+  assert.match(js, /第三次卡住/);
+  assert.match(js, /不再让你解释原题/);
+  assert.match(js, /非原题小例子/);
+  assert.match(js, /只填一个空/);
+  assert.match(js, /guidanceNeedsWorkedMiniExample\(lock\)/);
+  assert.match(js, /thirdStuckMiniExampleRescue\(lock, question, skill\)/);
+  assert.doesNotMatch(js, /thirdStuckMiniExampleRescue[\s\S]*正确答案是/);
+});
+
 test("student guidance keeps the suggested rescue draft after re-render", () => {
   assert.match(js, /if \(lock\.replyDraft && !replyInput\.value\.trim\(\)\) replyInput\.value = lock\.replyDraft/);
   assert.match(js, /state\.guidanceLock\.replyDraft = ""/);

@@ -3929,8 +3929,17 @@ function guidanceNeedsLowerStep(lock = state.guidanceLock) {
   return teachingTurns >= 2;
 }
 
+function guidanceNeedsWorkedMiniExample(lock = state.guidanceLock) {
+  const teachingTurns = lock?.teachingTurns || 0;
+  return teachingTurns >= 3;
+}
+
 function repeatedStuckCoachNotice() {
   return "第二次卡住时，不用继续打字；点“帮我拼完整方法句”或“小台阶”，系统先帮你接上方法。";
+}
+
+function thirdStuckMiniExampleRescue(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex || state.currentQuestion], skill = question?.skill || activeDiagnostic().skills[0][0]) {
+  return `第三次卡住，我们先换出口：不再让你解释原题。非原题小例子：${teachingMiniExampleForSkill(skill)} 你现在只填一个空：我第一步先看____。填完后系统再帮你接回原题。`;
 }
 
 function repeatedStuckAlternativeExplanation(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex || state.currentQuestion], skill = question?.skill || activeDiagnostic().skills[0][0]) {
@@ -3968,6 +3977,9 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
           : "具体内容";
   if (guidanceMetaQuestionComplaint(reply)) {
     return `你说得对，知识点没吃透时，继续问“这题问什么”会让人卡住。别再追问“这题问什么”。我们改成三步：先讲一个小知识点：${localStudentFriendlyConceptLine(question)}；二选一判断：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)} 可直接点按钮，不用自己打完整解释。`;
+  }
+  if (guidanceNeedsWorkedMiniExample(lock)) {
+    return thirdStuckMiniExampleRescue(lock, question, skill);
   }
   if (guidanceNeedsLowerStep(lock)) {
     return repeatedStuckAlternativeExplanation(lock, question, skill);

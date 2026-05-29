@@ -800,6 +800,16 @@ test("student stuck on concepts gets a no-typing support card", () => {
   assert.doesNotMatch(js, /conceptSupportForLock[\s\S]*正确答案是/);
 });
 
+test("wrong-answer guidance shows no-typing support before the student has to explain", () => {
+  const startBlock = js.match(/function startGuidedMastery[\s\S]*?\n}/)?.[0] || "";
+  assert.match(startBlock, /forceStepBuilder: !startsWithVariant/);
+  assert.match(startBlock, /recommendedSupportAction: "fill-goal"/);
+  assert.match(startBlock, /microDrill: startsWithVariant \? null : guidanceMicroDrillForLock/);
+  assert.match(js, /不用先打完整解释/);
+  assert.match(js, /帮我填第一小句/);
+  assert.doesNotMatch(startBlock, /correct|正确答案是/);
+});
+
 test("concept support can build a full method sentence without revealing answers", () => {
   assert.match(html, /帮我拼完整方法句/);
   assert.match(js, /choiceKey === "build-method"/);
@@ -1394,6 +1404,15 @@ test("variant retry keeps next-step help visible even after rubric is complete",
   assert.match(js, /具体来说，题目里的____说明我的方法____/);
   assert.match(js, /不要重做整题，只补一句具体证据或条件/);
   assert.doesNotMatch(js, /needsRetryDetail[\s\S]*正确答案是/);
+});
+
+test("variant retry next-step button inserts the forced specific-detail starter", () => {
+  assert.match(js, /const needsRetryDetail = Boolean\(state\.guidanceLock\?\.variantFeedback\)/);
+  assert.match(
+    js,
+    /applyVariantStarter\(variantNextStepStarterFor\(\s*\$\("variantReply"\)\.value,\s*state\.guidanceLock\?\.variant,\s*undefined,\s*Boolean\(state\.guidanceLock\?\.variantFeedback\)\s*\)\)/
+  );
+  assert.match(js, /具体来说，题目里的____说明我的方法____/);
 });
 
 test("variant explanation offers non-answer sentence starters", () => {

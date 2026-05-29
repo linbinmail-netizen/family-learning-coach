@@ -4022,6 +4022,10 @@ function startGuidedMastery(question, selectedIndex, reason, confidence, issue) 
     variant,
     status: startsWithVariant ? "variant" : "coaching",
     teachingTurns: 0,
+    forceStepBuilder: !startsWithVariant,
+    recommendedSupportAction: "fill-goal",
+    microDrill: startsWithVariant ? null : guidanceMicroDrillForLock(null, question),
+    stepBuilderParts: startsWithVariant ? {} : { goal: guidanceStepBuilderSentence("goal", null, question) },
     complete: false,
   };
   state.inlineCoachHistory = startsWithVariant
@@ -7028,7 +7032,12 @@ function bindEvents() {
     applyVariantStarter(starter.dataset.starterText);
   });
   $("applyVariantNextStepButton").addEventListener("click", () => {
-    applyVariantStarter(variantNextStepStarterFor($("variantReply").value, state.guidanceLock?.variant));
+    applyVariantStarter(variantNextStepStarterFor(
+      $("variantReply").value,
+      state.guidanceLock?.variant,
+      undefined,
+      Boolean(state.guidanceLock?.variantFeedback)
+    ));
   });
   $("variantReteachButton").addEventListener("click", requestVariantReteach);
 

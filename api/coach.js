@@ -78,6 +78,9 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (studentCannotProduce && /重新来|重来|从头|再想一次|重新想|重做|restart|start over/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范/.test(text)) {
     return "restart_demand_when_stuck";
   }
+  if (studentCannotProduce && /本质|逻辑关系|综合分析|推理链条|抽象|概念之间|形成完整|整体理解|深入理解|higher.order|conceptual/i.test(text) && !/只补一个空|现在只|第一步先|小讲解|老师先示范|填空/.test(text)) {
+    return "abstract_lecture_when_stuck";
+  }
   if (text.length > 180) return "too_long";
   return "";
 }

@@ -613,6 +613,17 @@ test("safeTutorReply rewrites restart demands when the student is stuck", () => 
   assert.doesNotMatch(reply, /重新来一遍|从头再想/);
 });
 
+test("safeTutorReply rewrites abstract lectures into a concrete micro action", () => {
+  const reply = safeTutorReply("这个问题的本质在于理解证据与观点之间的逻辑关系。你需要综合分析语境、作者意图、推理链条以及概念之间的联系，然后形成完整的判断。", {
+    ...baseBody,
+    studentReply: "知识点没吃透，打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /老师先示范|小讲解|现在只|只补一个空|第一步/);
+  assert.doesNotMatch(reply, /本质在于理解|综合分析|推理链条|形成完整的判断/);
+});
+
 test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {
   const request = buildMasteryEvaluationRequest({
     ...baseBody,

@@ -182,8 +182,16 @@ function stuckGapTeachingAction(body = {}) {
 }
 
 function methodAttemptContinuation(body = {}) {
-  const frame = "题目里的____说明____。";
-  return `你已经说出方法雏形了，别重新开始。下一步只补具体条件：${frame}`;
+  const reply = String(body.studentReply || "");
+  const anchors = [];
+  if (/中心观点|观点|claim|central/i.test(reply)) anchors.push("中心观点");
+  if (/证据|evidence/i.test(reply)) anchors.push("证据");
+  if (/关键词|key word|keyword/i.test(reply)) anchors.push("关键词");
+  if (/斜率|变化率|slope|rate/i.test(reply)) anchors.push("斜率/变化率");
+  if (/变量|数据|variable|data/i.test(reply)) anchors.push("变量/数据");
+  if (/条件|关系|condition|relationship/i.test(reply)) anchors.push("条件关系");
+  const anchorText = anchors.length ? anchors.slice(0, 2).join("和") : "题目目标和第一步";
+  return `你已经说对了${anchorText}，不要重做整题。下一步只补题目里的具体关键词或证据：题目里的____说明____。`;
 }
 
 function buildTeachingNote({ subject, skill, explanation }) {
@@ -339,6 +347,7 @@ export function buildTutorRequest(body = {}) {
       "不要直接说出正确选项、答案字母或最终答案。",
       "Guide with this five-step routine: 理解题意 → 找关键词 → 排除错误选项 → 写一句理由 → 总结方法.",
       "学生已经有方法雏形时，最多问一个短问题，推动她补具体条件或证据。",
+      "遇到半对思路时，先指出学生已经说对的部分，再说不要重做整题，只补题目里的具体关键词或证据。",
       "学生卡住或概念没接上时，先教再问；不要只抛问题让她自己组织完整答案。",
       "Respond to the student's actual reply quality: if answer-only, ask for method; if vague, give a sentence frame; if stuck, reteach briefly; if decent, push for precision.",
       "先用“卡点判断”命名学生缺少的部分，例如：卡点判断：题目目标不清楚。然后再教。",
@@ -385,7 +394,7 @@ export function buildTutorRequest(body = {}) {
               recentHistory: history.slice(-8),
               studentReply,
               task:
-                "Move the student one step forward. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先补前置概念，再给半句填空. Use replyAnalysis, coachingGap, and coachSessionMemory to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
+                "Move the student one step forward. If replyAnalysis.type is method_attempt, treat it as 半对思路: 先指出学生已经说对的部分，不要重做整题，只让她补题目里的具体关键词或证据. If the student cannot describe the question goal, teach first and give a fill-in sentence; do not simply ask them again what the question asks. If the student says they cannot type because the knowledge point is not solid, treat it as a concept gap, not a writing problem: 先补前置概念，再给半句填空. Use replyAnalysis, coachingGap, and coachSessionMemory to name the missing piece first with “卡点判断”, then give one concrete next sentence or question. If needsTeaching is true, follow this order: 卡点判断 → 小讲解 → 现在只做一小步. Do not reveal the correct answer.",
             }),
           },
         ],

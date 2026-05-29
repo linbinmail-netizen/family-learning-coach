@@ -164,6 +164,34 @@ test("fallback reply avoids repeating the same answer-only prompt", () => {
   assert.doesNotMatch(reply, /The central idea or claim/);
 });
 
+test("fallback reply builds on a partial method attempt instead of restarting", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "这题要我判断中心观点，我先找证据，因为证据要支持观点",
+    layeredHints: ["先说题目目标", "再找直接证据", "最后解释证据和观点的关系"],
+  });
+
+  assert.match(reply, /你已经说对/);
+  assert.match(reply, /中心观点|证据/);
+  assert.match(reply, /不要重做整题/);
+  assert.match(reply, /补题目里的具体关键词或证据/);
+  assert.doesNotMatch(reply, /重新开始|先说题目问什么/);
+  assert.doesNotMatch(reply, /正确答案|答案是/);
+});
+
+test("AI coach prompt tells remote model to name the correct part of a partial method", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "这题要我判断中心观点，我先找证据，因为证据要支持观点",
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /半对思路/);
+  assert.match(text, /先指出学生已经说对的部分/);
+  assert.match(text, /不要重做整题/);
+  assert.match(text, /补题目里的具体关键词或证据/);
+});
+
 test("handler uses local coach when OpenAI key is missing instead of showing setup errors", async () => {
   const previousKey = process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_API_KEY;

@@ -2694,7 +2694,7 @@ function challengeMissionPreferredQuestion(unanswered = [], challengeQueue = [],
     return sameSkillExplanation || ranked.find(({ question }) => question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning);
   }
   if (queueHead.label === "学校考试深度题") {
-    return ranked.find(({ question }) => question.schoolExamDepth);
+    return ranked.find(({ question }) => isProofCapableSchoolPractice(question));
   }
   if (queueHead.label === "同技能变式题") {
     return ranked.find(({ question }) => question.skill === currentSkill && isDepthPracticeQuestion(question));
@@ -2708,7 +2708,7 @@ function questionCompletesChallengeMission(question = {}, mission = {}, subjectI
     return Boolean(question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning);
   }
   if (mission.label === "学校考试深度题") {
-    return Boolean(question.schoolExamDepth);
+    return isProofCapableSchoolPractice(question);
   }
   if (mission.label === "同技能变式题") {
     const previousSkill = state.adaptiveStats[subjectId]?.challengeSkill || "";
@@ -4767,6 +4767,10 @@ function isChallengeProofQuestion(question = {}) {
     || question.errorAnalysis
     || question.multiStepReasoning
   );
+}
+
+function isProofCapableSchoolPractice(question = {}) {
+  return Boolean(question.schoolExamDepth && isChallengeProofQuestion(question));
 }
 
 function isExplanationFirstChallenge(question = {}) {

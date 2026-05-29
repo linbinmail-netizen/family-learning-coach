@@ -1511,6 +1511,19 @@ test("challenge fallback avoids hard choice-only questions", () => {
   assert.doesNotMatch(challengeCandidateBlock, /question\.schoolExamDepth \|\| question\.constructedResponse/);
 });
 
+test("school-depth challenge missions require proof-capable school practice", () => {
+  const missionBlock = js.match(/function challengeMissionPreferredQuestion[\s\S]*?function questionCompletesChallengeMission/)?.[0] || "";
+  const completionBlock = js.match(/function questionCompletesChallengeMission[\s\S]*?function challengeMissionCompletionNotice/)?.[0] || "";
+
+  assert.match(js, /function isProofCapableSchoolPractice/);
+  assert.match(missionBlock, /queueHead\.label === "学校考试深度题"/);
+  assert.match(missionBlock, /isProofCapableSchoolPractice\(question\)/);
+  assert.match(completionBlock, /mission\.label === "学校考试深度题"/);
+  assert.match(completionBlock, /isProofCapableSchoolPractice\(question\)/);
+  assert.doesNotMatch(missionBlock, /ranked\.find\(\(\{ question \}\) => question\.schoolExamDepth\)/);
+  assert.doesNotMatch(completionBlock, /return Boolean\(question\.schoolExamDepth\)/);
+});
+
 test("challenge mission explanation step prefers same-skill depth questions", () => {
   const missionBlock = js.match(/function challengeMissionPreferredQuestion[\s\S]*?function questionCompletesChallengeMission/)?.[0] || "";
 

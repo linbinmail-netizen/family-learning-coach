@@ -577,6 +577,13 @@ test("student guidance reply gives immediate quality feedback while typing", () 
   assert.match(css, /reply-progress-text/);
 });
 
+test("student guidance entry copy does not ask stuck students to explain the question first", () => {
+  assert.match(html, /告诉 AI 你卡在概念、第一步还是原因/);
+  assert.match(html, /先听讲解，再做一小步/);
+  assert.doesNotMatch(html, /placeholder="用自己的话写：这题真正问什么/);
+  assert.doesNotMatch(html, /<strong id="guidanceTaskTitle">先说题目问什么<\/strong>/);
+});
+
 test("guidance next missing sentence becomes subject specific for thin replies", () => {
   assert.match(js, /function guidanceDetailSentenceForQuestion/);
   assert.match(js, /题目里的具体数字或变化关系/);

@@ -3252,7 +3252,7 @@ function guidanceInsightForLock(lock = state.guidanceLock, question = activeQues
   const repairAction =
     lock?.issue === "confidence" || lock?.issue === "school_verification"
       ? "不显示正确答案，先说清楚为什么这样做，再完成变式验证。"
-      : "不显示正确答案，先说题目真正问什么，再找关键词或已知条件。";
+      : "不显示正确答案，先看 AI 拆题和小讲解，再只补关键词或第一步。";
   return {
     issueType,
     skillGap: `${skill}：${lesson.concept.replace(/^今天先练：/, "")}`,
@@ -3287,7 +3287,7 @@ function guidanceCurrentTaskForLock(lock = state.guidanceLock) {
     return {
       badge: "第 2 步 / 复述方法",
       title: "把方法补完整",
-      body: "只要写清三件事：题目问什么、第一步看什么、为什么这样做。写完整后才能继续。",
+      body: "只要写清三件事：目标、第一步、为什么。卡住就点“补下一句”或“先补知识点”。",
     };
   }
   return {

@@ -928,6 +928,21 @@ test("student complaint about meta questions switches to teach-choice-fill mode"
   assert.doesNotMatch(js, /guidanceMetaQuestionComplaint[\s\S]*正确答案是/);
 });
 
+test("child quote about not being able to type routes to teacher-first bridge", () => {
+  assert.match(js, /function teacherFirstBridgeForMetaComplaint/);
+  assert.match(js, /引导你让你自己去说/);
+  assert.match(js, /这问题问的什么/);
+  assert.match(js, /别人知识点没吃透人家也打不出来/);
+  assert.match(js, /先不问“这题问什么”/);
+  assert.match(js, /老师先搭桥/);
+  assert.match(js, /不用自己组织题意/);
+  assert.match(js, /只点一个选择或填一个空/);
+  assert.match(js, /teacherFirstBridgeForMetaComplaint\(recentStudent, question\)/);
+  assert.match(js, /teacherFirstBridgeForMetaComplaint\(reply, question\)/);
+  assert.match(js, /teacherFirstBridgeForMetaComplaint\(rawReply, question\)/);
+  assert.doesNotMatch(js, /teacherFirstBridgeForMetaComplaint[\s\S]*正确答案是/);
+});
+
 test("cannot-produce replies auto-fill a teacher model instead of asking for more typing", () => {
   assert.match(js, /guidanceCannotProduceThought\(reply\)/);
   assert.match(js, /state\.guidanceLock\.replyDraft = guidanceTeacherModelForLock\(state\.guidanceLock\)/);

@@ -3823,6 +3823,12 @@ function guidanceMetaQuestionComplaint(reply = "") {
   return mentionsMetaQuestion && cannotBridgeConcept;
 }
 
+function teacherFirstBridgeForMetaComplaint(reply = "", question = activeQuestions()[state.currentQuestion]) {
+  const quoteSignal = /引导你让你自己去说|这问题问的什么|别人知识点没吃透人家也打不出来/.test(String(reply || "").replace(/\s+/g, ""));
+  const signalPrefix = quoteSignal ? "我听懂了：孩子不是不努力，是现在还没有台阶。" : "我听懂了。";
+  return `${signalPrefix}别再追问“这题问什么”，先不问“这题问什么”，也不用自己组织题意。老师先搭桥，先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 接着做二选一判断；现在只点一个选择或填一个空：先看题干关键词、条件或证据，不看答案长短。最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`;
+}
+
 function evaluateGuidanceReplyQuality(reply = "") {
   const text = reply.trim().toLowerCase();
   const compactText = text.replace(/\s+/g, "");
@@ -4070,7 +4076,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
           ? "原因"
           : "具体内容";
   if (guidanceMetaQuestionComplaint(reply)) {
-    return `你说得对，知识点没吃透时，继续问“这题问什么”会让人卡住。不会表达不是问题，不用先证明自己会说。老师先说给你听：${localStudentFriendlyConceptLine(question)} 你只需要选一个按钮或补一个空：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`;
+    return teacherFirstBridgeForMetaComplaint(reply, question);
   }
   if (guidanceNeedsWorkedMiniExample(lock)) {
     return thirdStuckMiniExampleRescue(lock, question, skill);
@@ -6281,7 +6287,7 @@ function sanitizeCoachSupplement(text = "", history = [], question = activeQuest
     restartsOldQuestion
     && /不知道|不会|不懂|打不出来|说不出来|写不出来|知识点没吃透|没思路|idk|stuck/i.test(recentStudent);
   if (guidanceMetaQuestionComplaint(recentStudent)) {
-    return `别再追问“这题问什么”。先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 接着做二选一判断，最后只填一个空：${localGapSentenceFrame(coachingGapForReply(recentStudent), question)}`;
+    return teacherFirstBridgeForMetaComplaint(recentStudent, question);
   }
   if (alreadyOnPartialMethodStep && restartsOldQuestion) {
     return "远端 AI 回到旧问题，先不用理会。按刚才的小步骤继续：题目里的____说明____。";
@@ -6509,7 +6515,7 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
 
   if (guidanceMetaQuestionComplaint(rawReply)) {
     return {
-      reply: `${mistakePrefix}别再追问“这题问什么”。不会表达不是问题。老师先说给你听：${localStudentFriendlyConceptLine(question)} 你只需要选一个按钮或补一个空：先看题干关键词，还是先看答案长短？最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`,
+      reply: `${mistakePrefix}${teacherFirstBridgeForMetaComplaint(rawReply, question)}`,
     };
   }
 

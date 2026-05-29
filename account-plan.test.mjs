@@ -1262,6 +1262,17 @@ test("challenge pre-answer offers non-answer starters so students are not stuck 
   assert.doesNotMatch(starterBlock, /正确答案|答案是/);
 });
 
+test("challenge pre-answer names the exact missing blank after a starter is inserted", () => {
+  const nextBlock = js.match(/function preAnswerNextMissingStep[\s\S]*?function renderPreAnswerChecklist/)?.[0] || "";
+  assert.match(html, /id="preAnswerNextStep"/);
+  assert.match(js, /function preAnswerNextMissingStep/);
+  assert.match(js, /preAnswerNextStep/);
+  assert.match(nextBlock, /先把第一个空补成题目要判断什么/);
+  assert.match(nextBlock, /再把第二个空补成第一步看什么/);
+  assert.match(nextBlock, /最后补“因为”后面的原因/);
+  assert.doesNotMatch(nextBlock, /正确答案|答案是/);
+});
+
 test("school-depth questions show a clear requirement card before students answer", () => {
   assert.match(html, /id="questionRequirementCard"/);
   assert.match(html, /id="questionRequirementTitle"/);

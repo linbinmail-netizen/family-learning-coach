@@ -1035,6 +1035,17 @@ textarea {
   color: var(--green-dark);
 }
 
+.pre-answer-next-step {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(196, 132, 43, 0.24);
+  border-radius: 8px;
+  background: #fffaf1;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+}
+
 .question-requirement-card {
   display: grid;
   gap: 6px;

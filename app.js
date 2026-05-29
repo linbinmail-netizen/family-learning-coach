@@ -4522,6 +4522,20 @@ function preAnswerGateState(question = activeQuestions()[state.currentQuestion],
   return { thought, needsPreAnswer, preAnswerReady };
 }
 
+function preAnswerNextMissingStep(thought = "", question = activeQuestions()[state.currentQuestion]) {
+  const quality = preAnswerThoughtQuality(thought);
+  if (isPreAnswerThoughtReady(thought, question)) return "思路已够用，现在可以选择答案。";
+  if (/____/.test(String(thought || ""))) {
+    if (!quality.hasGoal) return "下一步：先把第一个空补成题目要判断什么。";
+    if (!quality.hasMethod) return "下一步：再把第二个空补成第一步看什么。";
+    return "下一步：最后补“因为”后面的原因。";
+  }
+  if (!quality.hasGoal) return "下一步：先写这题要判断什么。";
+  if (!quality.hasMethod) return "下一步：再写第一步看什么。";
+  if (isSchoolExamPracticeQuestion(question) && !quality.hasReason) return "下一步：最后补为什么这样做。";
+  return "下一步：把句子写具体一点，再选择答案。";
+}
+
 function renderPreAnswerChecklist(thought = "", question = activeQuestions()[state.currentQuestion]) {
   const quality = preAnswerThoughtQuality(thought);
   const needsReason = isSchoolExamPracticeQuestion(question);
@@ -4547,6 +4561,7 @@ function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion]
   if (document.activeElement !== thoughtInput) thoughtInput.value = thought;
   renderPreAnswerChecklist(thought, question);
   $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "先写一句思路，选项才会解锁。";
+  $("preAnswerNextStep").textContent = preAnswerNextMissingStep(thought, question);
   $("preAnswerHelp").textContent = preAnswerReady
     ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
     : isSchoolExamPracticeQuestion(question)

@@ -6232,7 +6232,7 @@ function renderCoach() {
   state.chatHistory = [
     {
       role: "coach",
-      text: "我们先不急着选答案。第一步，请你用自己的话说：这道题真正问的是什么？",
+      text: `我先帮你拆题：先补一个小知识点。${localStudentFriendlyConceptLine(question)} 不急着选答案，也不用先完整解释题意。`,
     },
     {
       role: "coach",
@@ -6240,7 +6240,7 @@ function renderCoach() {
     },
     {
       role: "coach",
-      text: `这题主要练习：${question?.skill || diagnostic.skills[0][0]}。我会提示你思路，但不会直接报答案。`,
+      text: `这题主要练习：${question?.skill || diagnostic.skills[0][0]}。现在只补一个空：我第一步先看____。我会提示你思路，但不会直接报答案。`,
     },
   ];
   $("chatWindow").innerHTML = `

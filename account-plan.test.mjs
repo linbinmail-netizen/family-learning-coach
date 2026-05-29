@@ -1806,6 +1806,15 @@ test("practice hint button gives a teacher-first micro hint instead of asking th
   assert.doesNotMatch(js, /studentSafePracticeHint[\s\S]*正确答案是/);
 });
 
+test("standalone AI coach opens with teaching before asking for the question goal", () => {
+  const renderCoachBlock = js.match(/function renderCoach[\s\S]*?function appendChat/)?.[0] || "";
+  assert.match(renderCoachBlock, /我先帮你拆题/);
+  assert.match(renderCoachBlock, /先补一个小知识点/);
+  assert.match(renderCoachBlock, /只补一个空/);
+  assert.match(renderCoachBlock, /localStudentFriendlyConceptLine\(question\)/);
+  assert.doesNotMatch(renderCoachBlock, /请你用自己的话说：这道题真正问的是什么/);
+});
+
 test("student coach uses recent same-skill mistakes", () => {
   assert.match(js, /recentSkillMistakes/);
   assert.match(js, /mistakesForCurrentSkill/);

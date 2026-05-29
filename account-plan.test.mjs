@@ -1353,6 +1353,16 @@ test("easy fast correct answers trigger school-level explanation verification", 
   assert.match(js, /答对后深度验证掌握/);
 });
 
+test("correct but unsure answers start with method verification instead of reteaching choices", () => {
+  const startBlock = js.match(/function startGuidedMastery[\s\S]*?function completeGuidedMastery/)?.[0] || "";
+  assert.match(js, /if \(confidence !== "sure"\) return "confidence"/);
+  assert.match(startBlock, /issue === "confidence"/);
+  assert.match(startBlock, /startsWithVariant/);
+  assert.match(startBlock, /你刚才已经选对了/);
+  assert.match(startBlock, /直接写出这类题的解题方法和原因/);
+  assert.doesNotMatch(startBlock, /issue === "confidence"[\s\S]{0,260}我不会直接告诉你答案/);
+});
+
 test("high-performing students are routed to explanation-first challenge questions", () => {
   assert.match(js, /function isExplanationFirstChallenge/);
   assert.match(js, /const highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.obviousEasyCorrect \|\| adaptiveResult\.raisedLevel \|\| adaptiveResult\.challengeMode \|\| targetLevel >= 2\)/);

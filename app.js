@@ -4081,7 +4081,7 @@ function transitionGuidanceToVariantImmediately(reply = "", immediateReply = "")
 
 function startGuidedMastery(question, selectedIndex, reason, confidence, issue) {
   const variant = buildVariantQuestion(question);
-  const startsWithVariant = issue === "school_verification";
+  const startsWithVariant = issue === "school_verification" || issue === "confidence";
   state.guidanceLock = {
     questionIndex: state.currentQuestion,
     questionKey: questionProgressKey(),

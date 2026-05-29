@@ -150,7 +150,7 @@ test("coach fallback continues from a real method attempt instead of restarting"
 
   assert.match(reply, /你已经说对/);
   assert.match(reply, /斜率\/变化率|条件关系/);
-  assert.match(reply, /不要重做整题/);
+  assert.match(reply, /这部分保留|直接接下一句/);
   assert.match(reply, /只补题目里的具体关键词或证据/);
   assert.match(reply, /题目里的____说明____/);
   assert.doesNotMatch(reply, /真正问你找什么|先把题目翻译成一句话|正确答案|答案是|选项\s*[A-D]/);

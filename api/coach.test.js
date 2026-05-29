@@ -174,10 +174,24 @@ test("fallback reply builds on a partial method attempt instead of restarting", 
 
   assert.match(reply, /你已经说对/);
   assert.match(reply, /中心观点|证据/);
-  assert.match(reply, /不要重做整题/);
+  assert.match(reply, /这部分保留|直接接下一句/);
   assert.match(reply, /补题目里的具体关键词或证据/);
   assert.doesNotMatch(reply, /重新开始|先说题目问什么/);
   assert.doesNotMatch(reply, /正确答案|答案是/);
+});
+
+test("partial method reply gets specific praise plus one next sentence", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "我先看斜率，因为要比较变化率",
+    skill: "斜率与变化率",
+  });
+
+  assert.match(reply, /你说对的是/);
+  assert.match(reply, /斜率\/变化率/);
+  assert.match(reply, /下一句只补/);
+  assert.match(reply, /题目里的____说明____/);
+  assert.doesNotMatch(reply, /重做整题|先说题目问什么|正确答案|答案是/);
 });
 
 test("AI coach prompt tells remote model to name the correct part of a partial method", () => {

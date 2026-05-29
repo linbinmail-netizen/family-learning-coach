@@ -1638,6 +1638,15 @@ test("local student coach handles answer letters and stuck replies directly", ()
   assert.match(js, /buildLocalCoachReply\(reply, state\.inlineCoachHistory\)/);
 });
 
+test("local student coach continues partial method attempts instead of restarting", () => {
+  assert.match(js, /function localMethodAttemptContinuation/);
+  assert.match(js, /你说对的是/);
+  assert.match(js, /下一句只补/);
+  assert.match(js, /题目里的____说明____/);
+  assert.match(js, /localMethodAttemptContinuation\(rawReply, question\)/);
+  assert.doesNotMatch(js, /localMethodAttemptContinuation[\s\S]*正确答案是/);
+});
+
 test("student coach uses recent same-skill mistakes", () => {
   assert.match(js, /recentSkillMistakes/);
   assert.match(js, /mistakesForCurrentSkill/);

@@ -6223,6 +6223,28 @@ function localOneStepCoachPrompt(gap = coachingGapForReply(), question = activeQ
   return `我看到你现在缺的是：${gap.label}。${gap.next} 只补这一句：${localGapSentenceFrame(gap, question)}`;
 }
 
+function localPartialMethodAnchors(reply = "", question = activeQuestions()[state.currentQuestion]) {
+  const text = `${reply} ${question?.skill || ""}`.toLowerCase();
+  const anchors = [];
+  if (/中心观点|观点|claim|central/.test(text)) anchors.push("中心观点");
+  if (/证据|evidence/.test(text)) anchors.push("证据");
+  if (/关键词|keyword|key word/.test(text)) anchors.push("关键词");
+  if (/斜率|变化率|slope|rate/.test(text)) anchors.push("斜率/变化率");
+  if (/变量|数据|variable|data/.test(text)) anchors.push("变量/数据");
+  if (/条件|关系|condition|relationship/.test(text)) anchors.push("条件关系");
+  return anchors.length ? anchors.slice(0, 2).join("和") : "题目目标和第一步";
+}
+
+function isLocalMethodAttempt(reply = "") {
+  const quality = evaluateGuidanceReplyQuality(reply);
+  return quality.enoughDetail && (quality.questionGoal || quality.methodStep) && !quality.asksForHelp;
+}
+
+function localMethodAttemptContinuation(reply = "", question = activeQuestions()[state.currentQuestion]) {
+  const anchorText = localPartialMethodAnchors(reply, question);
+  return `你说对的是${anchorText}，这部分保留，直接接下一句。下一句只补题目里的具体关键词或证据：题目里的____说明____。`;
+}
+
 function localStudentFriendlyConceptLine(question = activeQuestions()[state.currentQuestion]) {
   // 不要把英文解析原句直接给孩子，卡住时先给一条中文短概念。
   const skill = question?.skill || activeDiagnostic().skills[0][0];
@@ -6334,6 +6356,12 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
     const stuckAction = localStuckGapTeachingAction(gap, question);
     return {
       reply: `${mistakePrefix}${stuckAction || `卡点判断：${gap.label}。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 现在只做一小步：${localGapSentenceFrame(gap, question)}`}`,
+    };
+  }
+
+  if (isLocalMethodAttempt(rawReply)) {
+    return {
+      reply: `${mistakePrefix}${localMethodAttemptContinuation(rawReply, question)}`,
     };
   }
 

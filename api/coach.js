@@ -199,7 +199,7 @@ function methodAttemptContinuation(body = {}) {
   if (/变量|数据|variable|data/i.test(reply)) anchors.push("变量/数据");
   if (/条件|关系|condition|relationship/i.test(reply)) anchors.push("条件关系");
   const anchorText = anchors.length ? anchors.slice(0, 2).join("和") : "题目目标和第一步";
-  return `你已经说对了${anchorText}，不要重做整题。下一步只补题目里的具体关键词或证据：题目里的____说明____。`;
+  return `你已经说对了。你说对的是${anchorText}，这部分保留，直接接下一句。下一句只补题目里的具体关键词或证据：题目里的____说明____。`;
 }
 
 function buildTeachingNote({ subject, skill, explanation }) {

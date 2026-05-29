@@ -4475,7 +4475,8 @@ function requiresPreAnswerThought(question = {}) {
 
 function preAnswerThoughtQuality(text = "") {
   const normalized = String(text || "").trim().toLowerCase();
-  const blocked = /^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$|不知道|不会|随便|guess|idk|____/.test(normalized);
+  const genericStarterOnly = /题目要求|题目里的关键词或条件|题目里的具体词|通用提示还不算完成/.test(normalized);
+  const blocked = /^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$|不知道|不会|随便|guess|idk|____/.test(normalized) || genericStarterOnly;
   const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|identify|what|which|calculate/.test(normalized);
   const hasMethod = /先|第一步|步骤|方法|看|找|条件|关键词|证据|变化|关系|first|evidence|compare|change|clue/.test(normalized);
   const hasReason = /因为|所以|为了|能帮|说明|证明|原因|because|why|so that|therefore/.test(normalized);
@@ -4497,7 +4498,7 @@ function isPreAnswerThoughtReady(text = "", question = {}) {
 function preAnswerStarterText(kind = "frame", question = activeQuestions()[state.currentQuestion]) {
   const hint = coachingHintForTurn(question, 0) || question?.coachHints?.[0] || "题目里的关键词或条件";
   if (kind === "keyword") {
-    return `这题要我先判断题目要求。我第一步先看 ${hint}，因为它能提示该用什么方法。`;
+    return `这题要我判断____。我第一步先看题目里的具体词：____，再结合 ${hint} 判断方法。`;
   }
   return "这题要我判断____。我第一步先看____，因为____。";
 }

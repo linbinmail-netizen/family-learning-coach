@@ -1273,6 +1273,17 @@ test("challenge pre-answer names the exact missing blank after a starter is inse
   assert.doesNotMatch(nextBlock, /正确答案|答案是/);
 });
 
+test("challenge pre-answer keyword starter cannot unlock choices without student-specific content", () => {
+  const starterBlock = js.match(/function preAnswerStarterText[\s\S]*?function applyPreAnswerStarter/)?.[0] || "";
+  const qualityBlock = js.match(/function preAnswerThoughtQuality[\s\S]*?function isChallengePreAnswerQuestion/)?.[0] || "";
+  assert.match(starterBlock, /题目里的具体词/);
+  assert.match(starterBlock, /____/);
+  assert.match(qualityBlock, /题目要求/);
+  assert.match(qualityBlock, /题目里的关键词或条件/);
+  assert.match(qualityBlock, /通用提示还不算完成/);
+  assert.doesNotMatch(starterBlock, /正确答案|答案是/);
+});
+
 test("school-depth questions show a clear requirement card before students answer", () => {
   assert.match(html, /id="questionRequirementCard"/);
   assert.match(html, /id="questionRequirementTitle"/);

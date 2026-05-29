@@ -1189,6 +1189,20 @@ test("challenge pre-answer requires goal and method before choices unlock", () =
   assert.match(js, /写清题目目标和第一步/);
 });
 
+test("challenge pre-answer gives a live writing checklist before answer choices unlock", () => {
+  assert.match(html, /id="preAnswerChecklist"/);
+  assert.match(html, /id="preAnswerGoalCheck"/);
+  assert.match(html, /id="preAnswerMethodCheck"/);
+  assert.match(html, /id="preAnswerReasonCheck"/);
+  assert.match(js, /function renderPreAnswerChecklist/);
+  assert.match(js, /preAnswerThoughtQuality\(thought\)/);
+  assert.match(js, /preAnswerGoalCheck/);
+  assert.match(js, /preAnswerMethodCheck/);
+  assert.match(js, /preAnswerReasonCheck/);
+  assert.match(js, /renderPreAnswerChecklist\(thought, question\)/);
+  assert.match(css, /pre-answer-checklist/);
+});
+
 test("student lesson includes concept, example, steps, trap, and quick check", () => {
   assert.match(html, /方法步骤/);
   assert.match(html, /易错提醒/);

@@ -987,6 +987,26 @@ textarea {
   resize: vertical;
 }
 
+.pre-answer-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pre-answer-checklist span {
+  padding: 6px 10px;
+  border: 1px solid rgba(47, 111, 159, 0.18);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted);
+}
+
+.pre-answer-checklist span.ready {
+  border-color: rgba(32, 111, 87, 0.24);
+  background: #edf8f2;
+  color: var(--green-dark);
+}
+
 .answer-option.locked-choice {
   opacity: 0.55;
   cursor: not-allowed;

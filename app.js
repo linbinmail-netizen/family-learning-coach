@@ -4473,6 +4473,22 @@ function preAnswerGateState(question = activeQuestions()[state.currentQuestion],
   return { thought, needsPreAnswer, preAnswerReady };
 }
 
+function renderPreAnswerChecklist(thought = "", question = activeQuestions()[state.currentQuestion]) {
+  const quality = preAnswerThoughtQuality(thought);
+  const needsReason = isSchoolExamPracticeQuestion(question);
+  const checks = [
+    ["preAnswerGoalCheck", quality.hasGoal, "题目目标"],
+    ["preAnswerMethodCheck", quality.hasMethod, "第一步"],
+    ["preAnswerReasonCheck", !needsReason || quality.hasReason, "为什么"],
+  ];
+  checks.forEach(([id, ready, label]) => {
+    const item = $(id);
+    if (!item) return;
+    item.classList.toggle("ready", Boolean(ready));
+    item.textContent = `${ready ? "已写：" : "还差："}${label}`;
+  });
+}
+
 function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion], progressKey = questionProgressKey()) {
   const { thought, needsPreAnswer, preAnswerReady } = preAnswerGateState(question, progressKey);
   const card = $("preAnswerCard");
@@ -4480,6 +4496,7 @@ function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion]
   const thoughtInput = $("preAnswerThought");
   card.classList.toggle("hidden", !needsPreAnswer);
   if (document.activeElement !== thoughtInput) thoughtInput.value = thought;
+  renderPreAnswerChecklist(thought, question);
   $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "先写一句思路，选项才会解锁。";
   $("preAnswerHelp").textContent = preAnswerReady
     ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"

@@ -1593,6 +1593,18 @@ test("variant verification lets a stuck student return to reteaching", () => {
   assert.match(css, /variant-next-actions/);
 });
 
+test("variant verification offers concept help before students type a full proof", () => {
+  assert.match(html, /id="variantConceptHelpButton"/);
+  assert.match(html, /先补知识点/);
+  assert.match(js, /function variantConceptHelpStarterFor/);
+  assert.match(js, /conceptMiniLesson\(question\)/);
+  assert.match(js, /localStudentFriendlyConceptLine\(question\)/);
+  assert.match(js, /variantConceptHelpButton"\)\.addEventListener\("click"/);
+  assert.match(js, /applyVariantStarter\(variantConceptHelpStarterFor/);
+  assert.match(js, /现在只补一个空/);
+  assert.doesNotMatch(js, /variantConceptHelpStarterFor[\s\S]*正确答案是/);
+});
+
 test("student cannot submit variant explanation until rubric is complete", () => {
   assert.match(html, /id="variantSubmit"/);
   assert.match(js, /function isVariantRubricReady/);

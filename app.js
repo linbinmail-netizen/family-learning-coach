@@ -2950,6 +2950,12 @@ function variantNextStepStarterFor(reply = "", variant = state.guidanceLock?.var
   return "具体来说，我还要把题目里的条件和我的方法连起来说明：";
 }
 
+function variantConceptHelpStarterFor(variant = state.guidanceLock?.variant, question = activeQuestions()[state.guidanceLock?.questionIndex ?? state.currentQuestion]) {
+  const lesson = conceptMiniLesson(question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  return `我先补知识点：${localStudentFriendlyConceptLine(question)} ${lesson.concept} 这题属于 ${skill}。现在只补一个空：我第一步先____，因为____。`;
+}
+
 const lessonBlueprints = {
   引用文本证据: {
     concept: "证据必须直接支持你的答案，不能只凭感觉。",
@@ -7362,6 +7368,9 @@ function bindEvents() {
       undefined,
       Boolean(state.guidanceLock?.variantFeedback)
     ));
+  });
+  $("variantConceptHelpButton").addEventListener("click", () => {
+    applyVariantStarter(variantConceptHelpStarterFor(state.guidanceLock?.variant));
   });
   $("variantReteachButton").addEventListener("click", requestVariantReteach);
 

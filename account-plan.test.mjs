@@ -1272,10 +1272,15 @@ test("challenge pre-answer offers non-answer starters so students are not stuck 
   assert.match(html, /id="preAnswerStarterBar"/);
   assert.match(html, /data-pre-answer-starter="frame"/);
   assert.match(html, /data-pre-answer-starter="keyword"/);
+  assert.match(html, /data-pre-answer-starter="concept"/);
+  assert.match(html, />先讲知识点</);
   assert.match(js, /function preAnswerStarterText/);
   assert.match(js, /function applyPreAnswerStarter/);
   assert.match(js, /data-pre-answer-starter/);
   assert.match(js, /如果不会写，就先点一个句式按钮/);
+  assert.match(starterBlock, /kind === "concept"/);
+  assert.match(starterBlock, /conceptMiniLesson/);
+  assert.match(starterBlock, /localStudentFriendlyConceptLine/);
   assert.match(starterBlock, /____/);
   assert.match(qualityBlock, /____/);
   assert.doesNotMatch(starterBlock, /正确答案|答案是/);

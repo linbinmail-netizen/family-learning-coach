@@ -4568,6 +4568,10 @@ function isPreAnswerThoughtReady(text = "", question = {}) {
 
 function preAnswerStarterText(kind = "frame", question = activeQuestions()[state.currentQuestion]) {
   const hint = coachingHintForTurn(question, 0) || question?.coachHints?.[0] || "题目里的关键词或条件";
+  if (kind === "concept") {
+    const lesson = conceptMiniLesson(question);
+    return `我知识点没吃透，先看小讲解：${localStudentFriendlyConceptLine(question)} ${lesson.concept} 现在只补一个空：我第一步先____，因为____。`;
+  }
   if (kind === "keyword") {
     return `这题要我判断____。我第一步先看题目里的具体词：____，再结合 ${hint} 判断方法。`;
   }

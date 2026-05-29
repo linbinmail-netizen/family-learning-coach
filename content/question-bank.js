@@ -1381,8 +1381,8 @@ function buildSystematicExpansionQuestions(subjectId, blueprint) {
       aiHintLevel2: "只补一个空：我第一步先看____。",
       aiHintLevel3: "再把方法接完整：我第一步先____，因为____。",
       coachHints: [
-        "What is the question asking you to identify first?",
-        "Which clue connects directly to the skill being practiced?",
+        "先看一个老师示范句，再补题目里的关键词。",
+        "只补第一步线索：我第一步先看____。",
       ],
     };
   });

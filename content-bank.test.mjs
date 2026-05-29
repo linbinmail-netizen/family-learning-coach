@@ -311,6 +311,13 @@ test("systematic AI hints are scaffold-first instead of asking students to inven
   assert.doesNotMatch(questionBankSource, /先说题目真正问什么/);
 });
 
+test("systematic coach hints do not send stuck students back to meta questions", () => {
+  assert.match(questionBankSource, /先看一个老师示范句/);
+  assert.match(questionBankSource, /只补第一步线索/);
+  assert.doesNotMatch(questionBankSource, /What is the question asking you to identify first/);
+  assert.doesNotMatch(questionBankSource, /Which clue connects directly to the skill being practiced/);
+});
+
 test("systematic expansion marks enough school-depth tasks for exam-level practice", () => {
   const context = { window: {} };
   vm.createContext(context);

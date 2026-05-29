@@ -412,6 +412,27 @@ test("fallback changes teaching style after repeated concept stuck replies", () 
   assert.doesNotMatch(reply, /正确答案|答案是/);
 });
 
+test("fallback third stuck reply leaves the original question for a worked mini example", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "还是不会，知识点没吃透，打不出来",
+    history: [
+      { role: "student", text: "我不知道这题问什么" },
+      { role: "coach", text: "卡点判断：题意没拆开。现在只做一小步：这题要我判断____。" },
+      { role: "student", text: "还是不会，打不出来" },
+      { role: "coach", text: "换一种讲法，任务再降一级：不用打完整句。小讲解：证据要支持观点。小例子：题目问作者观点时，先找观点句。" },
+      { role: "student", text: "我还是不会" },
+      { role: "coach", text: "下一小步只补一个空：我先看____。" },
+    ],
+  });
+
+  assert.match(reply, /第三次卡住/);
+  assert.match(reply, /不再围着原题/);
+  assert.match(reply, /非原题小例子/);
+  assert.match(reply, /只填一个空/);
+  assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
+});
+
 test("fallback reteaching uses concrete subject examples", () => {
   const reply = buildFallbackReply({
     ...baseBody,

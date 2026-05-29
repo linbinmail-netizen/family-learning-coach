@@ -272,6 +272,25 @@ export function needsSmallerTaskAfterRepeatedStuck(body = {}) {
   return currentIsStuck && currentCannotProduceWords && (studentMessages.length >= 2 || stuckTurnCount >= 2);
 }
 
+function needsWorkedMiniExampleAfterThirdStuck(body = {}) {
+  const history = body.history || [];
+  const studentMessages = history
+    .filter((message) => message.role === "student")
+    .map((message) => String(message.text || ""));
+  const coachMessages = history
+    .filter((message) => message.role === "coach")
+    .map((message) => String(message.text || ""));
+  const stuckTurnCount = [body.studentReply, ...studentMessages.slice(-5)].filter((reply) => detectNeedsTeaching(reply)).length;
+  const alreadyLowered = coachMessages.some((text) => /换一种讲法|下一小步|只补一个空|只完成一个空/.test(text));
+  return detectNeedsTeaching(body.studentReply || "") && studentMessages.length >= 3 && stuckTurnCount >= 3 && alreadyLowered;
+}
+
+function thirdStuckWorkedMiniExampleRescue(body = {}) {
+  const skill = body.skill || "这个知识点";
+  const example = teachingMiniExampleForApi(skill, body.subject);
+  return `第三次卡住，先不再围着原题。非原题小例子：${example} 现在只填一个空：我第一步先看____。填完再接回原题。`;
+}
+
 function repeatedConceptStuckRescue(body = {}) {
   const skill = body.skill || "这个知识点";
   const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
@@ -424,6 +443,10 @@ export function buildFallbackReply(body = {}) {
   const mistakePrefix = body.recentSkillMistakes?.length
     ? `你之前在同类题上卡过 ${body.recentSkillMistakes[0].attempts || 1} 次，`
     : "";
+
+  if (needsWorkedMiniExampleAfterThirdStuck(body)) {
+    return `${mistakePrefix}${thirdStuckWorkedMiniExampleRescue(body)}`;
+  }
 
   if (needsSmallerTaskAfterRepeatedStuck(body)) {
     if (cannotProduceBecauseConceptGap(body.studentReply || "")) {

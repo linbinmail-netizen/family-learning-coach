@@ -1247,6 +1247,21 @@ test("challenge pre-answer gives a live writing checklist before answer choices 
   assert.match(css, /pre-answer-checklist/);
 });
 
+test("challenge pre-answer offers non-answer starters so students are not stuck on a blank box", () => {
+  const starterBlock = js.match(/function preAnswerStarterText[\s\S]*?function applyPreAnswerStarter/)?.[0] || "";
+  const qualityBlock = js.match(/function preAnswerThoughtQuality[\s\S]*?function isChallengePreAnswerQuestion/)?.[0] || "";
+  assert.match(html, /id="preAnswerStarterBar"/);
+  assert.match(html, /data-pre-answer-starter="frame"/);
+  assert.match(html, /data-pre-answer-starter="keyword"/);
+  assert.match(js, /function preAnswerStarterText/);
+  assert.match(js, /function applyPreAnswerStarter/);
+  assert.match(js, /data-pre-answer-starter/);
+  assert.match(js, /如果不会写，就先点一个句式按钮/);
+  assert.match(starterBlock, /____/);
+  assert.match(qualityBlock, /____/);
+  assert.doesNotMatch(starterBlock, /正确答案|答案是/);
+});
+
 test("school-depth questions show a clear requirement card before students answer", () => {
   assert.match(html, /id="questionRequirementCard"/);
   assert.match(html, /id="questionRequirementTitle"/);

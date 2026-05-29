@@ -994,6 +994,27 @@ textarea {
   resize: vertical;
 }
 
+.pre-answer-starter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pre-answer-starter-bar button {
+  padding: 7px 10px;
+  border: 1px solid rgba(47, 111, 159, 0.24);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--blue-dark);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.pre-answer-starter-bar button:hover {
+  border-color: rgba(47, 111, 159, 0.5);
+  background: #edf6fb;
+}
+
 .pre-answer-checklist {
   display: flex;
   flex-wrap: wrap;

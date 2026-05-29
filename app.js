@@ -4475,7 +4475,7 @@ function requiresPreAnswerThought(question = {}) {
 
 function preAnswerThoughtQuality(text = "") {
   const normalized = String(text || "").trim().toLowerCase();
-  const blocked = /^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$|不知道|不会|随便|guess|idk/.test(normalized);
+  const blocked = /^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$|不知道|不会|随便|guess|idk|____/.test(normalized);
   const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|identify|what|which|calculate/.test(normalized);
   const hasMethod = /先|第一步|步骤|方法|看|找|条件|关键词|证据|变化|关系|first|evidence|compare|change|clue/.test(normalized);
   const hasReason = /因为|所以|为了|能帮|说明|证明|原因|because|why|so that|therefore/.test(normalized);
@@ -4492,6 +4492,24 @@ function isPreAnswerThoughtReady(text = "", question = {}) {
   if (isSchoolExamPracticeQuestion(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason;
   if (isChallengePreAnswerQuestion(question)) return quality.hasGoal && quality.hasMethod;
   return quality.hasGoal || quality.hasMethod;
+}
+
+function preAnswerStarterText(kind = "frame", question = activeQuestions()[state.currentQuestion]) {
+  const hint = coachingHintForTurn(question, 0) || question?.coachHints?.[0] || "题目里的关键词或条件";
+  if (kind === "keyword") {
+    return `这题要我先判断题目要求。我第一步先看 ${hint}，因为它能提示该用什么方法。`;
+  }
+  return "这题要我判断____。我第一步先看____，因为____。";
+}
+
+function applyPreAnswerStarter(kind = "frame") {
+  const input = $("preAnswerThought");
+  if (!input) return;
+  const starter = preAnswerStarterText(kind);
+  input.value = input.value.trim() ? `${input.value.trim()} ${starter}` : starter;
+  state.preAnswerThoughts[questionProgressKey()] = input.value;
+  renderQuestion();
+  input.focus();
 }
 
 function preAnswerGateState(question = activeQuestions()[state.currentQuestion], progressKey = questionProgressKey()) {
@@ -4532,10 +4550,10 @@ function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion]
   $("preAnswerHelp").textContent = preAnswerReady
     ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
     : isSchoolExamPracticeQuestion(question)
-      ? "不要写答案字母。写清题目目标、第一步和为什么这样做。"
+      ? "不要写答案字母。如果不会写，就先点一个句式按钮，再补题目目标、第一步和为什么。"
       : isChallengePreAnswerQuestion(question)
-        ? "不要写答案字母。写清题目目标和第一步。"
-        : "不要写答案字母。写清“题目要判断什么”或“第一步看什么”。";
+        ? "不要写答案字母。如果不会写，就先点一个句式按钮，写清题目目标和第一步。"
+        : "不要写答案字母。如果不会写，就先点一个句式按钮。";
   document.querySelectorAll("#answerGrid [data-answer-index]").forEach((button) => {
     button.classList.toggle("locked-choice", !preAnswerReady);
     if (!preAnswerReady) button.setAttribute("aria-disabled", "true");
@@ -6935,6 +6953,13 @@ function bindEvents() {
     state.preAnswerThoughts[questionProgressKey()] = event.target.value;
     saveData();
     renderPreAnswerGate();
+  });
+
+  $("preAnswerStarterBar").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-pre-answer-starter]");
+    if (!button) return;
+    applyPreAnswerStarter(button.dataset.preAnswerStarter);
+    saveData();
   });
 
   $("answerGrid").addEventListener("click", (event) => {

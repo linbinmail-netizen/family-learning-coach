@@ -1403,6 +1403,15 @@ function clearLearningStateForAccount() {
   state.questionStartedAt = "";
 }
 
+function upgradeSavedShortPlanSettings(planSettings = {}) {
+  return Object.fromEntries(
+    Object.entries(planSettings).map(([studentId, plan]) => {
+      const isOldShortDefault = plan && plan.minutes === 30 && plan.questionTarget === 8;
+      return [studentId, isOldShortDefault ? { ...plan, minutes: 120, questionTarget: 24 } : plan];
+    })
+  );
+}
+
 function loadSavedData(key = storageKey, options = {}) {
   try {
     if (options.resetLearning) clearLearningStateForAccount();
@@ -1433,6 +1442,7 @@ function loadSavedData(key = storageKey, options = {}) {
         ...state.planSettings,
         ...saved.planSettings,
       };
+      state.planSettings = upgradeSavedShortPlanSettings(state.planSettings);
     }
     if (saved?.adaptiveLevels) state.adaptiveLevels = saved.adaptiveLevels;
     if (saved?.adaptiveStats) state.adaptiveStats = saved.adaptiveStats;
@@ -2359,8 +2369,8 @@ function defaultSubjectForStudent(studentId) {
 function planForStudent(studentId) {
   const fallbackSubject = defaultSubjectForStudent(studentId);
   return {
-    minutes: 30,
-    questionTarget: 8,
+    minutes: 120,
+    questionTarget: 24,
     difficultyMode: "adaptive",
     focusSubject: fallbackSubject,
     ...(state.planSettings[studentId] || {}),

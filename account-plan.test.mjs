@@ -364,8 +364,16 @@ test("student daily plan supports a two-hour learning structure", () => {
 test("default student plans are two-hour sessions, not short templates", () => {
   assert.match(js, /older: \{ minutes: 120, questionTarget: 24, difficultyMode: "adaptive", focusSubject: "english1" \}/);
   assert.match(js, /younger: \{ minutes: 120, questionTarget: 24, difficultyMode: "adaptive", focusSubject: "math8" \}/);
+  assert.match(js, /minutes: 120,\s*questionTarget: 24/);
   assert.match(js, /完成约 \$\{foundationTarget\} 道基础和中等题/);
   assert.match(js, /完成约 \$\{challengeTarget\} 道挑战题或解释题/);
+});
+
+test("saved old short default plans migrate to two-hour sessions without overwriting custom plans", () => {
+  assert.match(js, /function upgradeSavedShortPlanSettings/);
+  assert.match(js, /plan\.minutes === 30 && plan\.questionTarget === 8/);
+  assert.match(js, /\{ \.\.\.plan, minutes: 120, questionTarget: 24 \}/);
+  assert.match(js, /upgradeSavedShortPlanSettings\(state\.planSettings\)/);
 });
 
 test("parent can apply a one-click two-hour plan preset", () => {

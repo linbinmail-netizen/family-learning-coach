@@ -1356,8 +1356,8 @@ let state = {
   questionStartedAt: "",
   learningPathSubject: "math",
   planSettings: {
-    older: { minutes: 30, questionTarget: 8, difficultyMode: "adaptive", focusSubject: "english1" },
-    younger: { minutes: 30, questionTarget: 8, difficultyMode: "adaptive", focusSubject: "math8" },
+    older: { minutes: 120, questionTarget: 24, difficultyMode: "adaptive", focusSubject: "english1" },
+    younger: { minutes: 120, questionTarget: 24, difficultyMode: "adaptive", focusSubject: "math8" },
   },
 };
 

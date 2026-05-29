@@ -4659,6 +4659,10 @@ function renderChallengeMissionQueue(question = activeQuestions()[state.currentQ
   const queue = state.adaptiveStats[state.subject]?.challengeQueue || [];
   const active = challengeBoostForSubject(state.subject) > 0 && queue.length;
   panel.classList.toggle("hidden", !active);
+  const evidence = adaptivePromotionEvidence(state.lastAdaptiveResult || { isCorrect: true, challengeMode: active });
+  $("challengeMissionReason").textContent = active
+    ? `挑战确认：因为${evidence}，现在不是惩罚，也不是多刷题；这是用解释型题证明你真的掌握。`
+    : "不是惩罚，也不是多刷题；这是用解释型题证明你真的掌握。";
   $("challengeMissionList").innerHTML = active
     ? queue.map((item) => `<li><strong>${item.label}</strong><span>${item.detail}</span></li>`).join("")
     : "";

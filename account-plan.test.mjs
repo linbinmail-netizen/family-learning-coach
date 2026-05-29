@@ -1352,10 +1352,15 @@ test("one obvious easy correct answer immediately promotes to depth practice", (
 test("easy streaks create a visible challenge mission queue", () => {
   assert.match(html, /id="challengeMissionQueue"/);
   assert.match(html, /id="challengeMissionList"/);
+  assert.match(html, /id="challengeMissionReason"/);
   assert.match(html, /挑战任务/);
   assert.match(js, /function buildChallengeMissionQueue/);
   assert.match(js, /function renderChallengeMissionQueue/);
   assert.match(js, /state\.adaptiveStats\[subjectId\]\.challengeQueue = buildChallengeMissionQueue\(question, nextStats\)/);
+  assert.match(js, /挑战确认/);
+  assert.match(js, /不是惩罚，也不是多刷题/);
+  assert.match(js, /证明你真的掌握/);
+  assert.match(js, /adaptivePromotionEvidence/);
   assert.match(js, /解释型题/);
   assert.match(js, /学校考试深度题/);
   assert.match(js, /同技能变式题/);

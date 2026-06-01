@@ -4223,6 +4223,7 @@ function startGuidedMastery(question, selectedIndex, reason, confidence, issue) 
     recommendedSupportAction: "fill-goal",
     microDrill: startsWithVariant ? null : guidanceMicroDrillForLock(null, question),
     stepBuilderParts: startsWithVariant ? {} : { goal: guidanceStepBuilderSentence("goal", null, question) },
+    replyDraft: startsWithVariant ? "" : guidanceReplyStarterForLock(null, question),
     complete: false,
   };
   state.inlineCoachHistory = startsWithVariant

@@ -623,6 +623,13 @@ test("student stuck guidance copy uses scaffolds instead of full restatement dem
   assert.doesNotMatch(js, /系统会先讲清概念，再让你复述和做变式。/);
 });
 
+test("wrong-answer guidance opens with a non-answer starter instead of a blank input", () => {
+  const startBlock = js.match(/function startGuidedMastery[\s\S]*?function completeGuidedMastery/)?.[0] || "";
+  assert.match(startBlock, /replyDraft: startsWithVariant \? "" : guidanceReplyStarterForLock/);
+  assert.match(js, /if \(lock\.replyDraft && !replyInput\.value\.trim\(\)\) replyInput\.value = lock\.replyDraft/);
+  assert.doesNotMatch(startBlock, /replyDraft:[\s\S]{0,160}correctAnswer|正确答案/);
+});
+
 test("guidance next missing sentence becomes subject specific for thin replies", () => {
   assert.match(js, /function guidanceDetailSentenceForQuestion/);
   assert.match(js, /题目里的具体数字或变化关系/);

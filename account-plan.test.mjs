@@ -1771,6 +1771,13 @@ test("variant verification does not reveal the expected method before the studen
   assert.match(js, /补完整各项变式说明/);
 });
 
+test("variant verification uses explicit expected method when available", () => {
+  assert.match(js, /function questionExpectedMethod/);
+  assert.match(js, /question\?\.expectedMethod/);
+  assert.match(js, /const method = questionExpectedMethod\(question\)/);
+  assert.doesNotMatch(js, /const method = question\?\.explanation \|\| question\?\.coachHints\?\.\[0\]/);
+});
+
 test("student AI requests have fast timeout fallback", () => {
   assert.match(js, /COACH_RESPONSE_TIMEOUT_MS/);
   assert.match(js, /MASTERY_RESPONSE_TIMEOUT_MS/);

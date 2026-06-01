@@ -2834,7 +2834,7 @@ function advanceToNextQuestionAfterCompletion(answeredIndex = state.currentQuest
 
 function buildVariantQuestion(question) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
-  const method = question?.explanation || question?.coachHints?.[0] || "先找题干关键词，再判断哪个选项直接回答问题。";
+  const method = questionExpectedMethod(question);
   const hints = question?.coachHints || [];
   return {
     prompt: `变式验证：请不用选项，用自己的话写出这类 ${skill} 题的解题方法。`,
@@ -2845,6 +2845,14 @@ function buildVariantQuestion(question) {
       .filter((word) => word.length >= 2)
       .slice(0, 8),
   };
+}
+
+function questionExpectedMethod(question = {}) {
+  if (question?.expectedMethod) return question.expectedMethod;
+  const firstHint = question?.coachHints?.[0] || "先找题干关键词";
+  const reasonHint = question?.coachHints?.[1] || question?.explanation || "说明这一步为什么能判断方法";
+  const trap = question?.commonMistakes?.[0] || "不能只看答案长短、熟悉词或直接猜";
+  return `${question?.explanation || ""} 第一标准：${firstHint}。原因：${reasonHint}。避开误区：${trap}。`;
 }
 
 function variantSkillPracticeGuideFor(skill = "") {

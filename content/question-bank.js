@@ -1412,3 +1412,31 @@ function enforceChallengeErrorAnalysisQuality(bank = window.twoHourExpansionQues
 }
 
 enforceChallengeErrorAnalysisQuality();
+
+function expectedMethodForQuestion(question = {}) {
+  const firstHint = (question.coachHints || [])[0] || "identify the question goal and first useful clue";
+  const secondHint = (question.coachHints || [])[1] || "explain why that clue supports the method";
+  const trap = (question.commonMistakes || [])[0] || "guessing from keywords or answer length without explaining the first step";
+  return `First step: ${firstHint}. Because: ${secondHint}. Trap/mistake to avoid: ${trap}.`;
+}
+
+function enforceProofQuestionExpectedMethods(bank = window.twoHourExpansionQuestionBank) {
+  Object.entries(bank).forEach(([subjectId, questions]) => {
+    bank[subjectId] = questions.map((question) => {
+      const proofCapable = Boolean(
+        String(question.difficulty || "").includes("挑战") ||
+        question.openResponse ||
+        question.constructedResponse ||
+        question.errorAnalysis ||
+        question.multiStepReasoning
+      );
+      if (!proofCapable || String(question.expectedMethod || "").length >= 40) return question;
+      return {
+        ...question,
+        expectedMethod: expectedMethodForQuestion(question),
+      };
+    });
+  });
+}
+
+enforceProofQuestionExpectedMethods();

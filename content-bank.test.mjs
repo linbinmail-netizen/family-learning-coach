@@ -367,3 +367,29 @@ test("systematic challenge questions include error analysis so they are not just
     }
   }
 });
+
+test("proof-capable advanced questions carry explicit transferable method criteria", () => {
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(questionBankSource, context);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    const questions = context.window.twoHourExpansionQuestionBank[subject] || [];
+    const proofQuestions = questions.filter(
+      (question) =>
+        String(question.difficulty).includes("挑战") ||
+        question.openResponse ||
+        question.constructedResponse ||
+        question.errorAnalysis ||
+        question.multiStepReasoning
+    );
+    assert.ok(proofQuestions.length >= 30, `${subject} should have enough proof-capable questions to audit`);
+    for (const question of proofQuestions) {
+      assert.ok(String(question.expectedMethod || "").length >= 40, `${subject} proof question needs expectedMethod: ${question.prompt}`);
+      assert.match(
+        question.expectedMethod,
+        /first step|because|why|trap|mistake|关键词|第一步|因为|误区|错误/i,
+        `${subject} expectedMethod should include method and misconception criteria`
+      );
+    }
+  }
+});

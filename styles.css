@@ -1368,6 +1368,28 @@ textarea {
   line-height: 1.45;
 }
 
+.coach-followup-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, auto);
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(47, 111, 159, 0.18);
+  border-radius: 8px;
+  background: #f7fbff;
+}
+
+.coach-followup-actions.hidden {
+  display: none;
+}
+
+.coach-followup-actions span {
+  color: var(--soft-ink);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .reply-quality-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2480,6 +2502,7 @@ li {
   .reply-quality-list,
   .reply-starter-row,
   .reply-step-actions,
+  .coach-followup-actions,
   .chat-form,
   .auth-actions {
     grid-template-columns: 1fr;

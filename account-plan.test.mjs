@@ -1991,6 +1991,22 @@ test("inline guidance help names the diagnosed stuck gap", () => {
   assert.doesNotMatch(helpBlock, /正确答案是|答案是/);
 });
 
+test("student can continue after an AI message without inventing what to type", () => {
+  const followupBlock = js.match(/function buildCoachFollowupReply[\s\S]*?function applyCoachFollowupAction/)?.[0] || "";
+  assert.match(html, /id="coachFollowupActions"/);
+  assert.match(html, /data-coach-followup="stuck"/);
+  assert.match(html, /data-coach-followup="example"/);
+  assert.match(html, /data-coach-followup="next"/);
+  assert.match(js, /function renderCoachFollowupActions/);
+  assert.match(js, /function applyCoachFollowupAction/);
+  assert.match(js, /coachFollowupActions"\)\.classList\.toggle\("hidden", !showActions\)/);
+  assert.match(js, /appendInlineCoach\("student", "我还是没懂，请换一种讲法。"\)/);
+  assert.match(js, /appendInlineCoach\("coach", buildCoachFollowupReply/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = guidanceNextSentenceForLock/);
+  assert.match(js, /不用重新组织完整解释/);
+  assert.doesNotMatch(followupBlock, /正确答案是|答案是/);
+});
+
 test("local student coach handles answer letters and stuck replies directly", () => {
   assert.match(js, /function buildLocalCoachReply/);
   assert.match(js, /function coachingGapForReply/);

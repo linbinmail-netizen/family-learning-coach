@@ -3540,6 +3540,44 @@ function renderGuidanceScaffold(lock = state.guidanceLock) {
   $("scaffoldReasonStarter").textContent = scaffold.reasonStarter;
 }
 
+function renderCoachFollowupActions(lock = state.guidanceLock) {
+  const actionBar = $("coachFollowupActions");
+  if (!actionBar) return;
+  const hasCoachReply = state.inlineCoachHistory.some((message) => message.role === "coach");
+  const showActions = Boolean(lock) && lock.status !== "variant" && hasCoachReply;
+  $("coachFollowupActions").classList.toggle("hidden", !showActions);
+}
+
+function buildCoachFollowupReply(action = "stuck", lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const gap = coachingGapForReply($("inlineCoachReply")?.value || lock?.replyDraft || "");
+  const nextSentence = guidanceNextSentenceForLock(lock, question);
+  if (action === "example") {
+    return `换个例子讲：${teachingMiniExampleForSkill(question?.skill || "")} 不用重新组织完整解释，只把这个例子的做法迁移回来：${nextSentence}`;
+  }
+  if (action === "next") {
+    return `只给下一步：${gap.next} 不用重新组织完整解释，直接补这一句：${nextSentence}`;
+  }
+  return `我知道你还是没懂。卡点判断：${gap.label}。小讲解：${localStudentFriendlyConceptLine(question)} 不用重新组织完整解释，现在只补一个空：${nextSentence}`;
+}
+
+function applyCoachFollowupAction(action = "stuck", input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock()) return;
+  const question = activeQuestions()[state.guidanceLock.questionIndex] || activeQuestions()[state.currentQuestion];
+  if (action === "stuck") appendInlineCoach("student", "我还是没懂，请换一种讲法。");
+  if (action === "example") appendInlineCoach("student", "换个例子讲。");
+  if (action === "next") appendInlineCoach("student", "只给我下一步。");
+  appendInlineCoach("coach", buildCoachFollowupReply(action, state.guidanceLock, question));
+  state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+  state.guidanceLock.replyDraft = guidanceNextSentenceForLock(state.guidanceLock, question);
+  if (input) {
+    input.value = state.guidanceLock.replyDraft;
+    input.focus();
+  }
+  saveData();
+  renderDiagnostic();
+  renderReplyQuality(input?.value || "");
+}
+
 function guidanceMicroDrillForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   if (/斜率|变化率|slope|rate|线性|函数/.test(skill)) {
@@ -3639,6 +3677,16 @@ function guidanceStepBuilderSentence(part = "goal", lock = state.guidanceLock, q
   if (part === "reason") return "因为这一步能帮我把题目要求和解题方法连起来";
   if (part === "evidence") return guidanceEvidenceBuilderSentence(question);
   return `这题要我判断 ${skill}`;
+}
+
+function guidanceNextSentenceForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const draft = $("inlineCoachReply")?.value || lock?.replyDraft || "";
+  const quality = evaluateGuidanceReplyQuality(draft);
+  if (!quality.questionGoal) return `${guidanceStepBuilderSentence("goal", lock, question)}。`;
+  if (!quality.methodStep) return `${guidanceStepBuilderSentence("method", lock, question)}。`;
+  if (!quality.reasonWhy) return `${guidanceStepBuilderSentence("reason", lock, question)}。`;
+  if (!quality.specificEvidence) return `${guidanceStepBuilderSentence("evidence", lock, question)}。`;
+  return guidanceTeacherModelForLock(lock, question);
 }
 
 function applyGuidanceStepBuilder(part = "goal", input = $("inlineCoachReply")) {
@@ -6171,6 +6219,7 @@ function renderInlineCoachPanel() {
     .map((message) => `<div class="message ${message.role}">${message.text}</div>`)
     .join("");
   $("inlineCoachWindow").scrollTop = $("inlineCoachWindow").scrollHeight;
+  renderCoachFollowupActions(lock);
 
   const variantVisible = lock.status === "variant";
   $("variantChallenge").classList.toggle("hidden", !variantVisible);
@@ -7515,6 +7564,11 @@ function bindEvents() {
     const button = event.target.closest("[data-guidance-quick-reply]");
     if (!button) return;
     submitGuidanceQuickReply(button.dataset.guidanceQuickReply, $("inlineCoachReply"));
+  });
+  $("coachFollowupActions").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-coach-followup]");
+    if (!button) return;
+    applyCoachFollowupAction(button.dataset.coachFollowup, $("inlineCoachReply"));
   });
   $("conceptSupportCard").addEventListener("click", (event) => {
     const button = event.target.closest("[data-concept-support]");

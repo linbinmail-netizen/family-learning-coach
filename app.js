@@ -3781,7 +3781,7 @@ function continueConceptBridgeSentence(input = $("inlineCoachReply")) {
 function guidanceReplyStarterForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const scaffold = guidanceScaffoldForLock(lock, question);
   const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || "关键词或条件";
-  return `这题要我[写题目目标]。我第一步先看[${firstStep}]，因为[说明这一步为什么有用]。`;
+  return `这题要我[写题目目标]。我第一步先看[${firstStep}]，因为[说明这一步为什么有用]。题目里的[具体证据或条件]说明[为什么方法合理]。`;
 }
 
 function guidanceDetailSentenceForQuestion(question = activeQuestions()[state.currentQuestion]) {

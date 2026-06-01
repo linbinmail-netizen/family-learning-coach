@@ -687,6 +687,13 @@ test("student guidance reply quality rejects generic reasons without question ev
   assert.match(js, /题目里的____说明____/);
 });
 
+test("student guidance starter includes a concrete evidence blank", () => {
+  const starterBlock = js.match(/function guidanceReplyStarterForLock[\s\S]*?function guidanceDetailSentenceForQuestion/)?.[0] || "";
+  assert.match(starterBlock, /题目里的\[具体证据或条件\]说明\[为什么方法合理\]/);
+  assert.match(starterBlock, /因为\[说明这一步为什么有用\]/);
+  assert.doesNotMatch(starterBlock, /正确答案是/);
+});
+
 test("student guidance gives a concrete rescue prompt when the reply says they are stuck", () => {
   assert.match(html, /id="replyHelperCard"/);
   assert.match(html, /id="replyStarterText"/);

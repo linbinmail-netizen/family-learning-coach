@@ -158,3 +158,16 @@ test("coach fallback continues from a real method attempt instead of restarting"
   assert.match(reply, /题目里的____说明____/);
   assert.doesNotMatch(reply, /真正问你找什么|先把题目翻译成一句话|正确答案|答案是|选项\s*[A-D]/);
 });
+
+test("coach fallback praises partial method then asks only for the missing reason", () => {
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "这题要我判断变化率，我第一步先比较 x 和 y 怎么变",
+    history: [{ role: "coach", text: "先听老师示范，再补第一步。" }],
+  });
+
+  assert.match(reply, /你已经说对|这部分保留/);
+  assert.match(reply, /题目目标和第一步|变化率|斜率/);
+  assert.match(reply, /只补因为|为什么这一步有用|因为这一步/);
+  assert.doesNotMatch(reply, /重新|从头|题目真正问你找什么|正确答案|答案是|选项\s*[A-D]/);
+});

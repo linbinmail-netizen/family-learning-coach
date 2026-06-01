@@ -1897,6 +1897,15 @@ test("local student coach continues partial method attempts instead of restartin
   assert.doesNotMatch(js, /localMethodAttemptContinuation[\s\S]*正确答案是/);
 });
 
+test("local student coach asks only for because when partial method is missing reason", () => {
+  const continuationBlock = js.match(/function localMethodAttemptContinuation[\s\S]*?function localStudentFriendlyConceptLine/)?.[0] || "";
+  assert.match(continuationBlock, /const gap = coachingGapForReply\(reply\)/);
+  assert.match(continuationBlock, /gap\.label === "原因说明不完整"/);
+  assert.match(continuationBlock, /现在只补因为/);
+  assert.match(continuationBlock, /因为这一步能帮我____/);
+  assert.doesNotMatch(continuationBlock, /现在只补因为[\s\S]*正确答案/);
+});
+
 test("local coach does not require students to invent the question goal when they are stuck", () => {
   const gapBlock = js.match(/function coachingGapForReply[\s\S]*?function localGapSentenceFrame/)?.[0] || "";
   const promptBlock = js.match(/function localOneStepCoachPrompt[\s\S]*?function localPartialMethodAnchors/)?.[0] || "";

@@ -6446,7 +6446,11 @@ function isLocalMethodAttempt(reply = "") {
 }
 
 function localMethodAttemptContinuation(reply = "", question = activeQuestions()[state.currentQuestion]) {
+  const gap = coachingGapForReply(reply);
   const anchorText = localPartialMethodAnchors(reply, question);
+  if (gap.label === "原因说明不完整") {
+    return `你说对的是${anchorText}，这部分保留。现在只补因为：因为这一步能帮我____。`;
+  }
   return `你说对的是${anchorText}，这部分保留，直接接下一句。下一句只补题目里的具体关键词或证据：题目里的____说明____。`;
 }
 

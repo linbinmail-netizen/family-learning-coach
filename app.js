@@ -3992,6 +3992,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     ["qualityQuestionGoal", quality.questionGoal],
     ["qualityMethodStep", quality.methodStep],
     ["qualityReasonWhy", quality.reasonWhy],
+    ["qualitySpecificEvidence", quality.specificEvidence],
   ].forEach(([id, met]) => {
     $(id).classList.toggle("met", met);
   });

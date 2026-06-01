@@ -596,6 +596,7 @@ test("student guidance reply gives immediate quality feedback while typing", () 
   assert.match(html, /id="qualityQuestionGoal"/);
   assert.match(html, /id="qualityMethodStep"/);
   assert.match(html, /id="qualityReasonWhy"/);
+  assert.match(html, /id="qualitySpecificEvidence"/);
   assert.match(html, /id="replyNextSentenceText"/);
   assert.match(js, /function evaluateGuidanceReplyQuality/);
   assert.match(js, /function guidanceReplyProgressText/);
@@ -605,6 +606,14 @@ test("student guidance reply gives immediate quality feedback while typing", () 
   assert.match(js, /inlineCoachReply"\)\.addEventListener\("input"/);
   assert.match(css, /reply-quality-card/);
   assert.match(css, /reply-progress-text/);
+});
+
+test("student guidance quality checklist shows concrete evidence as its own step", () => {
+  assert.match(html, /具体证据/);
+  assert.match(html, /先完成题目目标、方法步骤、原因说明、具体证据 4 个部分/);
+  assert.match(js, /\["qualitySpecificEvidence", quality\.specificEvidence\]/);
+  assert.match(js, /已完成 \$\{completed\}\/4/);
+  assert.doesNotMatch(html, /先完成题目目标、方法步骤、原因说明 3 个部分/);
 });
 
 test("student guidance entry copy does not ask stuck students to explain the question first", () => {

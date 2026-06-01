@@ -4960,6 +4960,7 @@ function minimumDailySchoolExamQuestions(plan = planForStudent(state.studentId))
   const limit = dailyQuestionLimit(plan);
   if (plan.difficultyMode === "steady") return Math.min(limit, Math.max(1, Math.round(limit * 0.18)));
   if (plan.difficultyMode === "challenge") return Math.min(limit, Math.max(3, Math.round(limit * 0.45)));
+  if (isTwoHourPlan(plan) && plan.difficultyMode === "adaptive") return Math.min(limit, Math.max(8, Math.round(limit * 0.45)));
   return Math.min(limit, Math.max(2, Math.round(limit * 0.3)));
 }
 

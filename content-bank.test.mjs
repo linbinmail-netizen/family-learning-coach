@@ -140,6 +140,12 @@ test("daily question set frontloads school exam depth", () => {
   assert.match(source, /frontloadSchoolExamPractice\(ensureDailyDepthMix\(ensureDailySchoolExamMix\(selected\)\)\)/);
 });
 
+test("two-hour adaptive sessions require a stronger school-depth floor", () => {
+  assert.match(source, /function minimumDailySchoolExamQuestions/);
+  assert.match(source, /isTwoHourPlan\(plan\) && plan\.difficultyMode === "adaptive"/);
+  assert.match(source, /Math\.max\(8, Math\.round\(limit \* 0\.45\)\)/);
+});
+
 test("adaptive sessions keep two depth checks inside the first six questions", () => {
   assert.match(source, /function ensureEarlyDepthCadence/);
   assert.match(source, /const earlyWindowSize = Math\.min\(6, limit\)/);

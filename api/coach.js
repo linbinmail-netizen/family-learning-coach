@@ -63,7 +63,7 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
     return "vague_praise_without_action";
   }
   const questionMarkCount = (text.match(/[?？]/g) || []).length;
-  if (questionMarkCount >= 2 && !/小讲解|例子|填空|只做一小步|前置概念|老师先示范|现在只/.test(text)) {
+  if (questionMarkCount >= 2 && (studentCannotProduce || !/小讲解|例子|填空|只做一小步|前置概念|老师先示范|现在只/.test(text))) {
     return "too_many_questions_without_scaffold";
   }
   if (studentCannotProduce && /题目.*问什么|问题.*问.*什么|这道题.*(考什么|在考什么)|题目要你找什么|先说.*题目|describe.*question|what.*question/i.test(text) && !/小讲解|例子|填空|只做一小步|前置概念/.test(text)) {

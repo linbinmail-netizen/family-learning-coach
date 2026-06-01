@@ -635,6 +635,32 @@ test("safeTutorReply rewrites abstract lectures into a concrete micro action", (
   assert.doesNotMatch(reply, /本质在于理解|综合分析|推理链条|形成完整的判断/);
 });
 
+test("safeTutorReply compresses long stuck-student lectures into one short action", () => {
+  const longLecture =
+    "这道题需要你先综合理解文章整体结构、作者写作目的、段落之间的逻辑关系、证据如何支撑观点、选项之间的细微差别，以及题目背后考查的阅读策略。你可以先回到原文，分析每一个选项对应的文本依据，再结合中心思想判断哪个选项更合理。";
+  const reply = safeTutorReply(longLecture, {
+    ...baseBody,
+    studentReply: "我不懂，知识点没吃透，打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.ok(reply.length <= 140, `compressed reply should stay short, got ${reply.length}: ${reply}`);
+  assert.match(reply, /小讲解|老师先示范/);
+  assert.match(reply, /现在只|只补一个空|半句填空/);
+  assert.doesNotMatch(reply, /综合理解文章整体结构|每一个选项对应的文本依据|细微差别/);
+});
+
+test("safeTutorReply rewrites scaffolded replies that still ask too many questions", () => {
+  const reply = safeTutorReply("小讲解：证据要支持观点。现在想一想：这题问什么？关键词是什么？为什么这个证据有用？", {
+    ...baseBody,
+    studentReply: "我不懂，知识点没吃透，打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /现在只|只补一个空|半句填空/);
+  assert.doesNotMatch(reply, /这题问什么？关键词是什么？为什么这个证据有用/);
+});
+
 test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {
   const request = buildMasteryEvaluationRequest({
     ...baseBody,

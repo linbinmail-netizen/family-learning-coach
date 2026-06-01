@@ -795,6 +795,16 @@ test("micro choice trap selections become teachable misconception feedback", () 
   assert.doesNotMatch(js, /choice\.trap[\s\S]*正确答案是/);
 });
 
+test("typed A or B in guidance input becomes the same micro choice flow", () => {
+  const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  assert.match(js, /function typedGuidanceMicroChoiceIndex/);
+  assert.match(js, /\^\[ab\]\$/);
+  assert.match(submitHandler, /const typedMicroChoice = typedGuidanceMicroChoiceIndex\(reply, state\.guidanceLock\)/);
+  assert.match(submitHandler, /applyGuidanceMicroChoice\(typedMicroChoice, input\)/);
+  assert.match(submitHandler, /return;/);
+  assert.doesNotMatch(js, /typedGuidanceMicroChoiceIndex[\s\S]*正确答案是/);
+});
+
 test("student stuck replies can submit for rescue instead of staying blocked", () => {
   const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";

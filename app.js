@@ -3637,6 +3637,13 @@ function applyGuidanceMicroChoice(choiceIndex = 0, input = $("inlineCoachReply")
   $("inlineCoachSubmit").focus();
 }
 
+function typedGuidanceMicroChoiceIndex(reply = "", lock = state.guidanceLock) {
+  if (!lock) return null;
+  const text = String(reply || "").trim().toLowerCase();
+  if (!/^[ab]$/.test(text)) return null;
+  return text === "a" ? 0 : 1;
+}
+
 function conceptBridgeChoicesForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const firstStep = guidanceStepBuilderSentence("method", lock, question).replace(/[。.!！]$/, "");
@@ -7285,6 +7292,11 @@ function bindEvents() {
     const input = $("inlineCoachReply");
     const reply = input.value.trim();
     if (!reply) return;
+    const typedMicroChoice = typedGuidanceMicroChoiceIndex(reply, state.guidanceLock);
+    if (typedMicroChoice !== null) {
+      applyGuidanceMicroChoice(typedMicroChoice, input);
+      return;
+    }
     const quality = evaluateGuidanceReplyQuality(reply);
     if (state.guidanceLock?.conceptBridgeReady && !quality.ready) {
       continueConceptBridgeSentence(input);

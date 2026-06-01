@@ -3600,13 +3600,27 @@ function renderGuidanceMicroChoice(lock = state.guidanceLock, quality = evaluate
   });
 }
 
+function guidanceEvidenceBuilderSentence(question = activeQuestions()[state.currentQuestion]) {
+  const skillText = `${question?.skill || ""} ${question?.standard || ""} ${activeSubject().label}`.toLowerCase();
+  if (/斜率|变化率|equation|algebra|math|geometry|比例|函数|方程|几何/.test(skillText)) {
+    return "题目里的具体数字或变化关系说明我的方法合理";
+  }
+  if (/evidence|claim|central|reading|english|rla|author|theme|证据|主张|中心|作者|文本/.test(skillText)) {
+    return "文章里的观点句或证据句说明我的方法合理";
+  }
+  if (/science|biology|experiment|variable|data|cell|energy|科学|生物|实验|变量|数据|细胞|能量/.test(skillText)) {
+    return "题目里的变量、数据或实验条件说明我的方法合理";
+  }
+  return "题目里的关键词或条件说明我的方法合理";
+}
+
 function guidanceStepBuilderSentence(part = "goal", lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const scaffold = guidanceScaffoldForLock(lock, question);
   const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || coachingHintForTurn(question, lock?.teachingTurns || 0) || "题目关键词和已知条件";
   if (part === "method") return `我第一步先看 ${firstStep}`;
   if (part === "reason") return "因为这一步能帮我把题目要求和解题方法连起来";
-  if (part === "evidence") return "题目里的具体证据或条件说明我的方法合理";
+  if (part === "evidence") return guidanceEvidenceBuilderSentence(question);
   return `这题要我判断 ${skill}`;
 }
 

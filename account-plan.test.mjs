@@ -384,16 +384,28 @@ test("default student plans are two-hour sessions, not short templates", () => {
   assert.match(js, /older: \{ minutes: 120, questionTarget: 24, difficultyMode: "adaptive", focusSubject: "english1" \}/);
   assert.match(js, /younger: \{ minutes: 120, questionTarget: 24, difficultyMode: "adaptive", focusSubject: "math8" \}/);
   assert.match(js, /minutes: 120,\s*questionTarget: 24/);
-  assert.match(js, /完成约 \$\{foundationTarget\} 道基础和中等题/);
+  assert.match(js, /完成约 \$\{schoolDepthTarget\} 道学校考试深度题或解释题/);
+  assert.match(js, /完成约 \$\{foundationTarget\} 道基础热身题/);
   assert.match(js, /完成约 \$\{challengeTarget\} 道挑战题或解释题/);
 });
 
 test("default two-hour plans reduce easy practice and favor school-depth work", () => {
-  assert.match(js, /const foundationTarget = plan\.difficultyMode === "adaptive"\s*\? Math\.max\(3, Math\.round\(targetQuestions \* 0\.25\)\)/);
-  assert.match(js, /const challengeTarget = Math\.max\(6, targetQuestions - foundationTarget - reviewTarget\)/);
-  assert.match(js, /基础题只保留热身，不占用主要时间/);
+  assert.match(js, /const schoolDepthTarget = plan\.difficultyMode === "adaptive"\s*\? Math\.max\(3, Math\.round\(targetQuestions \* 0\.18\)\)/);
+  assert.match(js, /const foundationTarget = plan\.difficultyMode === "adaptive"\s*\? Math\.max\(2, Math\.round\(targetQuestions \* 0\.18\)\)/);
+  assert.match(js, /const challengeTarget = Math\.max\(6, targetQuestions - schoolDepthTarget - foundationTarget - reviewTarget\)/);
+  assert.match(js, /基础题只保留查漏补缺，不占用主要时间/);
   assert.match(js, /学校考试深度题和解释题占主要比例/);
   assert.match(js, /if \(plan\.difficultyMode === "adaptive"\) return Math\.min\(limit, Math\.max\(4, Math\.round\(limit \* 0\.42\)\)\)/);
+});
+
+test("two-hour daily task list opens with school depth before foundation warmup", () => {
+  const planBlock = js.match(/function buildTwoHourLearningBlocks[\s\S]*?function twoHourBlockMinutes/)?.[0] || js.match(/function buildTwoHourLearningBlocks[\s\S]*?function learningBlockForQuestionIndex/)?.[0] || "";
+  assert.match(planBlock, /schoolDepthTarget/);
+  assert.match(planBlock, /学校深度起步/);
+  assert.match(planBlock, /基础热身/);
+  assert.match(planBlock, /Math\.round\(targetQuestions \* 0\.18\)/);
+  assert.doesNotMatch(planBlock, /基础练习/);
+  assert.doesNotMatch(planBlock, /targetQuestions \* 0\.45/);
 });
 
 test("saved old short default plans migrate to two-hour sessions without overwriting custom plans", () => {
@@ -431,6 +443,17 @@ test("student lesson view shows the current learning route", () => {
   assert.match(js, /learning-progress/);
   assert.match(js, /今日进度/);
   assert.match(js, /学习路线/);
+});
+
+test("two-hour route starts with school-depth work instead of a long foundation block", () => {
+  const routeBlock = js.match(/function learningRouteBlocks[\s\S]*?function advancedQuestionRatio/)?.[0] || "";
+  const blockForQuestion = js.match(/function learningBlockForQuestionIndex[\s\S]*?function learningRouteBlocks/)?.[0] || "";
+  assert.match(js, /function twoHourQuestionBlockTargets/);
+  assert.match(routeBlock, /学校深度起步/);
+  assert.match(routeBlock, /schoolDepth/);
+  assert.match(blockForQuestion, /学校深度起步/);
+  assert.doesNotMatch(routeBlock, /targetQuestions \* 0\.45/);
+  assert.doesNotMatch(blockForQuestion, /targetQuestions \* 0\.45/);
 });
 
 test("student lesson view gives a clear next-step instruction", () => {

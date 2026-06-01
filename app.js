@@ -4374,11 +4374,14 @@ function twoHourBlockMinutes(totalMinutes = 120) {
 
 function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount, guidedCount, report, openMistakes }) {
   const targetQuestions = plan.questionTarget || Math.max(4, Math.min(24, Math.round(plan.minutes / 5)));
+  const schoolDepthTarget = plan.difficultyMode === "adaptive"
+    ? Math.max(3, Math.round(targetQuestions * 0.18))
+    : Math.max(2, Math.round(targetQuestions * 0.12));
   const foundationTarget = plan.difficultyMode === "adaptive"
-    ? Math.max(3, Math.round(targetQuestions * 0.25))
-    : Math.max(4, Math.round(targetQuestions * 0.45));
+    ? Math.max(2, Math.round(targetQuestions * 0.18))
+    : Math.max(3, Math.round(targetQuestions * 0.25));
   const reviewTarget = Math.max(2, Math.round(targetQuestions * 0.2));
-  const challengeTarget = Math.max(6, targetQuestions - foundationTarget - reviewTarget);
+  const challengeTarget = Math.max(6, targetQuestions - schoolDepthTarget - foundationTarget - reviewTarget);
   const twoHourMode = plan.minutes >= 90 || targetQuestions >= 18;
   const blockMinutes = twoHourBlockMinutes(plan.minutes);
 
@@ -4429,32 +4432,40 @@ function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount
     },
     {
       step: "第二步",
-      title: "基础练习",
-      minutes: blockMinutes.foundation,
-      detail: `完成约 ${foundationTarget} 道基础和中等题；基础题只保留热身，不占用主要时间。`,
-      done: Math.min(answeredCount, foundationTarget),
-      total: foundationTarget,
+      title: "学校深度起步",
+      minutes: blockMinutes.concept,
+      detail: `先完成约 ${schoolDepthTarget} 道学校考试深度题或解释题；系统会要求写出题目目标、第一步、原因和具体证据，避免一开始就刷简单选择题。`,
+      done: Math.min(answeredCount, schoolDepthTarget),
+      total: schoolDepthTarget,
     },
     {
       step: "第三步",
+      title: "基础热身",
+      minutes: blockMinutes.foundation,
+      detail: `完成约 ${foundationTarget} 道基础热身题；基础题只保留查漏补缺，不占用主要时间。`,
+      done: Math.min(Math.max(answeredCount - schoolDepthTarget, 0), foundationTarget),
+      total: foundationTarget,
+    },
+    {
+      step: "第四步",
       title: "错题复盘",
       minutes: blockMinutes.review,
       detail: openMistakes.length
         ? `优先复盘 ${openMistakes[0].skill}，用 AI 引导讲清楚错因。`
         : `完成约 ${reviewTarget} 道滚动复习题，防止旧知识掉线。`,
-      done: Math.min(Math.max(answeredCount - foundationTarget, 0), reviewTarget),
+      done: Math.min(Math.max(answeredCount - schoolDepthTarget - foundationTarget, 0), reviewTarget),
       total: reviewTarget,
     },
     {
-      step: "第四步",
+      step: "第五步",
       title: "挑战拔高",
       minutes: blockMinutes.challenge,
       detail: `完成约 ${challengeTarget} 道挑战题或解释题，学校考试深度题和解释题占主要比例，每题都要能说出理由。`,
-      done: Math.min(Math.max(answeredCount - foundationTarget - reviewTarget, 0), challengeTarget),
+      done: Math.min(Math.max(answeredCount - schoolDepthTarget - foundationTarget - reviewTarget, 0), challengeTarget),
       total: challengeTarget,
     },
     {
-      step: "第五步",
+      step: "第六步",
       title: "今日总结",
       minutes: blockMinutes.summary,
       detail: "生成今日总结，记录掌握度、错题知识点和明天计划。",
@@ -4939,13 +4950,21 @@ function isTwoHourPlan(plan = planForStudent(state.studentId)) {
   return plan.minutes >= 90 || (plan.questionTarget || 8) >= 18;
 }
 
+function twoHourQuestionBlockTargets(plan = planForStudent(state.studentId)) {
+  const targetQuestions = plan.questionTarget || 8;
+  const schoolDepthEnd = Math.max(3, Math.round(targetQuestions * 0.18));
+  const foundationEnd = schoolDepthEnd + Math.max(2, Math.round(targetQuestions * 0.16));
+  const reviewEnd = foundationEnd + Math.max(3, Math.round(targetQuestions * 0.22));
+  return { targetQuestions, schoolDepthEnd, foundationEnd, reviewEnd };
+}
+
 function learningBlockForQuestionIndex(index = state.currentQuestion, plan = planForStudent(state.studentId)) {
   const targetQuestions = plan.questionTarget || 8;
   if (!isTwoHourPlan(plan)) return { id: "practice", label: "今日学习", rangeEnd: targetQuestions };
 
-  const foundationEnd = Math.max(4, Math.round(targetQuestions * 0.45));
-  const reviewEnd = foundationEnd + Math.max(2, Math.round(targetQuestions * 0.2));
-  if (index < foundationEnd) return { id: "foundation", label: "基础练习", rangeEnd: foundationEnd };
+  const { schoolDepthEnd, foundationEnd, reviewEnd } = twoHourQuestionBlockTargets(plan);
+  if (index < schoolDepthEnd) return { id: "schoolDepth", label: "学校深度起步", rangeEnd: schoolDepthEnd };
+  if (index < foundationEnd) return { id: "foundation", label: "基础热身", rangeEnd: foundationEnd };
   if (index < reviewEnd) return { id: "review", label: "错题复盘", rangeEnd: reviewEnd };
   return { id: "challenge", label: "挑战拔高", rangeEnd: targetQuestions };
 }
@@ -4955,10 +4974,10 @@ function learningRouteBlocks(plan = planForStudent(state.studentId)) {
   if (!isTwoHourPlan(plan)) {
     return [{ id: "practice", label: "今日学习", start: 0, end: targetQuestions }];
   }
-  const foundationEnd = Math.max(4, Math.round(targetQuestions * 0.45));
-  const reviewEnd = foundationEnd + Math.max(2, Math.round(targetQuestions * 0.2));
+  const { schoolDepthEnd, foundationEnd, reviewEnd } = twoHourQuestionBlockTargets(plan);
   return [
-    { id: "foundation", label: "基础练习", start: 0, end: foundationEnd },
+    { id: "schoolDepth", label: "学校深度起步", start: 0, end: schoolDepthEnd },
+    { id: "foundation", label: "基础热身", start: schoolDepthEnd, end: foundationEnd },
     { id: "review", label: "错题复盘", start: foundationEnd, end: reviewEnd },
     { id: "challenge", label: "挑战拔高", start: reviewEnd, end: targetQuestions },
   ];

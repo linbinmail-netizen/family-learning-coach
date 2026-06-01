@@ -1358,16 +1358,17 @@ test("deep questions require a thought before answer choices unlock", () => {
   assert.match(css, /locked-choice/);
 });
 
-test("challenge pre-answer requires goal and method before choices unlock", () => {
+test("challenge pre-answer requires goal method reason and evidence before choices unlock", () => {
   assert.match(js, /function preAnswerThoughtQuality/);
   assert.match(js, /const hasGoal =/);
   assert.match(js, /const hasMethod =/);
   assert.match(js, /const hasReason =/);
+  assert.match(js, /const hasEvidence =/);
   assert.match(js, /function isChallengePreAnswerQuestion/);
-  assert.match(js, /if \(isChallengePreAnswerQuestion\(question\)\) return quality\.hasGoal && quality\.hasMethod/);
-  assert.match(js, /if \(isSchoolExamPracticeQuestion\(question\)\) return quality\.hasGoal && quality\.hasMethod && quality\.hasReason/);
+  assert.match(js, /if \(isChallengePreAnswerQuestion\(question\)\) return quality\.hasGoal && quality\.hasMethod && quality\.hasReason && quality\.hasEvidence/);
+  assert.match(js, /if \(isSchoolExamPracticeQuestion\(question\)\) return quality\.hasGoal && quality\.hasMethod && quality\.hasReason && quality\.hasEvidence/);
   assert.match(js, /isPreAnswerThoughtReady\(preAnswerThought, question\)/);
-  assert.match(js, /写清题目目标和第一步/);
+  assert.match(js, /写清题目目标、第一步、原因和题目证据/);
 });
 
 test("challenge pre-answer gives a live writing checklist before answer choices unlock", () => {
@@ -1375,11 +1376,13 @@ test("challenge pre-answer gives a live writing checklist before answer choices 
   assert.match(html, /id="preAnswerGoalCheck"/);
   assert.match(html, /id="preAnswerMethodCheck"/);
   assert.match(html, /id="preAnswerReasonCheck"/);
+  assert.match(html, /id="preAnswerEvidenceCheck"/);
   assert.match(js, /function renderPreAnswerChecklist/);
   assert.match(js, /preAnswerThoughtQuality\(thought\)/);
   assert.match(js, /preAnswerGoalCheck/);
   assert.match(js, /preAnswerMethodCheck/);
   assert.match(js, /preAnswerReasonCheck/);
+  assert.match(js, /preAnswerEvidenceCheck/);
   assert.match(js, /renderPreAnswerChecklist\(thought, question\)/);
   assert.match(css, /pre-answer-checklist/);
 });
@@ -1412,6 +1415,7 @@ test("challenge pre-answer names the exact missing blank after a starter is inse
   assert.match(nextBlock, /先把第一个空补成题目要判断什么/);
   assert.match(nextBlock, /再把第二个空补成第一步看什么/);
   assert.match(nextBlock, /最后补“因为”后面的原因/);
+  assert.match(nextBlock, /再补题目里的具体证据或条件/);
   assert.doesNotMatch(nextBlock, /正确答案|答案是/);
 });
 

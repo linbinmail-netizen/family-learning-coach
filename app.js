@@ -4645,7 +4645,8 @@ function preAnswerThoughtQuality(text = "") {
   const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|identify|what|which|calculate/.test(normalized);
   const hasMethod = /先|第一步|步骤|方法|看|找|条件|关键词|证据|变化|关系|first|evidence|compare|change|clue/.test(normalized);
   const hasReason = /因为|所以|为了|能帮|说明|证明|原因|because|why|so that|therefore/.test(normalized);
-  return { normalized, blocked, hasGoal, hasMethod, hasReason, enoughLength: normalized.length >= 14 };
+  const hasEvidence = /题目里|题干|文章里|文本里|证据|关键词|条件|数字|数据|变量|变化关系|观点句|证据句|实验条件|specific|evidence|data|keyword|condition|variable/.test(normalized);
+  return { normalized, blocked, hasGoal, hasMethod, hasReason, hasEvidence, enoughLength: normalized.length >= 14 };
 }
 
 function isChallengePreAnswerQuestion(question = {}) {
@@ -4659,9 +4660,9 @@ function manualTooEasyChallenge(question = {}) {
 function isPreAnswerThoughtReady(text = "", question = {}) {
   const quality = preAnswerThoughtQuality(text);
   if (!quality.enoughLength || quality.blocked) return false;
-  if (manualTooEasyChallenge(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason;
-  if (isSchoolExamPracticeQuestion(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason;
-  if (isChallengePreAnswerQuestion(question)) return quality.hasGoal && quality.hasMethod;
+  if (manualTooEasyChallenge(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason && quality.hasEvidence;
+  if (isSchoolExamPracticeQuestion(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason && quality.hasEvidence;
+  if (isChallengePreAnswerQuestion(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason && quality.hasEvidence;
   return quality.hasGoal || quality.hasMethod;
 }
 
@@ -4672,9 +4673,9 @@ function preAnswerStarterText(kind = "frame", question = activeQuestions()[state
     return `我知识点没吃透，先看小讲解：${localStudentFriendlyConceptLine(question)} ${lesson.concept} 现在只补一个空：我第一步先____，因为____。`;
   }
   if (kind === "keyword") {
-    return `这题要我判断____。我第一步先看题目里的具体词：____，再结合 ${hint} 判断方法。`;
+    return `这题要我判断____。我第一步先看题目里的具体词：____，因为____。题目里的具体证据或条件是____。再结合 ${hint} 判断方法。`;
   }
-  return "这题要我判断____。我第一步先看____，因为____。";
+  return "这题要我判断____。我第一步先看____，因为____。题目里的具体证据或条件是____。";
 }
 
 function applyPreAnswerStarter(kind = "frame") {
@@ -4704,21 +4705,25 @@ function preAnswerNextMissingStep(thought = "", question = activeQuestions()[sta
   if (/____/.test(String(thought || ""))) {
     if (!quality.hasGoal) return "下一步：先把第一个空补成题目要判断什么。";
     if (!quality.hasMethod) return "下一步：再把第二个空补成第一步看什么。";
-    return "下一步：最后补“因为”后面的原因。";
+    if (!quality.hasReason) return "下一步：最后补“因为”后面的原因。";
+    return "下一步：再补题目里的具体证据或条件。";
   }
   if (!quality.hasGoal) return "下一步：先写这题要判断什么。";
   if (!quality.hasMethod) return "下一步：再写第一步看什么。";
-  if (isSchoolExamPracticeQuestion(question) && !quality.hasReason) return "下一步：最后补为什么这样做。";
+  if ((isSchoolExamPracticeQuestion(question) || isChallengePreAnswerQuestion(question) || manualTooEasyChallenge(question)) && !quality.hasReason) return "下一步：最后补为什么这样做。";
+  if ((isSchoolExamPracticeQuestion(question) || isChallengePreAnswerQuestion(question) || manualTooEasyChallenge(question)) && !quality.hasEvidence) return "下一步：再补题目里的具体证据或条件。";
   return "下一步：把句子写具体一点，再选择答案。";
 }
 
 function renderPreAnswerChecklist(thought = "", question = activeQuestions()[state.currentQuestion]) {
   const quality = preAnswerThoughtQuality(thought);
-  const needsReason = isSchoolExamPracticeQuestion(question);
+  const needsReason = isSchoolExamPracticeQuestion(question) || isChallengePreAnswerQuestion(question) || manualTooEasyChallenge(question);
+  const needsEvidence = needsReason;
   const checks = [
     ["preAnswerGoalCheck", quality.hasGoal, "题目目标"],
     ["preAnswerMethodCheck", quality.hasMethod, "第一步"],
     ["preAnswerReasonCheck", !needsReason || quality.hasReason, "为什么"],
+    ["preAnswerEvidenceCheck", !needsEvidence || quality.hasEvidence, "证据"],
   ];
   checks.forEach(([id, ready, label]) => {
     const item = $(id);
@@ -4741,9 +4746,9 @@ function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion]
   $("preAnswerHelp").textContent = preAnswerReady
     ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
     : isSchoolExamPracticeQuestion(question)
-      ? "不要写答案字母。如果不会写，就先点一个句式按钮，再补题目目标、第一步和为什么。"
+      ? "不要写答案字母。如果不会写，就先点一个句式按钮，写清题目目标、第一步、原因和题目证据。"
       : isChallengePreAnswerQuestion(question)
-        ? "不要写答案字母。如果不会写，就先点一个句式按钮，写清题目目标和第一步。"
+        ? "不要写答案字母。如果不会写，就先点一个句式按钮，写清题目目标、第一步、原因和题目证据。"
         : "不要写答案字母。如果不会写，就先点一个句式按钮。";
   document.querySelectorAll("#answerGrid [data-answer-index]").forEach((button) => {
     button.classList.toggle("locked-choice", !preAnswerReady);

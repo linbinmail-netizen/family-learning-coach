@@ -4065,10 +4065,31 @@ function buildGuidedTeachingMove(reply = "", lock = state.guidanceLock) {
   const quality = evaluateGuidanceReplyQuality(reply);
   const hint = coachingHintForTurn(question, lock?.teachingTurns || 0);
   const mistake = commonMistakeForQuestion(question);
-  const nextAsk = quality.reasonWhy
-    ? "把你的方法换成一句更具体的话：我先看____，因为____。"
-    : "先不要写答案，请补上“为什么这一步有用”。";
-  return `概念提醒：${hint} 常见误区：${mistake} 小例子：${teachingMiniExampleForSkill(skill)} 下一问：${nextAsk}`;
+  const completedParts = [
+    quality.questionGoal && "题目目标",
+    quality.methodStep && "第一步",
+    quality.reasonWhy && "原因",
+    quality.specificEvidence && "具体证据",
+  ].filter(Boolean);
+  const missingPart = !quality.questionGoal
+    ? "题目目标"
+    : !quality.methodStep
+      ? "第一步"
+      : !quality.reasonWhy
+        ? "原因"
+        : !quality.specificEvidence
+          ? "具体证据"
+          : "表达更精确";
+  const nextAsk = !quality.questionGoal
+    ? "只补：这题要我判断____。"
+    : !quality.methodStep
+      ? "只补：我第一步先看____。"
+      : !quality.reasonWhy
+        ? "只补：因为这一步能帮我____。"
+        : !quality.specificEvidence
+          ? "只补：题目里的____说明____。"
+          : "把题目里的关键词或条件说得更具体。";
+  return `概念提醒：${hint} 常见误区：${mistake} 小例子：${teachingMiniExampleForSkill(skill)} 已经完成：${completedParts.join("、") || "开始尝试"}。还差：${missingPart}。不要重写全部，下一问：${nextAsk}`;
 }
 
 function buildGuidanceRescueMove(lock = state.guidanceLock) {

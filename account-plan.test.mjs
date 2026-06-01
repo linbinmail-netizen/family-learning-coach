@@ -1152,6 +1152,18 @@ test("student guidance coach gives teaching feedback before variant verification
   assert.doesNotMatch(js, /正确答案是/);
 });
 
+test("student guidance teaching move names completed parts and one missing part", () => {
+  const teachingBlock = js.match(/function buildGuidedTeachingMove[\s\S]*?function buildGuidanceRescueMove/)?.[0] || "";
+  assert.match(teachingBlock, /已经完成：/);
+  assert.match(teachingBlock, /还差：/);
+  assert.match(teachingBlock, /题目目标/);
+  assert.match(teachingBlock, /第一步/);
+  assert.match(teachingBlock, /原因/);
+  assert.match(teachingBlock, /具体证据/);
+  assert.match(teachingBlock, /不要重写全部/);
+  assert.doesNotMatch(teachingBlock, /正确答案是|答案是/);
+});
+
 test("complete guidance restatement opens variant verification without a second coach turn", () => {
   assert.match(js, /function shouldMoveToVariantAfterReply/);
   assert.match(js, /evaluateGuidanceReplyQuality\(reply\)\.ready/);

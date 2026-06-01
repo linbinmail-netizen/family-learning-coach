@@ -672,6 +672,7 @@ test("buildMasteryEvaluationRequest grades open explanations without revealing a
   assert.match(text, /mastery_evaluation/);
   assert.match(text, /passed/);
   assert.match(text, /nextPrompt/);
+  assert.match(text, /misconception check|trap|guessing shortcut/);
   assert.match(text, /不要直接说出正确选项/);
 });
 
@@ -690,12 +691,29 @@ test("fallback mastery evaluation distinguishes method explanation from guessing
   assert.equal(strong.passed, true);
   assert.match(strong.reply, /通过|清楚/);
   assert.equal(weak.passed, false);
-  assert.match(weak.reply, /第一步|为什么|方法/);
+  assert.match(weak.reply, /第一步|误区|方法/);
+});
+
+test("fallback mastery evaluation requires a misconception check, not only method", () => {
+  const noTrap = buildFallbackMasteryEvaluation({
+    variantReply: "第一步先看题目问的中心观点，因为证据要支持这个观点。",
+    expectedMethod: "Evidence should support a claim or central idea.",
+    skill: "识别中心观点",
+  });
+  const withTrap = buildFallbackMasteryEvaluation({
+    variantReply: "第一步先看题目问的中心观点，因为证据要支持这个观点，所以不能只看最长选项或直接猜。",
+    expectedMethod: "Evidence should support a claim or central idea.",
+    skill: "识别中心观点",
+  });
+
+  assert.equal(noTrap.passed, false);
+  assert.match(noTrap.reply, /误区|猜|避开/);
+  assert.equal(withTrap.passed, true);
 });
 
 test("fallback mastery evaluation accepts Chinese math method explanations", () => {
   const result = buildFallbackMasteryEvaluation({
-    variantReply: "我会先找两个点的 x 变化和 y 变化，再用 y 的变化除以 x 的变化，因为斜率表示每增加 1 个 x，y 变多少。",
+    variantReply: "我会先找两个点的 x 变化和 y 变化，再用 y 的变化除以 x 的变化，因为斜率表示每增加 1 个 x，y 变多少，不能把 x 和 y 的变化写反。",
     expectedMethod: "Slope shows the rate of change between two points.",
     skill: "斜率与变化率",
   });

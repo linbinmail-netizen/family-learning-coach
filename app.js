@@ -3219,7 +3219,7 @@ function isVariantExplanationStrong(reply = "", variant = state.guidanceLock?.va
   const methodWords = ["先", "因为", "所以", "题目", "关键词", "证据", "方法", "第一步", "看", "判断", "条件", "关系", "变化", "除以", "because", "first", "evidence", "method"];
   const hasMethodLanguage = methodWords.some((word) => text.includes(word.toLowerCase()));
   const keywordHits = variantKeywordBank(variant).filter((word) => text.includes(String(word).toLowerCase())).length;
-  return hasMethodLanguage && keywordHits >= 1;
+  return hasMethodLanguage && keywordHits >= 1 && isVariantRubricReady(reply, variant);
 }
 
 function hasMeaningfulVariantCompletion(reply = "") {

@@ -1715,6 +1715,12 @@ test("student cannot submit variant explanation until rubric is complete", () =>
   assert.match(js, /先补完整各项变式说明/);
 });
 
+test("local strong variant fallback cannot bypass the full rubric", () => {
+  const strongBlock = js.match(/function isVariantExplanationStrong[\s\S]*?function hasMeaningfulVariantCompletion/)?.[0] || "";
+  assert.match(strongBlock, /isVariantRubricReady\(reply, variant\)/);
+  assert.doesNotMatch(strongBlock, /return hasMethodLanguage && keywordHits >= 1;/);
+});
+
 test("variant retry stays in the proof panel and preserves the student draft", () => {
   assert.match(js, /function variantTargetedRetryText/);
   assert.match(js, /先别重写全部，只补这一处/);

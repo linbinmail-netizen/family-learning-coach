@@ -393,8 +393,9 @@
                   <li><span>1</span><strong id="scaffoldQuestionFocus">题目问什么：先用一句话说出题目要找什么。</strong></li>
                   <li><span>2</span><strong id="scaffoldFirstStep">第一步看什么：找关键词或已知条件。</strong></li>
                   <li><span>3</span><strong id="scaffoldReasonStarter">为什么这样做：因为这一步能帮我判断方法。</strong></li>
+                  <li><span>4</span><strong>具体证据或条件：题目里的线索说明方法为什么合理。</strong></li>
                 </ol>
-                <p class="form-note">把这 3 句合成一句话写到下面，不要写答案字母。</p>
+                <p class="form-note">把这 4 句合成一句话写到下面，不要写答案字母。</p>
               </section>
               <div class="chat-window inline-chat-window" id="inlineCoachWindow"></div>
               <section class="guidance-next-action-bar" id="guidanceNextActionBar" aria-live="polite">
@@ -431,7 +432,7 @@
                     <strong id="replyHelperTitle">先照这句填空</strong>
                     <p id="replyHelperText">如果不知道怎么写，先用下面的句式，不要写答案字母。</p>
                     <div class="reply-starter-row">
-                      <span id="replyStarterText">这题要我[写题目目标]。我第一步先看[关键词或条件]，因为[说明这一步为什么有用]。</span>
+                      <span id="replyStarterText">这题要我[写题目目标]。我第一步先看[关键词或条件]，因为[说明这一步为什么有用]。题目里的[具体证据或条件]说明[为什么方法合理]。</span>
                       <div class="reply-helper-actions">
                         <button class="secondary-button small-button" id="applyReplyStarterButton" type="button">填入句式</button>
                         <button class="secondary-button small-button" id="applyNextSentenceButton" type="button">补下一句</button>
@@ -453,11 +454,12 @@
                     </div>
                     <div class="reply-step-builder-card" id="replyStepBuilderCard" aria-label="分步搭建方法句">
                       <strong>不会写完整句时，先点小台阶</strong>
-                      <p>按顺序点 3 个按钮，系统会帮你把“题目问什么、第一步、为什么”组成可提交的方法句。</p>
+                      <p>按顺序点 4 个按钮，系统会帮你把“题目问什么、第一步、为什么、具体证据或条件”组成可提交的方法句。</p>
                       <div class="reply-step-actions">
                         <button class="secondary-button small-button" type="button" data-reply-step="goal">题目问什么</button>
                         <button class="secondary-button small-button" type="button" data-reply-step="method">第一步看什么</button>
                         <button class="secondary-button small-button" type="button" data-reply-step="reason">为什么这样做</button>
+                        <button class="secondary-button small-button" type="button" data-reply-step="evidence">具体证据</button>
                       </div>
                     </div>
                     <div class="micro-choice-card hidden" id="replyMicroChoiceCard" aria-label="二选一微任务">

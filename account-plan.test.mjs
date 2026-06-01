@@ -694,6 +694,14 @@ test("student guidance starter includes a concrete evidence blank", () => {
   assert.doesNotMatch(starterBlock, /正确答案是/);
 });
 
+test("step builder has a separate concrete evidence step", () => {
+  assert.match(html, /data-reply-step="evidence"/);
+  assert.match(html, /具体证据或条件/);
+  assert.match(html, /按顺序点 4 个按钮/);
+  assert.match(js, /if \(part === "evidence"\) return "题目里的具体证据或条件说明我的方法合理"/);
+  assert.match(js, /\["goal", "method", "reason", "evidence"\]/);
+});
+
 test("student guidance gives a concrete rescue prompt when the reply says they are stuck", () => {
   assert.match(html, /id="replyHelperCard"/);
   assert.match(html, /id="replyStarterText"/);

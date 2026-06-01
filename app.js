@@ -3452,7 +3452,7 @@ function guidanceUnlockItemsForLock(lock = state.guidanceLock) {
     },
     {
       label: "跟着支架补方法",
-      detail: "先看讲解，再点按钮或补半句：题目目标、第一步、原因。",
+      detail: "先看讲解，再点按钮或补半句：题目目标、第一步、原因、具体证据。",
       done: restatementReady,
       active: Boolean(lock) && !inVariant,
     },
@@ -3606,6 +3606,7 @@ function guidanceStepBuilderSentence(part = "goal", lock = state.guidanceLock, q
   const firstStep = scaffold.firstStep.replace(/^第一步看什么：/, "") || coachingHintForTurn(question, lock?.teachingTurns || 0) || "题目关键词和已知条件";
   if (part === "method") return `我第一步先看 ${firstStep}`;
   if (part === "reason") return "因为这一步能帮我把题目要求和解题方法连起来";
+  if (part === "evidence") return "题目里的具体证据或条件说明我的方法合理";
   return `这题要我判断 ${skill}`;
 }
 
@@ -3615,7 +3616,7 @@ function applyGuidanceStepBuilder(part = "goal", input = $("inlineCoachReply")) 
   const parts = state.guidanceLock.stepBuilderParts || {};
   parts[part] = sentence;
   state.guidanceLock.stepBuilderParts = parts;
-  input.value = ["goal", "method", "reason"]
+  input.value = ["goal", "method", "reason", "evidence"]
     .map((key) => parts[key])
     .filter(Boolean)
     .join("。");

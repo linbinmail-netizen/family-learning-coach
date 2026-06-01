@@ -944,8 +944,10 @@ test("child quote about not being able to type routes to teacher-first bridge", 
   assert.match(js, /别人知识点没吃透人家也打不出来/);
   assert.match(js, /先不问“这题问什么”/);
   assert.match(js, /老师先搭桥/);
+  assert.match(js, /不是不努力，是概念台阶不够/);
   assert.match(js, /不用自己组织题意/);
   assert.match(js, /只点一个选择或填一个空/);
+  assert.match(js, /直接回 A 或 B/);
   assert.match(js, /teacherFirstBridgeForMetaComplaint\(recentStudent, question\)/);
   assert.match(js, /teacherFirstBridgeForMetaComplaint\(reply, question\)/);
   assert.match(js, /teacherFirstBridgeForMetaComplaint\(rawReply, question\)/);

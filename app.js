@@ -3837,8 +3837,8 @@ function guidanceMetaQuestionComplaint(reply = "") {
 
 function teacherFirstBridgeForMetaComplaint(reply = "", question = activeQuestions()[state.currentQuestion]) {
   const quoteSignal = /引导你让你自己去说|这问题问的什么|别人知识点没吃透人家也打不出来/.test(String(reply || "").replace(/\s+/g, ""));
-  const signalPrefix = quoteSignal ? "我听懂了：孩子不是不努力，是现在还没有台阶。" : "我听懂了。";
-  return `${signalPrefix}别再追问“这题问什么”，先不问“这题问什么”，也不用自己组织题意。老师先搭桥，先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 接着做二选一判断；现在只点一个选择或填一个空：先看题干关键词、条件或证据，不看答案长短。最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`;
+  const signalPrefix = quoteSignal ? "我听懂了：不是不努力，是概念台阶不够。" : "我听懂了。";
+  return `${signalPrefix}别再追问“这题问什么”，先不问“这题问什么”，也不用自己组织题意。老师先搭桥，先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 接着做二选一判断；现在只点一个选择或填一个空，直接回 A 或 B 也可以：A 先看题干关键词、条件或证据；B 先看答案长短。最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`;
 }
 
 function evaluateGuidanceReplyQuality(reply = "") {

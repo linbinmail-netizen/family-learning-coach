@@ -88,6 +88,11 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
 export function safeTutorReply(aiReply = "", body = {}) {
   const reason = unsafeTutorReplyReason(aiReply, body);
   if (!reason) return String(aiReply || "").trim();
+  if ((reason === "too_long" || reason === "abstract_lecture_when_stuck") && cannotProduceBecauseConceptGap(body.studentReply || "")) {
+    const skill = body.skill || "这个知识点";
+    const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
+    return `老师先示范：${shortExplanation} 现在只做二选一，直接回 A 或 B：A 看题干关键词；B 看答案长短。半句填空：这题要我判断____。`;
+  }
   if (reason === "meta_question_without_scaffold" || reason === "generic_encouragement_without_action" || reason === "vague_praise_without_action" || reason === "too_many_questions_without_scaffold") {
     const skill = body.skill || "这个知识点";
     const coachingGap = coachingGapAnalysis(body.studentReply || "");
@@ -206,10 +211,10 @@ function stuckGapTeachingAction(body = {}) {
   const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
   const example = teachingMiniExampleForApi(skill, body.subject);
   if (coachingGap.gap === "question_goal") {
-    return `${diagnosedGapLine(body)}不用自己翻译题意，老师先替你拆半句。小讲解：${shortExplanation} 现在只做一小步：二选一，先看题干关键词，还是先看答案长短？半句填空：${gapSentenceFrame(coachingGap, body)}`;
+    return `${diagnosedGapLine(body)}不用自己翻译题意，老师先替你拆半句。小讲解：${shortExplanation} 现在只做一小步，二选一，先看题干关键词，还是先看答案长短？直接回 A 或 B 也可以：A 关键词；B 答案长短。半句填空：${gapSentenceFrame(coachingGap, body)}`;
   }
   if (coachingGap.gap === "concept") {
-    return `${diagnosedGapLine(body)}这不是写作问题，先补前置概念。老师先说给你听。小讲解：${shortExplanation} 现在只做一小步，你只需要选一个按钮或补一个空：二选一，先看题干关键词，还是先看答案长短？半句填空：这题要我判断____。`;
+    return `${diagnosedGapLine(body)}这不是写作问题，先补前置概念。老师先说给你听。小讲解：${shortExplanation} 现在只做一小步，你只需要选一个按钮或补一个空，二选一，先看题干关键词，还是先看答案长短？直接回 A 或 B 也可以：A 关键词；B 答案长短。半句填空：这题要我判断____。`;
   }
   if (coachingGap.gap === "method_stuck") {
     return `${diagnosedGapLine(body)}只选第一步动作。小讲解：${shortExplanation} 现在只做一小步：${gapSentenceFrame(coachingGap, body)}`;

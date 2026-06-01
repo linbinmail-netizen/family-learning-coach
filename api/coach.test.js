@@ -424,6 +424,7 @@ test("fallback for cannot-produce replies teaches before asking for a tiny fill-
   assert.match(reply, /半句填空/);
   assert.match(reply, /二选一/);
   assert.match(reply, /先看题干关键词，还是先看答案长短/);
+  assert.match(reply, /直接回 A 或 B/);
   assert.doesNotMatch(reply, /继续说题目问什么/);
   assert.doesNotMatch(reply, /答案是/);
 });
@@ -438,6 +439,7 @@ test("exact student complaint gets teacher-first support instead of another meta
 
   assert.match(reply, /老师先说给你听/);
   assert.match(reply, /你只需要选一个按钮或补一个空/);
+  assert.match(reply, /直接回 A 或 B/);
   assert.doesNotMatch(reply, /你能用自己的话说.*题目/);
   assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
 });

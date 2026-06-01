@@ -1046,6 +1046,21 @@ test("student guidance unpacks the question goal before asking the child to expl
   assert.doesNotMatch(js, /guidanceQuestionUnpackForLock[\s\S]*正确答案是/);
 });
 
+test("stuck students see a teacher question unpack card before typing", () => {
+  const unpackBlock = js.match(/function questionUnpackForLock[\s\S]*?function renderQuestionUnpackCard/)?.[0] || "";
+  assert.match(html, /id="questionUnpackCard"/);
+  assert.match(html, /id="questionUnpackGoal"/);
+  assert.match(html, /id="questionUnpackClue"/);
+  assert.match(html, /id="questionUnpackWhy"/);
+  assert.match(js, /function questionUnpackForLock/);
+  assert.match(js, /renderQuestionUnpackCard/);
+  assert.match(unpackBlock, /题目其实在考/);
+  assert.match(unpackBlock, /先看这条线索/);
+  assert.match(unpackBlock, /为什么这样看/);
+  assert.match(css, /question-unpack-card/);
+  assert.doesNotMatch(unpackBlock, /正确答案是|答案是/);
+});
+
 test("repeated stuck guidance lowers the task instead of asking for a full sentence again", () => {
   assert.match(js, /function guidanceNeedsLowerStep/);
   assert.match(js, /teachingTurns >= 2/);

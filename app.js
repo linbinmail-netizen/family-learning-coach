@@ -3506,18 +3506,35 @@ function guidanceScaffoldForLock(lock = state.guidanceLock, question = activeQue
 }
 
 function guidanceQuestionUnpackForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const unpack = questionUnpackForLock(lock, question);
+  return `${unpack.goal} ${unpack.clue} ${unpack.why}`;
+}
+
+function questionUnpackForLock(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const lesson = conceptMiniLesson(question);
   const skill = question?.skill || activeDiagnostic().skills[0][0];
   const firstStep = coachingHintForTurn(question, lock?.teachingTurns || 0) || lesson.steps?.[0] || "题干里的关键词或已知条件";
   const promptPreview = String(question?.prompt || "").replace(/\s+/g, " ").slice(0, 90);
-  return `不是让你先猜答案。题目其实在问：我能不能判断 ${skill}。先看这句题干：${promptPreview}。第一眼只找：${firstStep}。`;
+  return {
+    goal: `不是让你先猜答案。题目其实在问什么：题目其实在考我能不能判断 ${skill}。`,
+    clue: `先看这条线索：${promptPreview}。第一眼只找：${firstStep}。`,
+    why: `为什么这样看：${firstStep} 会把题目要求和方法连起来，不用先自己组织完整题意。`,
+  };
+}
+
+function renderQuestionUnpackCard(lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const unpack = questionUnpackForLock(lock, question);
+  $("questionUnpackText").textContent = guidanceQuestionUnpackForLock(lock, question);
+  $("questionUnpackGoal").textContent = unpack.goal;
+  $("questionUnpackClue").textContent = unpack.clue;
+  $("questionUnpackWhy").textContent = unpack.why;
 }
 
 function renderGuidanceScaffold(lock = state.guidanceLock) {
   if (!lock) return;
   const question = activeQuestions()[lock.questionIndex] || activeQuestions()[state.currentQuestion];
   const scaffold = guidanceScaffoldForLock(lock, question);
-  $("questionUnpackText").textContent = guidanceQuestionUnpackForLock(lock, question);
+  renderQuestionUnpackCard(lock, question);
   $("scaffoldQuestionFocus").textContent = scaffold.questionFocus;
   $("scaffoldFirstStep").textContent = scaffold.firstStep;
   $("scaffoldReasonStarter").textContent = scaffold.reasonStarter;

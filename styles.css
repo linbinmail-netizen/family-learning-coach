@@ -1541,6 +1541,39 @@ textarea {
   box-shadow: 0 0 0 2px rgba(31, 138, 92, 0.14);
 }
 
+.question-unpack-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(47, 111, 159, 0.2);
+  border-radius: 8px;
+  background: #f7fbff;
+}
+
+.question-unpack-card p {
+  margin: 0;
+  color: var(--soft-ink);
+  line-height: 1.45;
+}
+
+.question-unpack-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.question-unpack-grid span {
+  min-height: 54px;
+  padding: 9px 10px;
+  border: 1px solid rgba(47, 111, 159, 0.18);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
 .concept-bridge-card strong,
 .concept-bridge-card p {
   margin: 0;

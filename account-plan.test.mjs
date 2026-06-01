@@ -1978,6 +1978,19 @@ test("guidance next action names the exact button for concept gaps", () => {
   assert.doesNotMatch(js, /guidanceNextActionForReply[\s\S]*正确答案是/);
 });
 
+test("inline guidance help names the diagnosed stuck gap", () => {
+  const helpBlock = js.match(/function guidanceReplyHelpText[\s\S]*?function guidanceReplyProgressText/)?.[0] || "";
+  const actionBlock = js.match(/function guidanceNextActionForReply[\s\S]*?function renderGuidanceNextAction/)?.[0] || "";
+  assert.match(js, /function guidanceStuckGapStatus/);
+  assert.match(helpBlock, /coachingGapForReply\(reply\)/);
+  assert.match(helpBlock, /卡点判断：\$\{gap\.label\}/);
+  assert.match(actionBlock, /guidanceStuckGapStatus\(reply/);
+  assert.match(js, /缺具体证据/);
+  assert.match(js, /第一步不会选/);
+  assert.match(js, /概念没接上/);
+  assert.doesNotMatch(helpBlock, /正确答案是|答案是/);
+});
+
 test("local student coach handles answer letters and stuck replies directly", () => {
   assert.match(js, /function buildLocalCoachReply/);
   assert.match(js, /function coachingGapForReply/);

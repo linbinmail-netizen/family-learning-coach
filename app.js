@@ -3928,12 +3928,24 @@ function guidanceCannotProduceThought(reply = "") {
   return guidanceMetaQuestionComplaint(reply) || /别人知识点没吃透|人家也打不出来|打不出来|说不出来|写不出来|不知道这题问什么|不懂这题问什么|不知道要写什么|不会说思路|没思路|不要再让我先说题目问什么|问我.*题目问什么.*打不出来/.test(String(reply || ""));
 }
 
+function guidanceStuckGapStatus(reply = "", quality = evaluateGuidanceReplyQuality(reply), question = activeQuestions()[state.guidanceLock?.questionIndex ?? state.currentQuestion]) {
+  const gap = coachingGapForReply(reply);
+  const teacherMove = localStuckGapTeachingAction(gap, question);
+  if (teacherMove) return teacherMove;
+  if (quality.asksForHelp || guidanceCannotProduceThought(reply)) {
+    return `卡点判断：${gap.label}。${gap.next} 老师先给一个台阶：${localStudentFriendlyConceptLine(question)} 现在只补一小句：${localGapSentenceFrame(gap, question)}`;
+  }
+  return `卡点判断：${gap.label}。${gap.next} 只补这一句：${localGapSentenceFrame(gap, question)}`;
+}
+
 function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQuality(reply)) {
   if (guidanceCannotProduceThought(reply)) {
-    return "你说得对，知识点没吃透时很难自己打出思路。不要再让孩子先完整说思路；系统会先帮你拆题和补概念，然后只填一个空。";
+    const gap = coachingGapForReply(reply);
+    return `卡点判断：${gap.label}。你说得对，知识点没吃透时很难自己打出思路。不要再让孩子先完整说思路；系统会先帮你拆题和补概念，不要求你完整说明；先帮你拆题和补概念，然后只填一个空：${localGapSentenceFrame(gap)}`;
   }
   if (quality.asksForHelp) {
-    return "没关系，先教会，再让你只答一小步。还是不会就点“看老师示范句”，不用自己组织完整答案。";
+    const gap = coachingGapForReply(reply);
+    return `卡点判断：${gap.label}。${gap.next} 没关系，先教会，再让你只答一小步；还是不会就点“看老师示范句”，不用自己组织完整答案。`;
   }
   if (quality.hasPlaceholder) {
     return "把方括号里的内容换成自己的话；如果不知道怎么换，可以先看老师示范句。";
@@ -3988,7 +4000,7 @@ function guidanceNextActionForReply(reply = "", quality = evaluateGuidanceReplyQ
       : "提交给教练：方法句已够完整，系统会检查后进入变式验证。";
   }
   if (guidanceCannotProduceThought(reply) || quality.asksForHelp || lock?.forceStepBuilder) {
-    return "不用先打完整解释：点“帮我填第一小句”只补第一小句，或点“先补知识点”“帮我拼完整方法句”；还是不懂就点“再讲一遍”。";
+    return `${guidanceStuckGapStatus(reply, quality, activeQuestions()[lock?.questionIndex ?? state.currentQuestion])} 不用先打完整解释。下一步：点“帮我填第一小句”只补第一小句，或点“先补知识点”“帮我拼完整方法句”；还是不懂就点“再讲一遍”。`;
   }
   if (!quality.questionGoal) return "先补题目目标：这题要我判断什么。";
   if (!quality.methodStep) return "再补方法步骤：第一步看什么或找什么。";

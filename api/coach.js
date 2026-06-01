@@ -156,6 +156,7 @@ export function coachingGapAnalysis(studentReply = "") {
   const stuck = detectNeedsTeaching(text);
   const questionConfusion = /题目.*(问什么|什么意思|看不懂)|问题.*(问什么|什么意思)|不懂.*(题|问题).*问什么|看不懂.*题|what.*question|question.*ask/.test(text);
   const methodConfusion = /第一步|先看什么|怎么开始|从哪|不知道.*步骤|不知道.*方法|first step|where.*start/.test(text);
+  const evidenceConfusion = /证据|具体证据|题目里|题干|关键词|条件|数字|data|evidence|keyword/.test(text) && /不知道|不会|找不到|怎么找|不懂|where|how/.test(text);
   const reasonConfusion = /为什么|原因|because|why|不知道.*解释|说不出.*理由/.test(text);
   const conceptConfusion = metaQuestionComplaint(text) || /知识点|概念|没学过|没吃透|前置|打不出来|写不出来|说不出来|完全不会|不明白|confused/.test(text);
   const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate|identify/.test(text);
@@ -165,6 +166,7 @@ export function coachingGapAnalysis(studentReply = "") {
   const enoughDetail = text.replace(/\s+/g, "").length >= 18 || text.split(/\s+/).filter(Boolean).length >= 8;
   if (answerOnly) return { gap: "answer_only", label: "只写了答案", next: "不要先选答案，先写方法句。" };
   if (!text) return { gap: "stuck", label: "还没形成第一步", next: "先看老师示范，再补一个空。" };
+  if (stuck && evidenceConfusion) return { gap: "specific_evidence_stuck", label: "缺具体证据", next: "只补题目里的关键词、数字、条件或证据。" };
   if (stuck && reasonConfusion) return { gap: "reason_stuck", label: "原因说不出", next: "只补一句为什么这一步有用。" };
   if (stuck && methodConfusion) return { gap: "method_stuck", label: "第一步不会选", next: "只选第一步动作，不用完整解释。" };
   if (stuck && questionConfusion) return { gap: "question_goal", label: "题意没拆开", next: "先看老师怎么拆题，再补一个空。" };
@@ -196,6 +198,7 @@ export function gapSentenceFrame(gap = {}, body = {}) {
     concept: `先记住：${skill} 是____。这题要我判断____。`,
     method_stuck: `我第一步先看 ${hint}。`,
     reason_stuck: `因为这一步能帮我____，所以不能只凭感觉选。`,
+    specific_evidence_stuck: "题目里的____说明____。",
     goal: `这题要我判断 ${skill} 里的____。`,
     method: `我第一步先看 ${hint}，再判断____。`,
     reason: `因为这一步能帮我____，所以不能只凭感觉选。`,
@@ -232,6 +235,9 @@ function stuckGapTeachingAction(body = {}) {
   }
   if (coachingGap.gap === "reason_stuck") {
     return `${diagnosedGapLine(body)}只补因为。想一想这一步帮你找到什么线索：${gapSentenceFrame(coachingGap, body)}`;
+  }
+  if (coachingGap.gap === "specific_evidence_stuck") {
+    return `${diagnosedGapLine(body)}不用重新讲原因，只找题目里的一个关键词、数字、条件或证据。现在只补：${gapSentenceFrame(coachingGap, body)}`;
   }
   return "";
 }

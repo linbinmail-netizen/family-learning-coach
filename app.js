@@ -6399,6 +6399,7 @@ function coachingGapForReply(studentReply = "") {
   const quality = evaluateGuidanceReplyQuality(studentReply);
   const questionConfusion = /题目.*(问什么|什么意思|看不懂)|问题.*(问什么|什么意思)|不懂.*(题|问题).*问什么|看不懂.*题|what.*question|question.*ask/.test(text);
   const methodConfusion = /第一步|先看什么|怎么开始|从哪|不知道.*步骤|不知道.*方法|first step|where.*start/.test(text);
+  const evidenceConfusion = /证据|具体证据|题目里|题干|关键词|条件|数字|data|evidence|keyword/.test(text) && /不知道|不会|找不到|怎么找|不懂|where|how/.test(text);
   const reasonConfusion = /为什么|原因|because|why|不知道.*解释|说不出.*理由/.test(text);
   const conceptConfusion = /知识点|概念|没学过|没吃透|前置|打不出来|写不出来|说不出来|完全不会|不明白|confused/.test(text);
   if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(text)) {
@@ -6407,6 +6408,7 @@ function coachingGapForReply(studentReply = "") {
   if (!text) {
     return { label: "还没形成第一步", next: "先看老师示范，再补一个空。" };
   }
+  if (quality.asksForHelp && evidenceConfusion) return { label: "缺具体证据", next: "只补题目里的关键词、数字、条件或证据。" };
   if (quality.asksForHelp && reasonConfusion) return { label: "原因说不出", next: "只补一句为什么这一步有用。" };
   if (quality.asksForHelp && methodConfusion) return { label: "第一步不会选", next: "只选第一步动作，不用完整解释。" };
   if (quality.asksForHelp && questionConfusion) return { label: "题意没拆开", next: "先看老师怎么拆题，再补一个空。" };

@@ -186,3 +186,18 @@ test("coach fallback treats generic reasons as needing concrete evidence", () =>
   assert.match(reply, /具体证据|题目里的____说明____/);
   assert.doesNotMatch(reply, /重新|从头|题目真正问你找什么|正确答案|答案是|选项\s*[A-D]/);
 });
+
+test("coach fallback routes explicit evidence confusion to concrete evidence", () => {
+  const gap = coachingGapAnalysis("我会第一步和原因，但不知道题目里的具体证据怎么找。");
+  assert.equal(gap.gap, "specific_evidence_stuck");
+
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "我会第一步和原因，但不知道题目里的具体证据怎么找。",
+    history: [{ role: "coach", text: "你已经说对了第一步。" }],
+  });
+
+  assert.match(reply, /卡点判断：缺具体证据|具体证据/);
+  assert.match(reply, /题目里的____说明____/);
+  assert.doesNotMatch(reply, /原因说不出|题目真正问你找什么|正确答案|答案是|选项\s*[A-D]/);
+});

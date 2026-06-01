@@ -617,10 +617,18 @@ test("student guidance quality checklist shows concrete evidence as its own step
 });
 
 test("student guidance entry copy does not ask stuck students to explain the question first", () => {
-  assert.match(html, /告诉 AI 你卡在概念、第一步还是原因/);
+  assert.match(html, /告诉 AI 你卡在概念、第一步、原因还是具体证据/);
   assert.match(html, /先听讲解，再做一小步/);
   assert.doesNotMatch(html, /placeholder="用自己的话写：这题真正问什么/);
   assert.doesNotMatch(html, /<strong id="guidanceTaskTitle">先说题目问什么<\/strong>/);
+});
+
+test("student guidance quick replies include a concrete evidence stuck option", () => {
+  assert.match(html, /不会找证据/);
+  assert.match(html, /我会第一步和原因，但不知道题目里的具体证据怎么找。/);
+  assert.match(js, /const evidenceConfusion =/);
+  assert.match(js, /quality\.asksForHelp && evidenceConfusion/);
+  assert.match(js, /label: "缺具体证据"/);
 });
 
 test("student stuck guidance copy uses scaffolds instead of full restatement demands", () => {

@@ -374,6 +374,23 @@ test("systematic challenge questions include error analysis so they are not just
   }
 });
 
+test("all runtime challenge questions require proof-style school depth", () => {
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(questionBankSource, context);
+  for (const subject of ["math8", "rla8", "science8", "english1", "algebra1", "geometry", "biology"]) {
+    const questions = context.window.twoHourExpansionQuestionBank[subject] || [];
+    const challengeQuestions = questions.filter((question) => String(question.difficulty || "").includes("挑战"));
+    assert.ok(challengeQuestions.length >= 12, `${subject} should have enough runtime challenge questions`);
+    for (const question of challengeQuestions) {
+      assert.equal(question.multiStepReasoning, true, `${subject} challenge should require multi-step reasoning: ${question.prompt}`);
+      assert.ok(question.openResponse || question.constructedResponse, `${subject} challenge should require written proof: ${question.prompt}`);
+      assert.ok(question.schoolExamDepth, `${subject} challenge should be school-depth: ${question.prompt}`);
+      assert.ok(String(question.expectedMethod || "").length >= 60, `${subject} challenge should carry explicit expectedMethod: ${question.prompt}`);
+    }
+  }
+});
+
 test("proof-capable advanced questions carry explicit transferable method criteria", () => {
   const context = { window: {} };
   vm.createContext(context);

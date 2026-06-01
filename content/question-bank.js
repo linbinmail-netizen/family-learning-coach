@@ -1402,6 +1402,10 @@ function enforceChallengeErrorAnalysisQuality(bank = window.twoHourExpansionQues
       const hasConcreteTrap = mistakes.some((mistake) => /trap|mistake|错误|猜|keyword|关键词/i.test(mistake));
       return {
         ...question,
+        schoolExamDepth: question.schoolExamDepth || `${subjectId} ${question.skill || "challenge"} proof-style school-depth reasoning`,
+        multiStepReasoning: true,
+        openResponse: question.openResponse !== false,
+        constructedResponse: true,
         errorAnalysis: true,
         commonMistakes: hasConcreteTrap
           ? mistakes

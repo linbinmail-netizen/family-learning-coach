@@ -1018,6 +1018,13 @@ test("second stuck reply switches to no-typing micro support", () => {
   assert.doesNotMatch(js, /repeatedStuckCoachNotice[\s\S]*正确答案是/);
 });
 
+test("help replies are replaced with a smaller actionable draft, not left as stuck text", () => {
+  const rescueBlock = js.match(/function rescueIncompleteGuidanceReply[\s\S]*?function requestConceptExampleReteach/)?.[0] || "";
+  assert.match(rescueBlock, /state\.guidanceLock\.replyDraft = guidanceStepBuilderSentence\("goal", state\.guidanceLock\)/);
+  assert.match(rescueBlock, /input\.value = state\.guidanceLock\.replyDraft/);
+  assert.doesNotMatch(rescueBlock, /if \(!state\.guidanceLock\.replyDraft\) state\.guidanceLock\.replyDraft = teachFirstLadderDraft/);
+});
+
 test("repeated stuck guidance switches explanation style instead of repeating fill-in", () => {
   assert.match(js, /function repeatedStuckAlternativeExplanation/);
   assert.match(js, /换一种讲法/);

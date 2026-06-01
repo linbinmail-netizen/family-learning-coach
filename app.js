@@ -4133,9 +4133,14 @@ function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")
       state.guidanceLock.replyDraft = guidanceTeacherModelForLock(state.guidanceLock);
       state.guidanceLock.microChoiceReady = true;
       state.guidanceLock.microChoiceNote = "先把老师示范句读一遍。不用再写完整解释，可以提交给教练检查；如果还不懂，点“再讲一遍”。";
+    } else {
+      state.guidanceLock.replyDraft = guidanceStepBuilderSentence("goal", state.guidanceLock);
+      state.guidanceLock.microChoiceReady = false;
     }
   }
-  if (!state.guidanceLock.replyDraft) state.guidanceLock.replyDraft = teachFirstLadderDraft(reply, state.guidanceLock);
+  if (!state.guidanceLock.replyDraft) {
+    state.guidanceLock.replyDraft = teachFirstLadderDraft(reply, state.guidanceLock);
+  }
   input.value = state.guidanceLock.replyDraft;
   renderReplyQuality(input.value);
   saveData();

@@ -1623,6 +1623,8 @@ test("variant submission returns teacher-style rubric feedback", () => {
   assert.match(js, /题目类型/);
   assert.match(js, /第一步/);
   assert.match(js, /原因解释/);
+  assert.match(js, /避开误区/);
+  assert.match(js, /常见误区/);
   assert.match(js, /buildVariantRubricFeedback\(reply/);
   assert.match(js, /variantRubricFeedback"\)\.innerHTML/);
   assert.match(css, /variant-rubric-feedback/);
@@ -1642,6 +1644,7 @@ test("variant live feedback tells the student the next missing step", () => {
   assert.match(js, /function variantNextActionText/);
   assert.match(js, /下一步：\$\{missing\.next\}/);
   assert.match(js, /说明已经完整，可以提交给 AI 教练检查/);
+  assert.match(js, /补一句你没有掉进哪个常见误区/);
   assert.match(js, /variantFeedback"\)\.textContent = variantNextActionText/);
 });
 
@@ -1649,8 +1652,8 @@ test("variant waiting feedback gives a concrete self-check while AI grades", () 
   const variantHandler = js.match(/\$\("variantForm"\)\.addEventListener\("submit",[\s\S]*?\n  \}\);/)?.[0] || "";
   assert.match(js, /function setVariantWaitingFeedback/);
   assert.match(js, /AI 正在批改变式解释/);
-  assert.match(js, /先自查四项/);
-  assert.match(js, /题目类型、第一步、原因、具体内容/);
+  assert.match(js, /先自查五项/);
+  assert.match(js, /题目类型、第一步、原因、避开误区、具体内容/);
   assert.match(variantHandler, /setVariantWaitingFeedback\(rubricFeedback\)/);
 });
 

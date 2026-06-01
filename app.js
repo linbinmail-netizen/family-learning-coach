@@ -2920,8 +2920,9 @@ function variantMethodChecklistFor(variant = state.guidanceLock?.variant, questi
       `判断题目类型：${guide.focus}`,
       guide.firstStep,
       guide.why,
+      `避开误区：说明你没有掉进“${commonMistakeForQuestion(question)}”这个常见误区。`,
     ],
-    selfCheck: "自查：我的解释是否包含“先做什么”和“为什么这样做”？如果只写答案，需要补方法。",
+    selfCheck: "自查：我的解释是否包含“先做什么”“为什么这样做”和“避开哪个常见误区”？如果只写答案，需要补方法。",
   };
 }
 
@@ -2931,6 +2932,7 @@ function variantSentenceStartersFor(variant = state.guidanceLock?.variant, quest
     { label: "说题型", text: `这题属于 ${skill}，我先要看 ` },
     { label: "说第一步", text: "第一步我会先 " },
     { label: "说原因", text: "这样做是因为 " },
+    { label: "说避坑", text: `我没有直接猜，也没有掉进这个常见误区：${commonMistakeForQuestion(question)}。` },
   ];
 }
 
@@ -2960,6 +2962,9 @@ function variantNextStepStarterFor(reply = "", variant = state.guidanceLock?.var
   }
   if (missing.label === "原因解释") {
     return "这样做是因为 ";
+  }
+  if (missing.label === "避开误区") {
+    return `我没有直接猜，也没有掉进这个常见误区：${commonMistakeForQuestion(question)}。`;
   }
   return "具体来说，我还要把题目里的条件和我的方法连起来说明：";
 }
@@ -3228,10 +3233,12 @@ function variantRubricItems(reply = "", variant = state.guidanceLock?.variant) {
   const typeReady = keywordHits >= 1 && !/答案是|选[a-d]|choose/.test(text);
   const firstStepReady = /先|第一步|看|找|用|比较|变化|证据|条件|first|compare|change|evidence/.test(text);
   const reasonReady = /因为|所以|为什么|说明|证明|原因|because|so that|why/.test(text);
+  const trapReady = /误区|错因|不能|不要|避免|避开|没有直接猜|不是.*猜|not guess|avoid|trap|mistake/.test(text);
   return [
     { label: "题目类型", ready: typeReady, next: "先说这题在考哪个知识点" },
     { label: "第一步", ready: firstStepReady, next: "写清第一步要看什么或怎么算" },
     { label: "原因解释", ready: reasonReady, next: "补上为什么这一步能帮助判断" },
+    { label: "避开误区", ready: trapReady, next: "补一句你没有掉进哪个常见误区" },
     { label: "具体内容", ready: hasMeaningfulVariantCompletion(reply), next: "把句式后面的内容补完整" },
   ];
 }
@@ -3282,7 +3289,7 @@ function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", var
 
 function setVariantWaitingFeedback(rubricFeedback = "") {
   $("variantFeedback").textContent =
-    `AI 正在批改变式解释。先自查四项：题目类型、第一步、原因、具体内容。${rubricFeedback}`;
+    `AI 正在批改变式解释。先自查五项：题目类型、第一步、原因、避开误区、具体内容。${rubricFeedback}`;
 }
 
 function renderVariantNextHelp(reply = $("variantReply")?.value || "", variant = state.guidanceLock?.variant) {

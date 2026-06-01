@@ -1529,6 +1529,14 @@ test("one obvious easy correct answer immediately promotes to depth practice", (
   assert.match(js, /马上做一道学校考试式验证/);
 });
 
+test("two-hour adaptive lessons start with school-exam depth when available", () => {
+  assert.match(js, /function ensureSchoolExamStartQuestion/);
+  assert.match(js, /isTwoHourPlan\(plan\) && plan\.difficultyMode === "adaptive"/);
+  assert.match(js, /findIndex\(isSchoolExamPracticeQuestion\)/);
+  assert.match(js, /ensureSchoolExamStartQuestion\(ensureEarlyDepthCadence/);
+  assert.match(js, /第一题优先进入学校考试深度/);
+});
+
 test("easy streaks create a visible challenge mission queue", () => {
   assert.match(html, /id="challengeMissionQueue"/);
   assert.match(html, /id="challengeMissionList"/);

@@ -3806,6 +3806,7 @@ function guidanceNextMissingSentence(reply = "", lock = state.guidanceLock, ques
   if (!quality.questionGoal) return `这题要我判断 ${skill}。`;
   if (!quality.methodStep) return `我第一步先看 ${firstStep}。`;
   if (!quality.reasonWhy) return "因为这一步能帮我把题目要求和解题方法连起来。";
+  if (!quality.specificEvidence) return "题目里的____说明____。";
   if (!quality.enoughDetail) return guidanceDetailSentenceForQuestion(question);
   return "现在把这句话用自己的话再说清楚一点。";
 }
@@ -3840,7 +3841,7 @@ function guidanceTeacherModelForLock(lock = state.guidanceLock, question = activ
     lock?.issue === "confidence"
       ? "这样可以证明我不是猜的，而是真的知道方法为什么能用"
       : "这一步能帮我把题目要求和解题方法连起来";
-  return `题目要我判断 ${skill}。第一步我先${firstStep}，因为${reason}。`;
+  return `题目要我判断 ${skill}。第一步我先${firstStep}，因为${reason}。${guidanceDetailSentenceForQuestion(question)}`;
 }
 
 function guidanceMetaQuestionComplaint(reply = "") {
@@ -3856,6 +3857,14 @@ function teacherFirstBridgeForMetaComplaint(reply = "", question = activeQuestio
   return `${signalPrefix}别再追问“这题问什么”，先不问“这题问什么”，也不用自己组织题意。老师先搭桥，先讲一个小知识点：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 接着做二选一判断；现在只点一个选择或填一个空，直接回 A 或 B 也可以：A 先看题干关键词、条件或证据；B 先看答案长短。最后只填一个空：${localGapSentenceFrame({ label: "概念没接上" }, question)}`;
 }
 
+function hasSpecificGuidanceEvidence(reply = "") {
+  const text = String(reply || "").trim().toLowerCase();
+  const compactText = text.replace(/\s+/g, "");
+  const genericReason = /因为(这样|这一步|这个|它)?(有用|可以|合理|重要|对)|because\s+(it|this|that)\s+(helps|works|matters|is useful)/i.test(compactText);
+  const hasConcreteSignal = /题目里|题干|文章里|文本里|数据|数字|条件|证据|关键词|变量|表格|图像|变化关系|每|增加|减少|说明|证明|\d|x\s*(和|与|and)\s*y|point|slope|rate|claim|evidence|variable|data|graph/i.test(text);
+  return hasConcreteSignal && !genericReason;
+}
+
 function evaluateGuidanceReplyQuality(reply = "") {
   const text = reply.trim().toLowerCase();
   const compactText = text.replace(/\s+/g, "");
@@ -3867,17 +3876,19 @@ function evaluateGuidanceReplyQuality(reply = "") {
   const hasReasonWhy = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that/.test(text);
   const asksForHelp = guidanceMetaQuestionComplaint(reply) || /不知道|不会|不懂|写什么|怎么写|没思路|知识点没吃透|打不出来|说不出来|help|stuck|idk|not sure/.test(text);
   const hasPlaceholder = /\[.*?\]|_{2,}/.test(reply);
+  const hasSpecificEvidence = hasSpecificGuidanceEvidence(reply);
   const conceptNotReady = asksForHelp || (Boolean(text) && !hasQuestionGoal && !hasMethodStep);
   return {
     enoughDetail,
     questionGoal: hasQuestionGoal,
     methodStep: hasMethodStep,
     reasonWhy: hasReasonWhy,
+    specificEvidence: hasSpecificEvidence,
     asksForHelp,
     hasPlaceholder,
     conceptNotReady,
     conceptBridgeReady,
-    ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && !asksForHelp && !hasPlaceholder,
+    ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && hasSpecificEvidence && !asksForHelp && !hasPlaceholder,
   };
 }
 
@@ -3900,12 +3911,13 @@ function guidanceReplyHelpText(reply = "", quality = evaluateGuidanceReplyQualit
     !quality.questionGoal && "写清题目要找什么",
     !quality.methodStep && "写清第一步看什么",
     !quality.reasonWhy && "写清为什么这样做",
+    !quality.specificEvidence && "补题目里的具体证据",
   ].filter(Boolean);
   return missing.length ? `下一步只补：${missing[0]}。可以先照下面句式写。` : "这句还不够清楚，先照下面句式补完整。";
 }
 
 function guidanceReplyProgressText(quality = evaluateGuidanceReplyQuality()) {
-  const completed = [quality.questionGoal, quality.methodStep, quality.reasonWhy].filter(Boolean).length;
+  const completed = [quality.questionGoal, quality.methodStep, quality.reasonWhy, quality.specificEvidence].filter(Boolean).length;
   const next =
     !quality.questionGoal
       ? "先写这题要判断什么"
@@ -3913,10 +3925,12 @@ function guidanceReplyProgressText(quality = evaluateGuidanceReplyQuality()) {
         ? "再写第一步看什么"
         : !quality.reasonWhy
           ? "最后写为什么这一步有用"
+          : !quality.specificEvidence
+            ? "补题目里的具体证据"
           : quality.ready
             ? "可以提交给教练检查"
-            : "把 3 个部分连成一句完整方法";
-  return `已完成 ${completed}/3：${next}。`;
+            : "把 4 个部分连成一句完整方法";
+  return `已完成 ${completed}/4：${next}。`;
 }
 
 function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality(), lock = state.guidanceLock) {
@@ -3947,7 +3961,8 @@ function guidanceNextActionForReply(reply = "", quality = evaluateGuidanceReplyQ
   if (!quality.questionGoal) return "先补题目目标：这题要我判断什么。";
   if (!quality.methodStep) return "再补方法步骤：第一步看什么或找什么。";
   if (!quality.reasonWhy) return "最后补原因说明：为什么这一步有用。";
-  return "把三句连成一句完整方法，再提交给教练。";
+  if (!quality.specificEvidence) return "再补题目证据：题目里的哪个关键词、数字或条件说明你的方法对。";
+  return "把四个部分连成一句完整方法，再提交给教练。";
 }
 
 function renderGuidanceNextAction(reply = $("inlineCoachReply")?.value || "", quality = evaluateGuidanceReplyQuality(reply)) {
@@ -3985,6 +4000,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     !quality.questionGoal && "题目目标",
     !quality.methodStep && "方法步骤",
     !quality.reasonWhy && "原因说明",
+    !quality.specificEvidence && "具体证据",
   ].filter(Boolean);
   const starter = guidanceReplyStarterForLock(state.guidanceLock);
   $("replyQualityStatus").textContent =
@@ -6385,6 +6401,7 @@ function coachingGapForReply(studentReply = "") {
   if (!quality.questionGoal) return { label: "题目目标不清楚", next: "补一句：这题要我判断什么。" };
   if (!quality.methodStep) return { label: "方法步骤不清楚", next: "补一句：我第一步先看什么。" };
   if (!quality.reasonWhy) return { label: "原因说明不完整", next: "补一句：为什么这一步有用。" };
+  if (!quality.specificEvidence) return { label: "缺具体证据", next: "只补题目里的关键词、数字、条件或证据。" };
   if (!quality.enoughDetail) return { label: "表达太短", next: "把题目目标、第一步和原因连成一句完整方法。" };
   return { label: "需要更精确", next: "把关键词、条件或证据说具体一点。" };
 }
@@ -6402,6 +6419,7 @@ function localGapSentenceFrame(gap = coachingGapForReply(), question = activeQue
     "题目目标不清楚": `这题要我判断 ${skill} 里的____。`,
     "方法步骤不清楚": `我第一步先看 ${hint}，再判断____。`,
     "原因说明不完整": "因为这一步能帮我____，所以不能只凭感觉选。",
+    "缺具体证据": "题目里的____说明____。",
     "表达太短": "具体来说，题目里的____说明我的方法应该是____。",
     "需要更精确": "我还要点出题目里的关键词：____，它说明____。",
   };
@@ -6450,6 +6468,9 @@ function localMethodAttemptContinuation(reply = "", question = activeQuestions()
   const anchorText = localPartialMethodAnchors(reply, question);
   if (gap.label === "原因说明不完整") {
     return `你说对的是${anchorText}，这部分保留。现在只补因为：因为这一步能帮我____。`;
+  }
+  if (gap.label === "缺具体证据") {
+    return `你说对的是${anchorText}，这部分保留。现在只补题目里的具体证据；下一句只补：题目里的____说明____。`;
   }
   return `你说对的是${anchorText}，这部分保留，直接接下一句。下一句只补题目里的具体关键词或证据：题目里的____说明____。`;
 }

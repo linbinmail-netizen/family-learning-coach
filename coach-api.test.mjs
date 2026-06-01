@@ -171,3 +171,18 @@ test("coach fallback praises partial method then asks only for the missing reaso
   assert.match(reply, /只补因为|为什么这一步有用|因为这一步/);
   assert.doesNotMatch(reply, /重新|从头|题目真正问你找什么|正确答案|答案是|选项\s*[A-D]/);
 });
+
+test("coach fallback treats generic reasons as needing concrete evidence", () => {
+  const gap = coachingGapAnalysis("这题要我判断变化率，我第一步先比较 x 和 y，因为这样有用。");
+  assert.equal(gap.gap, "specific_evidence");
+
+  const reply = buildFallbackReply({
+    ...baseBody,
+    studentReply: "这题要我判断变化率，我第一步先比较 x 和 y，因为这样有用。",
+    history: [{ role: "coach", text: "先听老师示范，再补原因。" }],
+  });
+
+  assert.match(reply, /你已经说对|这部分保留/);
+  assert.match(reply, /具体证据|题目里的____说明____/);
+  assert.doesNotMatch(reply, /重新|从头|题目真正问你找什么|正确答案|答案是|选项\s*[A-D]/);
+});

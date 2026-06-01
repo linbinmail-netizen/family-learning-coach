@@ -161,6 +161,7 @@ export function coachingGapAnalysis(studentReply = "") {
   const hasGoal = /题目|问什么|要求|求什么|找什么|判断|比较|what|which|calculate|identify/.test(text);
   const hasMethod = /先|第一步|步骤|方法|看|找|变化|条件|证据|除以|比较|compare|divide|change|rate|evidence/.test(text);
   const hasReason = /因为|所以|为了|能帮|说明|证明|原因|why|because|so that|therefore/.test(text);
+  const hasSpecificEvidence = hasSpecificReplyEvidence(text);
   const enoughDetail = text.replace(/\s+/g, "").length >= 18 || text.split(/\s+/).filter(Boolean).length >= 8;
   if (answerOnly) return { gap: "answer_only", label: "只写了答案", next: "不要先选答案，先写方法句。" };
   if (!text) return { gap: "stuck", label: "还没形成第一步", next: "先看老师示范，再补一个空。" };
@@ -172,8 +173,17 @@ export function coachingGapAnalysis(studentReply = "") {
   if (!hasGoal) return { gap: "goal", label: "题目目标不清楚", next: "先说这题要你判断什么。" };
   if (!hasMethod) return { gap: "method", label: "方法步骤不清楚", next: "补一句第一步看什么。" };
   if (!hasReason) return { gap: "reason", label: "原因说明不完整", next: "补一句为什么这一步有用。" };
+  if (!hasSpecificEvidence) return { gap: "specific_evidence", label: "缺具体证据", next: "只补题目里的关键词、数字、条件或证据。" };
   if (!enoughDetail) return { gap: "detail", label: "表达太短", next: "把目标、方法、原因连成完整句。" };
   return { gap: "precision", label: "需要更精确", next: "把关键词或证据说具体一点。" };
+}
+
+function hasSpecificReplyEvidence(reply = "") {
+  const text = String(reply || "").trim().toLowerCase();
+  const compactText = text.replace(/\s+/g, "");
+  const genericReason = /因为(这样|这一步|这个|它)?(有用|可以|合理|重要|对)|because\s+(it|this|that)\s+(helps|works|matters|is useful)/i.test(compactText);
+  const hasConcreteSignal = /题目里|题干|文章里|文本里|数据|数字|条件|证据|关键词|变量|表格|图像|变化关系|每|增加|减少|说明|证明|\d|x\s*(和|与|and)\s*y|point|slope|rate|claim|evidence|variable|data|graph/i.test(text);
+  return hasConcreteSignal && !genericReason;
 }
 
 export function gapSentenceFrame(gap = {}, body = {}) {
@@ -189,6 +199,7 @@ export function gapSentenceFrame(gap = {}, body = {}) {
     goal: `这题要我判断 ${skill} 里的____。`,
     method: `我第一步先看 ${hint}，再判断____。`,
     reason: `因为这一步能帮我____，所以不能只凭感觉选。`,
+    specific_evidence: "题目里的____说明____。",
     detail: `具体来说，题目里的____说明我的方法应该是____。`,
     precision: `我还要点出题目里的关键词：____，它说明____。`,
   };
@@ -238,6 +249,9 @@ function methodAttemptContinuation(body = {}) {
   const anchorText = anchors.length ? anchors.slice(0, 2).join("和") : "题目目标和第一步";
   if (gap.gap === "reason") {
     return `你已经说对了。你说对的是${anchorText}，这部分保留。现在只补因为：因为这一步能帮我____。`;
+  }
+  if (gap.gap === "specific_evidence") {
+    return `你已经说对了。你说对的是${anchorText}，这部分保留。现在只补题目里的具体证据；下一句只补：题目里的____说明____。`;
   }
   if (gap.gap === "detail" || gap.gap === "precision") {
     return `你已经说对了。你说对的是${anchorText}，这部分保留，直接接下一句。下一句只补题目里的具体关键词或证据：题目里的____说明____。`;

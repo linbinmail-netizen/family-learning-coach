@@ -661,6 +661,15 @@ test("student guidance reply quality rejects short keyword-only replies", () => 
   assert.match(js, /解释要更完整/);
 });
 
+test("student guidance reply quality rejects generic reasons without question evidence", () => {
+  assert.match(js, /function hasSpecificGuidanceEvidence/);
+  assert.match(js, /const hasSpecificEvidence = hasSpecificGuidanceEvidence\(reply\)/);
+  assert.match(js, /ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && hasSpecificEvidence/);
+  assert.match(js, /genericReason/);
+  assert.match(js, /有用\|可以\|合理\|重要/);
+  assert.match(js, /题目里的____说明____/);
+});
+
 test("student guidance gives a concrete rescue prompt when the reply says they are stuck", () => {
   assert.match(html, /id="replyHelperCard"/);
   assert.match(html, /id="replyStarterText"/);
@@ -1078,7 +1087,7 @@ test("student can request a teacher model sentence without seeing the answer", (
 
 test("student guidance starter placeholders do not pass the quality gate", () => {
   assert.match(js, /const hasPlaceholder = .*\\\[.*\\\]/);
-  assert.match(js, /ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && !asksForHelp && !hasPlaceholder/);
+  assert.match(js, /ready: enoughDetail && hasQuestionGoal && hasMethodStep && hasReasonWhy && hasSpecificEvidence && !asksForHelp && !hasPlaceholder/);
 });
 
 test("student cannot pass mastery until restatement is complete", () => {
@@ -1904,6 +1913,17 @@ test("local student coach asks only for because when partial method is missing r
   assert.match(continuationBlock, /现在只补因为/);
   assert.match(continuationBlock, /因为这一步能帮我____/);
   assert.doesNotMatch(continuationBlock, /现在只补因为[\s\S]*正确答案/);
+});
+
+test("local student coach treats generic reasons as missing concrete evidence", () => {
+  const gapBlock = js.match(/function coachingGapForReply[\s\S]*?function localGapSentenceFrame/)?.[0] || "";
+  const continuationBlock = js.match(/function localMethodAttemptContinuation[\s\S]*?function localStudentFriendlyConceptLine/)?.[0] || "";
+  assert.match(gapBlock, /缺具体证据/);
+  assert.match(gapBlock, /!quality\.specificEvidence/);
+  assert.match(continuationBlock, /gap\.label === "缺具体证据"/);
+  assert.match(continuationBlock, /现在只补题目里的具体证据/);
+  assert.match(continuationBlock, /题目里的____说明____/);
+  assert.doesNotMatch(continuationBlock, /缺具体证据[\s\S]*正确答案/);
 });
 
 test("local coach does not require students to invent the question goal when they are stuck", () => {

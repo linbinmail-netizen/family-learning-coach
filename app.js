@@ -5090,11 +5090,23 @@ function renderChallengeMissionQueue(question = activeQuestions()[state.currentQ
   const active = challengeBoostForSubject(state.subject) > 0 && queue.length;
   panel.classList.toggle("hidden", !active);
   const evidence = adaptivePromotionEvidence(state.lastAdaptiveResult || { isCorrect: true, challengeMode: active });
+  const totalSteps = 3;
+  const currentStep = Math.max(1, totalSteps - queue.length + 1);
+  const currentMission = queue[0] || {};
+  const nextMission = queue[1] || {};
   $("challengeMissionReason").textContent = active
     ? `挑战确认：因为${evidence}，现在不是惩罚，也不是多刷题；这是用解释型题证明你真的掌握。`
     : "不是惩罚，也不是多刷题；这是用解释型题证明你真的掌握。";
+  $("challengeRouteCurrent").textContent = active
+    ? `第 ${currentStep}/${totalSteps} 步：${currentMission.label}。先写方法证明，再看选项。`
+    : "当前：先写方法证明";
+  $("challengeRouteNext").textContent = active
+    ? nextMission.label
+      ? `完成后进入：${nextMission.label}。目标是同一个知识点继续加深，不是随机加难。`
+      : "完成后：挑战路线结束，系统会把这次表现记为掌握证明。"
+    : "下一步：完成解释型题后继续学校考试深度题。";
   $("challengeMissionList").innerHTML = active
-    ? queue.map((item) => `<li><strong>${item.label}</strong><span>${item.detail}</span></li>`).join("")
+    ? queue.map((item, index) => `<li class="${index === 0 ? "active" : ""}"><strong>${index === 0 ? "正在做：" : "接下来："}${item.label}</strong><span>${item.detail}</span></li>`).join("")
     : "";
 }
 

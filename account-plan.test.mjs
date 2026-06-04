@@ -1667,6 +1667,9 @@ test("easy streaks create a visible challenge mission queue", () => {
   assert.match(html, /id="challengeMissionQueue"/);
   assert.match(html, /id="challengeMissionList"/);
   assert.match(html, /id="challengeMissionReason"/);
+  assert.match(html, /id="challengeRouteStatus"/);
+  assert.match(html, /id="challengeRouteCurrent"/);
+  assert.match(html, /id="challengeRouteNext"/);
   assert.match(html, /挑战任务/);
   assert.match(js, /function buildChallengeMissionQueue/);
   assert.match(js, /function renderChallengeMissionQueue/);
@@ -1680,6 +1683,20 @@ test("easy streaks create a visible challenge mission queue", () => {
   assert.match(js, /同技能变式题/);
   assert.match(js, /renderChallengeMissionQueue\(question\)/);
   assert.match(css, /challenge-mission-queue/);
+});
+
+test("challenge route tells students the current step and next proof target", () => {
+  const routeBlock = js.match(/function renderChallengeMissionQueue[\s\S]*?function isTwoHourPlan/)?.[0] || "";
+  assert.match(routeBlock, /const totalSteps = 3/);
+  assert.match(routeBlock, /第 \$\{currentStep\}\/\$\{totalSteps\} 步/);
+  assert.match(routeBlock, /先写方法证明，再看选项/);
+  assert.match(routeBlock, /完成后进入/);
+  assert.match(routeBlock, /同一个知识点继续加深，不是随机加难/);
+  assert.match(routeBlock, /挑战路线结束/);
+  assert.match(routeBlock, /class="\$\{index === 0 \? "active" : ""\}"/);
+  assert.match(css, /challenge-route-status/);
+  assert.match(css, /challenge-mission-queue li\.active/);
+  assert.doesNotMatch(routeBlock, /正确答案是|答案是|选项\s*[A-D]/);
 });
 
 test("challenge mission queue directly steers the next question type", () => {

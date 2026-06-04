@@ -483,6 +483,24 @@ textarea {
   line-height: 1.45;
 }
 
+.challenge-route-status {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid rgba(42, 107, 84, 0.22);
+  border-radius: 8px;
+  background: #f5fbf7;
+}
+
+.challenge-route-status strong {
+  color: var(--green-dark);
+}
+
+.challenge-route-status small {
+  color: var(--soft-ink);
+  line-height: 1.4;
+}
+
 .challenge-mission-queue ul {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -498,6 +516,12 @@ textarea {
   border: 1px solid rgba(196, 132, 43, 0.24);
   border-radius: 8px;
   background: #fff;
+}
+
+.challenge-mission-queue li.active {
+  border-color: rgba(42, 107, 84, 0.48);
+  background: #f6fbf7;
+  box-shadow: 0 0 0 2px rgba(42, 107, 84, 0.08);
 }
 
 .challenge-mission-queue strong,

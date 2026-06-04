@@ -1598,13 +1598,30 @@ test("school verification skips wrong-answer diagnosis so correct students are n
 
 test("high-performing students are routed to explanation-first challenge questions", () => {
   assert.match(js, /function isExplanationFirstChallenge/);
-  assert.match(js, /const highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.obviousEasyCorrect \|\| adaptiveResult\.raisedLevel \|\| adaptiveResult\.challengeMode \|\| targetLevel >= 2\)/);
+  assert.match(js, /const highPerformance = adaptiveResult\.isCorrect && \(adaptiveResult\.fastCorrect \|\| adaptiveResult\.obviousEasyCorrect \|\| adaptiveResult\.proofQualityStrong \|\| adaptiveResult\.raisedLevel \|\| adaptiveResult\.challengeMode \|\| targetLevel >= 2\)/);
   assert.match(js, /const explanationChallengeCandidate = unanswered/);
   assert.match(js, /isExplanationFirstChallenge\(question\)/);
   assert.match(js, /if \(highPerformance && explanationChallengeCandidate\) return explanationChallengeCandidate\.index/);
   assert.match(js, /fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20/);
-  assert.match(js, /const raisedLevel = nextStats\.correctStreak >= 2 && level < difficultyLevels\.length - 1/);
-  assert.match(js, /return \{ isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20, obviousEasyCorrect, raisedLevel, challengeMode \}/);
+  assert.match(js, /const raisedLevel = \(nextStats\.correctStreak >= 2 \|\| proofQualityStrong\) && level < difficultyLevels\.length - 1/);
+  assert.match(js, /return \{ isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20, obviousEasyCorrect, proofQualityStrong, raisedLevel, challengeMode \}/);
+});
+
+test("adaptive difficulty uses written method proof quality, not only speed", () => {
+  const adaptiveBlock = js.match(/function updateAdaptiveDifficulty[\s\S]*?function raiseDifficultyOnDemand/)?.[0] || "";
+  const nextQuestionBlock = js.match(/function nextAdaptiveQuestionIndex[\s\S]*?function challengeMissionPreferredQuestion/)?.[0] || "";
+  const masteryBlock = js.match(/function completeGuidedMastery[\s\S]*?function resetDiagnosticProgress/)?.[0] || "";
+  assert.match(js, /function methodProofQualityForQuestion/);
+  assert.match(js, /preAnswerThoughtQuality\(thought\)/);
+  assert.match(js, /quality\.hasGoal[\s\S]*quality\.hasMethod[\s\S]*quality\.hasReason[\s\S]*quality\.hasEvidence/);
+  assert.match(adaptiveBlock, /const proofQuality = methodProofQualityForQuestion\(question, state\.currentQuestion\)/);
+  assert.match(adaptiveBlock, /const proofQualityStrong = isCorrect && proofQuality\.strong/);
+  assert.match(adaptiveBlock, /const raisedLevel = \(nextStats\.correctStreak >= 2 \|\| proofQualityStrong\) && level < difficultyLevels\.length - 1/);
+  assert.match(adaptiveBlock, /方法证明完整，下一题会提高到更接近学校考试的深度/);
+  assert.match(js, /方法证明完整/);
+  assert.match(nextQuestionBlock, /adaptiveResult\.proofQualityStrong/);
+  assert.match(masteryBlock, /proofQualityStrong: isVariantExplanationStrong\(variantReply, state\.guidanceLock\.variant\)/);
+  assert.doesNotMatch(adaptiveBlock + nextQuestionBlock, /正确答案是|答案是/);
 });
 
 test("high-performing students get same-skill explanation challenges before unrelated hard questions", () => {

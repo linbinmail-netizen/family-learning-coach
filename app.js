@@ -2642,7 +2642,7 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
   const currentSkill = questions[answeredIndex]?.skill || "";
   const sameSkillExplanationBoost = (question = {}) => question.skill === currentSkill ? 100 : 0;
   const sameSkillChallengeBoost = (question = {}) => question.skill === currentSkill ? 60 : 0;
-  const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
+  const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect || adaptiveResult.proofQualityStrong || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
   const challengeQueue = state.adaptiveStats[state.subject]?.challengeQueue || [];
   const missionCandidate = challengeMissionPreferredQuestion(unanswered, challengeQueue, targetLevel);
   const sameSkillSchoolDepthCandidate = unanswered
@@ -2739,6 +2739,7 @@ function challengeMissionCompletionNotice(completedMission = {}, remainingQueue 
 function adaptivePromotionEvidence(adaptiveResult = {}) {
   const signals = [];
   if (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect) signals.push("答得快");
+  if (adaptiveResult.proofQualityStrong) signals.push("方法证明完整");
   if (adaptiveResult.raisedLevel || adaptiveResult.challengeMode) signals.push("连续答对");
   if (adaptiveResult.isCorrect) signals.push("自己选择了“确定”");
   return signals.length ? signals.join("、") : "这题已经通过";
@@ -4486,6 +4487,7 @@ function completeGuidedMastery(variantReply = "") {
   const preferredIndex = nextAdaptiveQuestionIndex(activeQuestions(), state.guidanceLock.questionIndex, {
     isCorrect: true,
     level: adaptiveLevelForSubject(),
+    proofQualityStrong: isVariantExplanationStrong(variantReply, state.guidanceLock.variant),
   });
   advanceToNextQuestionAfterCompletion(state.guidanceLock.questionIndex, "guided", preferredIndex);
   state.guidanceLock = null;
@@ -4865,6 +4867,24 @@ function isPreAnswerThoughtReady(text = "", question = {}) {
   if (isSchoolExamPracticeQuestion(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason && quality.hasEvidence;
   if (isChallengePreAnswerQuestion(question)) return quality.hasGoal && quality.hasMethod && quality.hasReason && quality.hasEvidence;
   return quality.hasGoal || quality.hasMethod;
+}
+
+function methodProofQualityForQuestion(question = activeQuestions()[state.currentQuestion], index = state.currentQuestion) {
+  const thought = state.preAnswerThoughts[questionProgressKey(index)] || "";
+  const quality = preAnswerThoughtQuality(thought);
+  const needsEvidence = manualTooEasyChallenge(question) || isSchoolExamPracticeQuestion(question) || isChallengePreAnswerQuestion(question);
+  return {
+    thought,
+    quality,
+    strong: Boolean(
+      thought
+      && quality.hasGoal
+      && quality.hasMethod
+      && quality.hasReason
+      && (!needsEvidence || quality.hasEvidence)
+      && !quality.blocked
+    ),
+  };
 }
 
 function preAnswerStarterText(kind = "frame", question = activeQuestions()[state.currentQuestion]) {
@@ -5457,6 +5477,8 @@ function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") 
   const subjectId = state.subject;
   const isCorrect = selectedIndex === question.correct;
   const obviousEasyCorrect = isObviousEasyCorrect(question, selectedIndex, confidence);
+  const proofQuality = methodProofQualityForQuestion(question, state.currentQuestion);
+  const proofQualityStrong = isCorrect && proofQuality.strong;
   const current = state.adaptiveStats[subjectId] || { correctStreak: 0, missedStreak: 0 };
   const completedChallengeMission = isCorrect && completeChallengeMissionForQuestion(question, "correct", subjectId);
   const currentChallengeBoost = Number(state.adaptiveStats[subjectId]?.challengeBoostRemaining ?? current.challengeBoostRemaining ?? 0);
@@ -5469,7 +5491,7 @@ function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") 
   let message = "";
   let challengeMode = nextStats.challengeBoostRemaining > 0;
 
-  const raisedLevel = nextStats.correctStreak >= 2 && level < difficultyLevels.length - 1;
+  const raisedLevel = (nextStats.correctStreak >= 2 || proofQualityStrong) && level < difficultyLevels.length - 1;
   if (shouldEnterChallengeBoost(question, nextStats, isCorrect)) {
     nextStats.challengeBoostRemaining = 3;
     state.adaptiveStats[subjectId] = nextStats;
@@ -5481,7 +5503,7 @@ function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") 
   if (raisedLevel) {
     level += 1;
     nextStats.correctStreak = 0;
-    if (!message) message = "答得很顺，下一题会提高一点难度。";
+    if (!message) message = proofQualityStrong ? "方法证明完整，下一题会提高到更接近学校考试的深度。" : "答得很顺，下一题会提高一点难度。";
   } else if (obviousEasyCorrect && !message) {
     level = Math.max(level, 2);
     message = "这题太轻松，马上做一道学校考试式验证；通过后下一题再切到解释型或学校考试深度题。";
@@ -5493,7 +5515,7 @@ function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") 
 
   state.adaptiveLevels[subjectId] = level;
   state.adaptiveStats[subjectId] = { ...(state.adaptiveStats[subjectId] || {}), ...nextStats };
-  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, obviousEasyCorrect, raisedLevel, challengeMode };
+  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, obviousEasyCorrect, proofQualityStrong, raisedLevel, challengeMode };
 }
 
 function raiseDifficultyOnDemand() {

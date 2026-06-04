@@ -4530,12 +4530,12 @@ function twoHourBlockMinutes(totalMinutes = 120) {
 function buildTwoHourLearningBlocks({ student, plan, focusSubject, answeredCount, guidedCount, report, openMistakes }) {
   const targetQuestions = plan.questionTarget || Math.max(4, Math.min(24, Math.round(plan.minutes / 5)));
   const schoolDepthTarget = plan.difficultyMode === "adaptive"
-    ? Math.max(3, Math.round(targetQuestions * 0.18))
+    ? Math.max(5, Math.round(targetQuestions * 0.25))
     : Math.max(2, Math.round(targetQuestions * 0.12));
   const foundationTarget = plan.difficultyMode === "adaptive"
-    ? Math.max(2, Math.round(targetQuestions * 0.18))
+    ? Math.max(1, Math.round(targetQuestions * 0.12))
     : Math.max(3, Math.round(targetQuestions * 0.25));
-  const reviewTarget = Math.max(2, Math.round(targetQuestions * 0.2));
+  const reviewTarget = Math.max(2, Math.round(targetQuestions * 0.18));
   const challengeTarget = Math.max(6, targetQuestions - schoolDepthTarget - foundationTarget - reviewTarget);
   const twoHourMode = plan.minutes >= 90 || targetQuestions >= 18;
   const blockMinutes = twoHourBlockMinutes(plan.minutes);
@@ -5221,8 +5221,9 @@ function selectTwoHourStructuredQuestions(questions, plan = planForStudent(state
 
   const targetQuestions = plan.questionTarget || 24;
   const challengeMode = plan.difficultyMode === "challenge";
-  const foundationTarget = challengeMode ? 1 : Math.max(2, Math.round(targetQuestions * 0.2));
-  const reviewTarget = challengeMode ? Math.max(2, Math.round(targetQuestions * 0.15)) : Math.max(3, Math.round(targetQuestions * 0.25));
+  const adaptiveMode = plan.difficultyMode === "adaptive";
+  const foundationTarget = challengeMode ? 1 : adaptiveMode ? Math.max(1, Math.round(targetQuestions * 0.12)) : Math.max(2, Math.round(targetQuestions * 0.2));
+  const reviewTarget = challengeMode ? Math.max(2, Math.round(targetQuestions * 0.15)) : adaptiveMode ? Math.max(3, Math.round(targetQuestions * 0.18)) : Math.max(3, Math.round(targetQuestions * 0.25));
   const challengeTarget = Math.max(2, targetQuestions - foundationTarget - reviewTarget);
   const foundationQuestions = adaptiveQuestions
     .filter((question) => difficultyScore(question.difficulty) <= 1)
@@ -5247,6 +5248,7 @@ function minimumDailyDepthQuestions(plan = planForStudent(state.studentId)) {
   const limit = dailyQuestionLimit(plan);
   if (plan.difficultyMode === "steady") return Math.min(limit, 2);
   if (plan.difficultyMode === "challenge") return Math.min(limit, Math.max(3, Math.round(limit * 0.45)));
+  if (isTwoHourPlan(plan) && plan.difficultyMode === "adaptive") return Math.min(limit, Math.max(8, Math.round(limit * 0.55)));
   if (plan.difficultyMode === "adaptive") return Math.min(limit, Math.max(4, Math.round(limit * 0.42)));
   return Math.min(limit, Math.max(2, Math.round(limit * 0.35)));
 }
@@ -5326,7 +5328,7 @@ function ensureEarlyDepthCadence(questions, plan = planForStudent(state.studentI
   const limit = Math.min(dailyQuestionLimit(plan), questions.length);
   if (plan.difficultyMode === "steady" || limit < 4) return questions;
   const earlyWindowSize = Math.min(6, limit);
-  const minimumEarlyDepth = plan.difficultyMode === "challenge" ? Math.min(3, earlyWindowSize) : Math.min(2, earlyWindowSize);
+  const minimumEarlyDepth = plan.difficultyMode === "challenge" ? Math.min(4, earlyWindowSize) : isTwoHourPlan(plan) && plan.difficultyMode === "adaptive" ? Math.min(3, earlyWindowSize) : Math.min(2, earlyWindowSize);
   const earlyBatch = questions.slice(0, earlyWindowSize);
   const currentEarlyDepth = earlyBatch.filter((question) => isSchoolExamPracticeQuestion(question) || isExplanationFirstChallenge(question)).length;
   if (currentEarlyDepth >= minimumEarlyDepth) return questions;
@@ -5352,6 +5354,18 @@ function ensureEarlyDepthCadence(questions, plan = planForStudent(state.studentI
 function limitEasyWarmupQuestions(questions, plan = planForStudent(state.studentId)) {
   const limit = Math.min(dailyQuestionLimit(plan), questions.length);
   if (plan.difficultyMode === "steady" || limit < 3) return questions;
+  if (isTwoHourPlan(plan) && plan.difficultyMode === "adaptive" && limit >= 4) {
+    const firstFourEasyCount = questions.slice(0, 4).filter((question) => difficultyScore(question.difficulty) <= 1 && !isDepthPracticeQuestion(question)).length;
+    if (firstFourEasyCount <= 1) return questions;
+    const replacementIndex = questions.findIndex(
+      (question, index) => index >= 4 && index < limit && (isDepthPracticeQuestion(question) || isSchoolExamPracticeQuestion(question))
+    );
+    if (replacementIndex < 0) return questions;
+    const adjusted = [...questions];
+    const [replacement] = adjusted.splice(replacementIndex, 1);
+    adjusted.splice(1, 0, replacement);
+    return adjusted;
+  }
   const firstTwoEasyCount = questions.slice(0, 2).filter((question) => difficultyScore(question.difficulty) <= 1 && !isDepthPracticeQuestion(question)).length;
   if (firstTwoEasyCount < 2) return questions;
   const replacementIndex = questions.findIndex(

@@ -390,12 +390,12 @@ test("default student plans are two-hour sessions, not short templates", () => {
 });
 
 test("default two-hour plans reduce easy practice and favor school-depth work", () => {
-  assert.match(js, /const schoolDepthTarget = plan\.difficultyMode === "adaptive"\s*\? Math\.max\(3, Math\.round\(targetQuestions \* 0\.18\)\)/);
-  assert.match(js, /const foundationTarget = plan\.difficultyMode === "adaptive"\s*\? Math\.max\(2, Math\.round\(targetQuestions \* 0\.18\)\)/);
+  assert.match(js, /const schoolDepthTarget = plan\.difficultyMode === "adaptive"\s*\? Math\.max\(5, Math\.round\(targetQuestions \* 0\.25\)\)/);
+  assert.match(js, /const foundationTarget = plan\.difficultyMode === "adaptive"\s*\? Math\.max\(1, Math\.round\(targetQuestions \* 0\.12\)\)/);
   assert.match(js, /const challengeTarget = Math\.max\(6, targetQuestions - schoolDepthTarget - foundationTarget - reviewTarget\)/);
   assert.match(js, /基础题只保留查漏补缺，不占用主要时间/);
   assert.match(js, /学校考试深度题和解释题占主要比例/);
-  assert.match(js, /if \(plan\.difficultyMode === "adaptive"\) return Math\.min\(limit, Math\.max\(4, Math\.round\(limit \* 0\.42\)\)\)/);
+  assert.match(js, /isTwoHourPlan\(plan\) && plan\.difficultyMode === "adaptive"\) return Math\.min\(limit, Math\.max\(8, Math\.round\(limit \* 0\.55\)\)\)/);
 });
 
 test("two-hour daily task list opens with school depth before foundation warmup", () => {
@@ -403,7 +403,8 @@ test("two-hour daily task list opens with school depth before foundation warmup"
   assert.match(planBlock, /schoolDepthTarget/);
   assert.match(planBlock, /学校深度起步/);
   assert.match(planBlock, /基础热身/);
-  assert.match(planBlock, /Math\.round\(targetQuestions \* 0\.18\)/);
+  assert.match(planBlock, /Math\.round\(targetQuestions \* 0\.25\)/);
+  assert.match(planBlock, /Math\.round\(targetQuestions \* 0\.12\)/);
   assert.doesNotMatch(planBlock, /基础练习/);
   assert.doesNotMatch(planBlock, /targetQuestions \* 0\.45/);
 });
@@ -1717,6 +1718,18 @@ test("two-hour adaptive lessons start with school-exam depth when available", ()
   assert.match(js, /findIndex\(isSchoolExamPracticeQuestion\)/);
   assert.match(js, /ensureSchoolExamStartQuestion\(ensureEarlyDepthCadence/);
   assert.match(js, /第一题优先进入学校考试深度/);
+});
+
+test("two-hour adaptive lessons keep the opening set challenging", () => {
+  const earlyBlock = js.match(/function ensureEarlyDepthCadence[\s\S]*?function limitEasyWarmupQuestions/)?.[0] || "";
+  const easyBlock = js.match(/function limitEasyWarmupQuestions[\s\S]*?function ensureDepthStartQuestion/)?.[0] || "";
+  const structuredBlock = js.match(/function selectTwoHourStructuredQuestions[\s\S]*?function dailyQuestionLimit/)?.[0] || "";
+  assert.match(structuredBlock, /adaptiveMode \? Math\.max\(1, Math\.round\(targetQuestions \* 0\.12\)\)/);
+  assert.match(earlyBlock, /isTwoHourPlan\(plan\) && plan\.difficultyMode === "adaptive" \? Math\.min\(3, earlyWindowSize\)/);
+  assert.match(easyBlock, /firstFourEasyCount/);
+  assert.match(easyBlock, /firstFourEasyCount <= 1/);
+  assert.match(easyBlock, /index >= 4 && index < limit/);
+  assert.doesNotMatch(easyBlock, /正确答案是|答案是/);
 });
 
 test("easy streaks create a visible challenge mission queue", () => {

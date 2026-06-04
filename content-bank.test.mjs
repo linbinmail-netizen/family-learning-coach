@@ -146,10 +146,10 @@ test("two-hour adaptive sessions require a stronger school-depth floor", () => {
   assert.match(source, /Math\.max\(8, Math\.round\(limit \* 0\.45\)\)/);
 });
 
-test("adaptive sessions keep two depth checks inside the first six questions", () => {
+test("adaptive sessions keep stronger depth checks inside the first six questions", () => {
   assert.match(source, /function ensureEarlyDepthCadence/);
   assert.match(source, /const earlyWindowSize = Math\.min\(6, limit\)/);
-  assert.match(source, /const minimumEarlyDepth = plan\.difficultyMode === "challenge" \? Math\.min\(3, earlyWindowSize\) : Math\.min\(2, earlyWindowSize\)/);
+  assert.match(source, /plan\.difficultyMode === "challenge" \? Math\.min\(4, earlyWindowSize\) : isTwoHourPlan\(plan\) && plan\.difficultyMode === "adaptive" \? Math\.min\(3, earlyWindowSize\) : Math\.min\(2, earlyWindowSize\)/);
   assert.match(source, /earlyBatch\.filter\(\(question\) => isSchoolExamPracticeQuestion\(question\) \|\| isExplanationFirstChallenge\(question\)\)\.length/);
   assert.match(source, /index >= earlyWindowSize && index < limit/);
   assert.match(source, /ensureEarlyDepthCadence\(ensureDepthStartQuestion\(limitEasyWarmupQuestions\(frontloadSchoolExamPractice/);
@@ -158,6 +158,8 @@ test("adaptive sessions keep two depth checks inside the first six questions", (
 test("adaptive and challenge modes limit easy warmup at the start", () => {
   assert.match(source, /function limitEasyWarmupQuestions/);
   assert.match(source, /plan\.difficultyMode === "steady"/);
+  assert.match(source, /firstFourEasyCount/);
+  assert.match(source, /firstFourEasyCount <= 1/);
   assert.match(source, /firstTwoEasyCount/);
   assert.match(source, /isDepthPracticeQuestion\(question\) \|\| isSchoolExamPracticeQuestion\(question\)/);
   assert.match(source, /adjusted\.splice\(1, 0, replacement\)/);
@@ -174,8 +176,9 @@ test("adaptive starts with depth practice when a depth candidate exists", () => 
 
 test("challenge mode starts with school-depth or explanation practice instead of easy warmup", () => {
   assert.match(source, /const challengeMode = plan\.difficultyMode === "challenge"/);
-  assert.match(source, /const foundationTarget = challengeMode \? 1 : Math\.max\(2, Math\.round\(targetQuestions \* 0\.2\)\)/);
-  assert.match(source, /const reviewTarget = challengeMode \? Math\.max\(2, Math\.round\(targetQuestions \* 0\.15\)\) : Math\.max\(3, Math\.round\(targetQuestions \* 0\.25\)\)/);
+  assert.match(source, /const adaptiveMode = plan\.difficultyMode === "adaptive"/);
+  assert.match(source, /const foundationTarget = challengeMode \? 1 : adaptiveMode \? Math\.max\(1, Math\.round\(targetQuestions \* 0\.12\)\) : Math\.max\(2, Math\.round\(targetQuestions \* 0\.2\)\)/);
+  assert.match(source, /const reviewTarget = challengeMode \? Math\.max\(2, Math\.round\(targetQuestions \* 0\.15\)\) : adaptiveMode \? Math\.max\(3, Math\.round\(targetQuestions \* 0\.18\)\) : Math\.max\(3, Math\.round\(targetQuestions \* 0\.25\)\)/);
   assert.match(source, /if \(plan\.difficultyMode === "challenge" && isSchoolExamPracticeQuestion\(schoolDepthQuestion\)\) adjusted\.splice\(0, 0, schoolDepthQuestion\)/);
   assert.match(source, /challenge-first school exam depth/);
 });

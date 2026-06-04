@@ -2645,6 +2645,14 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
   const highPerformance = adaptiveResult.isCorrect && (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect || adaptiveResult.raisedLevel || adaptiveResult.challengeMode || targetLevel >= 2);
   const challengeQueue = state.adaptiveStats[state.subject]?.challengeQueue || [];
   const missionCandidate = challengeMissionPreferredQuestion(unanswered, challengeQueue, targetLevel);
+  const sameSkillSchoolDepthCandidate = unanswered
+    .filter(({ question }) => question.skill === currentSkill && isProofCapableSchoolPractice(question))
+    .sort(
+      (a, b) =>
+        questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
+        || questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
+        || difficultyScore(b.question.difficulty) - difficultyScore(a.question.difficulty)
+    )[0];
   const explanationChallengeCandidate = unanswered
     .filter(({ question }) => isExplanationFirstChallenge(question))
     .sort(
@@ -2671,6 +2679,7 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
     .sort((a, b) => difficultyScore(a.question.difficulty) - difficultyScore(b.question.difficulty))[0];
 
   if (adaptiveResult.challengeMode && missionCandidate) return missionCandidate.index;
+  if (highPerformance && sameSkillSchoolDepthCandidate) return sameSkillSchoolDepthCandidate.index;
   if (highPerformance && explanationChallengeCandidate) return explanationChallengeCandidate.index;
   if (adaptiveResult.isCorrect && targetLevel >= 2 && challengeCandidate) return challengeCandidate.index;
   if (adaptiveResult.isCorrect === false && supportCandidate) return supportCandidate.index;

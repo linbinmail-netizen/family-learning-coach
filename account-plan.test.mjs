@@ -1584,6 +1584,15 @@ test("high-performing students get same-skill explanation challenges before unre
   assert.match(nextQuestionBlock, /sameSkillExplanationBoost\(b\.question\) - sameSkillExplanationBoost\(a\.question\)/);
 });
 
+test("fast easy correct answers first look for same-skill school-depth proof", () => {
+  const nextQuestionBlock = js.match(/function nextAdaptiveQuestionIndex[\s\S]*?function challengeMissionPreferredQuestion/)?.[0] || "";
+  assert.match(nextQuestionBlock, /sameSkillSchoolDepthCandidate/);
+  assert.match(nextQuestionBlock, /question\.skill === currentSkill/);
+  assert.match(nextQuestionBlock, /isProofCapableSchoolPractice\(question\)/);
+  assert.match(nextQuestionBlock, /if \(highPerformance && sameSkillSchoolDepthCandidate\) return sameSkillSchoolDepthCandidate\.index/);
+  assert.match(nextQuestionBlock, /if \(highPerformance && explanationChallengeCandidate\) return explanationChallengeCandidate\.index/);
+});
+
 test("high-performing fallback challenge also stays on the same skill first", () => {
   const nextQuestionBlock = js.match(/function nextAdaptiveQuestionIndex[\s\S]*?function challengeMissionPreferredQuestion/)?.[0] || "";
   const challengeCandidateBlock = nextQuestionBlock.match(/const challengeCandidate = unanswered[\s\S]*?const supportCandidate/)?.[0] || "";

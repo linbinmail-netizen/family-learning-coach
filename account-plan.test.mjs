@@ -271,6 +271,16 @@ test("student dashboard immediately surfaces too-easy evidence as challenge work
   assert.doesNotMatch(js, /今天题目偏容易[\s\S]*正确答案是/);
 });
 
+test("student dashboard names completed challenge proofs when deciding next difficulty step", () => {
+  const nextActionBlock = js.match(/function nextStudentAction[\s\S]*?function mergeQuestions/)?.[0] || "";
+  const coachQueueBlock = js.match(/function studentCoachQueue[\s\S]*?function renderLearningPath/)?.[0] || "";
+  assert.match(nextActionBlock, /tooEasyEvidence\.challengeProofs > 0/);
+  assert.match(nextActionBlock, /已完成 \$\{tooEasyEvidence\.challengeProofs\} 条挑战证明/);
+  assert.match(coachQueueBlock, /tooEasyEvidence\.challengeProofs > 0/);
+  assert.match(coachQueueBlock, /挑战证明/);
+  assert.doesNotMatch(nextActionBlock + coachQueueBlock, /正确答案是|答案是/);
+});
+
 test("missed questions feed a review loop", () => {
   assert.match(html, /id="mistakeReviewList"/);
   assert.match(html, /id="reportMistakes"/);
@@ -924,8 +934,10 @@ test("student stuck replies can submit for rescue instead of staying blocked", (
   const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   const stuckBranch = submitHandler.match(/if \(quality\.asksForHelp\) \{[\s\S]*?return;\n    \}/)?.[0] || "";
   assert.match(js, /const canAskForHelp = quality\.asksForHelp \|\| Boolean\(String\(reply \|\| ""\)\.trim\(\)\)/);
-  assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
+  assert.match(js, /const canContinueWithoutTyping = Boolean\(state\.guidanceLock\?\.forceStepBuilder/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !\(canAskForHelp \|\| canContinueWithoutTyping\)/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.textContent = guidanceSubmitButtonText\(quality, state\.guidanceLock\)/);
+  assert.match(js, /if \(lock\?\.forceStepBuilder && !quality\.ready\) return "不用打字，继续教我"/);
   assert.match(js, /if \(quality\.asksForHelp\) return "帮我开头"/);
   assert.match(js, /if \(quality\.ready\) return "提交给教练"/);
   assert.match(js, /return "让教练帮我补"/);
@@ -1123,6 +1135,18 @@ test("cannot-produce replies show a two-choice bridge instead of auto-submitting
   assert.doesNotMatch(js, /guidanceCannotProduceThought\(reply\)[\s\S]*正确答案是/);
 });
 
+test("empty stuck guidance can continue through the primary coach button", () => {
+  const renderBlock = js.match(/function renderReplyQuality[\s\S]*?function teachingMiniExampleForSkill/)?.[0] || "";
+  const submitBlock = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit"[\s\S]*?askAiCoach/)?.[0] || "";
+  assert.match(renderBlock, /canContinueWithoutTyping/);
+  assert.match(renderBlock, /state\.guidanceLock\?\.forceStepBuilder/);
+  assert.match(renderBlock, /!\(canAskForHelp \|\| canContinueWithoutTyping\)/);
+  assert.match(submitBlock, /if \(!reply && state\.guidanceLock\?\.forceStepBuilder\)/);
+  assert.match(submitBlock, /applyCoachFollowupAction\("next", input\)/);
+  assert.match(js, /不用打字，继续教我/);
+  assert.doesNotMatch(submitBlock, /正确答案是|答案是/);
+});
+
 test("student guidance unpacks the question goal before asking the child to explain it", () => {
   assert.match(html, /id="questionUnpackText"/);
   assert.match(html, /id="applyQuestionGoalButton"/);
@@ -1238,7 +1262,7 @@ test("student guidance starter placeholders do not pass the quality gate", () =>
 
 test("student cannot pass mastery until restatement is complete", () => {
   assert.match(html, /id="inlineCoachSubmit"/);
-  assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !canAskForHelp/);
+  assert.match(js, /\$\("inlineCoachSubmit"\)\.disabled = !quality\.ready && !\(canAskForHelp \|\| canContinueWithoutTyping\)/);
   assert.match(js, /const quality = evaluateGuidanceReplyQuality\(reply\)/);
   assert.match(js, /if \(!quality\.ready\)/);
   assert.match(js, /rescueIncompleteGuidanceReply\(reply, input\)/);

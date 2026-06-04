@@ -4163,6 +4163,7 @@ function guidanceReplyProgressText(quality = evaluateGuidanceReplyQuality()) {
 
 function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality(), lock = state.guidanceLock) {
   if (lock?.microChoiceReady) return "提交示范句检查";
+  if (lock?.forceStepBuilder && !quality.ready) return "不用打字，继续教我";
   if (quality.conceptBridgeReady) return "继续补下一句";
   if (quality.asksForHelp) return "帮我开头";
   if (quality.ready) return "提交给教练";
@@ -4216,6 +4217,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   renderGuidanceNextAction(reply, quality);
   const helperCard = $("replyHelperCard");
   const canAskForHelp = quality.asksForHelp || Boolean(String(reply || "").trim());
+  const canContinueWithoutTyping = Boolean(state.guidanceLock?.forceStepBuilder && !String(reply || "").trim());
   [
     ["qualityQuestionGoal", quality.questionGoal],
     ["qualityMethodStep", quality.methodStep],
@@ -4250,7 +4252,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
     renderGuidanceMicroChoice(state.guidanceLock, quality);
     renderConceptBridgeChoices(reply, quality, state.guidanceLock);
   }
-  $("inlineCoachSubmit").disabled = !quality.ready && !canAskForHelp;
+  $("inlineCoachSubmit").disabled = !quality.ready && !(canAskForHelp || canContinueWithoutTyping);
   $("inlineCoachSubmit").textContent = guidanceSubmitButtonText(quality, state.guidanceLock);
   renderGuidanceUnlockProgress();
 }
@@ -4797,6 +4799,9 @@ function nextStudentAction(tasks = buildDailyTasks(), tooEasyEvidence = tooEasyE
   const current = todayCompletionState(tasks);
   if (current.complete) return "今日学习已完成。可以休息，或做 1 道挑战题保持手感。";
   if (!current.nextTask) return "下一步：开始今日学习。";
+  if (tooEasyEvidence.active && tooEasyEvidence.challengeProofs > 0) {
+    return `下一步：已完成 ${tooEasyEvidence.challengeProofs} 条挑战证明，继续做学校考试深度题，并写出方法再选答案。`;
+  }
   if (tooEasyEvidence.active) return "下一步：今天题目偏容易，先做学校考试深度题，并写出方法再选答案。";
   if (current.nextTask.title.includes("总结")) return "下一步：生成今日总结。";
   if (current.nextTask.title.includes("变式")) return "下一步：完成变式验证。";
@@ -5880,12 +5885,16 @@ function studentCoachQueue({ focusSubject, stats, completion, tooEasyEvidence = 
     {
       label: "现在",
       title: tooEasyEvidence.active
-        ? `先做${focusSubject.label}学校考试深度题`
+        ? tooEasyEvidence.challengeProofs > 0
+          ? `继续完成${focusSubject.label}挑战证明`
+          : `先做${focusSubject.label}学校考试深度题`
         : needsPractice
           ? `完成 ${focusSubject.label} 当前练习`
           : "今日练习目标已达到",
       detail: tooEasyEvidence.active
-        ? "今天题目偏容易，系统会减少基础选择题；先写方法，再选答案。"
+        ? tooEasyEvidence.challengeProofs > 0
+          ? `你已完成 ${tooEasyEvidence.challengeProofs} 条挑战证明。接下来继续做学校考试深度题，先写方法，再选答案。`
+          : "今天题目偏容易，系统会减少基础选择题；先写方法，再选答案。"
         : needsPractice
           ? `还差 ${Math.max(0, target - answered)} 题。先独立作答，不确定就标记“猜的”。`
           : "可以进入错题复盘或生成今日总结。",
@@ -7728,6 +7737,10 @@ function bindEvents() {
     if (!hasActiveGuidanceLock()) return;
     const input = $("inlineCoachReply");
     const reply = input.value.trim();
+    if (!reply && state.guidanceLock?.forceStepBuilder) {
+      applyCoachFollowupAction("next", input);
+      return;
+    }
     if (!reply) return;
     const typedMicroChoice = typedGuidanceMicroChoiceIndex(reply, state.guidanceLock);
     if (typedMicroChoice !== null) {

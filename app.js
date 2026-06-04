@@ -6791,6 +6791,15 @@ function coachHistoryAlreadyUsed(history = [], pattern) {
   return history.some((message) => message.role === "coach" && pattern.test(String(message.text || "")));
 }
 
+function localRepeatedStuckCount(history = [], currentReply = "") {
+  const stuckPattern = /不知道|不会|不懂|打不出来|说不出来|写不出来|知识点没吃透|没思路|idk|stuck/i;
+  const recentStudentReplies = history
+    .filter((message) => message.role === "student")
+    .map((message) => String(message.text || ""))
+    .slice(-3);
+  return recentStudentReplies.concat(String(currentReply || "")).filter((text) => stuckPattern.test(text)).length;
+}
+
 async function askAiCoach(studentReply, history = state.chatHistory) {
   const question = activeQuestions()[state.currentQuestion];
   const payload = {
@@ -6867,6 +6876,7 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
   const gap = coachingGapForReply(rawReply);
   const repeatedAnswerPrompt = coachHistoryAlreadyUsed(history, /第一步看____|只写了答案|答案字母/);
   const repeatedReasonPrompt = coachHistoryAlreadyUsed(history, /原因说明不完整|为什么这一步|用这句补完整/);
+  const repeatedStuckCount = localRepeatedStuckCount(history, rawReply);
 
   if (/^[a-d]$|^选\s*[a-d]$|^choose\s*[a-d]$/i.test(rawReply)) {
     return {
@@ -6883,6 +6893,16 @@ function buildLocalCoachReply(studentReply, history = state.chatHistory, questio
   }
 
   if (reply.length < 8 || /不知道|不会|不懂|打不出来|说不出来|写不出来|知识点没吃透|idk/.test(reply)) {
+    if (repeatedStuckCount >= 3) {
+      return {
+        reply: `${mistakePrefix}第三次卡住，我们换成非原题小例子，不再追问题目。${teachingMiniExampleForSkill(question?.skill || "")} 现在不用打完整句，只选一个动作：先看题目关键词，还是先看答案长短？`,
+      };
+    }
+    if (repeatedStuckCount >= 2) {
+      return {
+        reply: `${mistakePrefix}第二次卡住，不继续追问你“题目问什么”。直接降到不用打字的小台阶：先读老师示范句，再只补一个空。${localGapSentenceFrame(gap, question)}`,
+      };
+    }
     const stuckAction = localStuckGapTeachingAction(gap, question);
     return {
       reply: `${mistakePrefix}${stuckAction || `卡点判断：${gap.label}。小讲解：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(question?.skill || "")} 现在只做一小步：${localGapSentenceFrame(gap, question)}`}`,

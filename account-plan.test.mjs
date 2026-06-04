@@ -2152,6 +2152,7 @@ test("local student coach handles answer letters and stuck replies directly", ()
   assert.match(js, /function localGapSentenceFrame/);
   assert.match(js, /function localOneStepCoachPrompt/);
   assert.match(js, /function coachHistoryAlreadyUsed/);
+  assert.match(js, /function localRepeatedStuckCount/);
   assert.match(js, /history = state\.chatHistory/);
   assert.match(js, /const hintTurn = Math\.max/);
   assert.match(js, /缺的是/);
@@ -2166,6 +2167,20 @@ test("local student coach handles answer letters and stuck replies directly", ()
   assert.match(js, /coachingHintForTurn\(question, 1\)/);
   assert.match(js, /coachingHintForTurn\(question, 2\)/);
   assert.match(js, /buildLocalCoachReply\(reply, state\.inlineCoachHistory\)/);
+});
+
+test("local student coach changes strategy after repeated stuck replies", () => {
+  const helperBlock = js.match(/function localRepeatedStuckCount[\s\S]*?async function askAiCoach/)?.[0] || "";
+  const localBlock = js.match(/function buildLocalCoachReply[\s\S]*?function renderEmail/)?.[0] || "";
+  assert.match(helperBlock, /slice\(-3\)/);
+  assert.match(helperBlock, /知识点没吃透/);
+  assert.match(localBlock, /const repeatedStuckCount = localRepeatedStuckCount\(history, rawReply\)/);
+  assert.match(localBlock, /repeatedStuckCount >= 3/);
+  assert.match(localBlock, /第三次卡住，我们换成非原题小例子/);
+  assert.match(localBlock, /repeatedStuckCount >= 2/);
+  assert.match(localBlock, /第二次卡住，不继续追问你“题目问什么”/);
+  assert.match(localBlock, /不用打字的小台阶/);
+  assert.doesNotMatch(localBlock, /第二次卡住[\s\S]*正确答案是|第三次卡住[\s\S]*正确答案是/);
 });
 
 test("local student coach continues partial method attempts instead of restarting", () => {

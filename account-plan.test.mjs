@@ -985,6 +985,16 @@ test("student stuck on concepts gets a no-typing support card", () => {
   assert.doesNotMatch(js, /conceptSupportForLock[\s\S]*正确答案是/);
 });
 
+test("pre-answer gate gives teaching help instead of asking stuck students to invent a full thought", () => {
+  const gateBlock = js.match(/function renderPreAnswerGate[\s\S]*?function shouldEnterChallengeBoost/)?.[0] || "";
+  const answerHandler = js.match(/\$\("answerGrid"\)\.addEventListener\("click",[\s\S]*?\n  \}\);/)?.[0] || "";
+  assert.match(html, /知识点没吃透，先教我/);
+  assert.match(gateBlock, /不会写时先点“知识点没吃透，先教我”或“给我句式”/);
+  assert.match(gateBlock, /系统会先讲概念，再让你只补一个空/);
+  assert.match(answerHandler, /如果知识点没吃透，点“先教我”或“给我句式”/);
+  assert.doesNotMatch(answerHandler, /先写一句自己的解题思路，再选择答案/);
+});
+
 test("concept support lets students choose why the knowledge point is stuck", () => {
   const gapBlock = js.match(/function conceptGapChoiceForLock[\s\S]*?function renderConceptSupportCard/)?.[0] || "";
   const applyBlock = js.match(/function applyConceptGapChoice[\s\S]*?function continueConceptBridgeSentence/)?.[0] || "";
@@ -1435,7 +1445,7 @@ test("deep questions require a thought before answer choices unlock", () => {
   assert.match(js, /renderPreAnswerGate\(\)/);
   const inputHandler = js.match(/\$\("preAnswerThought"\)\.addEventListener\("input", \(event\) => \{[\s\S]*?\n  \}\);/)?.[0] || "";
   assert.doesNotMatch(inputHandler, /renderDiagnostic\(\)/);
-  assert.match(js, /先写一句自己的解题思路，再选择答案/);
+  assert.match(js, /如果知识点没吃透，点“先教我”或“给我句式”/);
   assert.match(css, /pre-answer-card/);
   assert.match(css, /locked-choice/);
 });
@@ -1450,7 +1460,7 @@ test("challenge pre-answer requires goal method reason and evidence before choic
   assert.match(js, /if \(isChallengePreAnswerQuestion\(question\)\) return quality\.hasGoal && quality\.hasMethod && quality\.hasReason && quality\.hasEvidence/);
   assert.match(js, /if \(isSchoolExamPracticeQuestion\(question\)\) return quality\.hasGoal && quality\.hasMethod && quality\.hasReason && quality\.hasEvidence/);
   assert.match(js, /isPreAnswerThoughtReady\(preAnswerThought, question\)/);
-  assert.match(js, /写清题目目标、第一步、原因和题目证据/);
+  assert.match(js, /系统会先讲概念，再让你只补一个空/);
 });
 
 test("challenge pre-answer gives a live writing checklist before answer choices unlock", () => {
@@ -1481,7 +1491,7 @@ test("challenge pre-answer offers non-answer starters so students are not stuck 
   assert.match(js, /function preAnswerStarterText/);
   assert.match(js, /function applyPreAnswerStarter/);
   assert.match(js, /data-pre-answer-starter/);
-  assert.match(js, /如果不会写，就先点一个句式按钮/);
+  assert.match(js, /系统会先讲概念，再让你只补一个空/);
   assert.match(starterBlock, /kind === "concept"/);
   assert.match(starterBlock, /conceptMiniLesson/);
   assert.match(starterBlock, /localStudentFriendlyConceptLine/);
@@ -1613,6 +1623,20 @@ test("school verification skips wrong-answer diagnosis so correct students are n
   const answerHandler = js.match(/\$\("answerGrid"\)\.addEventListener\("click",[\s\S]*?\n  \}\);/)?.[0] || "";
   assert.match(answerHandler, /if \(issue !== "school_verification"\) recordMistake/);
   assert.match(answerHandler, /if \(issue !== "school_verification"\) requestCoachFeedbackForGuidance/);
+});
+
+test("correct depth answers require strong method proof before moving on", () => {
+  const answerHandler = js.match(/\$\("answerGrid"\)\.addEventListener\("click",[\s\S]*?\n  \}\);/)?.[0] || "";
+  const verificationBlock = js.match(/function needsCorrectAnswerMethodVerification[\s\S]*?function preAnswerStarterText/)?.[0] || "";
+  assert.match(js, /function needsCorrectAnswerMethodVerification/);
+  assert.match(verificationBlock, /methodProofQualityForQuestion\(question, index\)/);
+  assert.match(verificationBlock, /isSchoolExamPracticeQuestion\(question\)/);
+  assert.match(verificationBlock, /isChallengePreAnswerQuestion\(question\)/);
+  assert.match(verificationBlock, /return !proof\.strong/);
+  assert.match(js, /if \(needsCorrectAnswerMethodVerification\(question, state\.currentQuestion, confidence\)\) return "school_verification"/);
+  assert.match(answerHandler, /const issue = shouldStartGuidance\(selectedIndex, question, confidence\)/);
+  assert.match(js, /你选对了，但方法证明还不够完整/);
+  assert.doesNotMatch(verificationBlock + answerHandler, /正确答案是|答案是/);
 });
 
 test("high-performing students are routed to explanation-first challenge questions", () => {

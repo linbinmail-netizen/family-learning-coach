@@ -3155,6 +3155,7 @@ function lessonMasteryStatus(skill, score) {
 function shouldStartGuidance(selectedIndex, question, confidence) {
   if (selectedIndex !== question.correct) return "answer";
   if (confidence !== "sure") return "confidence";
+  if (needsCorrectAnswerMethodVerification(question, state.currentQuestion, confidence)) return "school_verification";
   if (isObviousEasyCorrect(question, selectedIndex, confidence)) return "school_verification";
   if (needsSchoolLevelVerification(question, confidence)) return "school_verification";
   return "";
@@ -3362,7 +3363,7 @@ function requestVariantReteach() {
 function guidanceIssueText(issue) {
   if (issue === "answer") return "答案还不对，先回到题干和关键词。";
   if (issue === "confidence") return "你选择了不确定或猜测，我们用一道变式题确认你真的会了。";
-  if (issue === "school_verification") return "这题做得很快，系统加一道学校考试式验证：请证明你不是靠选项猜对。";
+  if (issue === "school_verification") return "你选对了，但方法证明还不够完整；系统加一道学校考试式验证，确认不是靠选项猜对。";
   return "需要先完成引导。";
 }
 
@@ -4888,6 +4889,19 @@ function methodProofQualityForQuestion(question = activeQuestions()[state.curren
   };
 }
 
+function needsCorrectAnswerMethodVerification(question = activeQuestions()[state.currentQuestion], index = state.currentQuestion, confidence = "sure") {
+  if (confidence !== "sure") return false;
+  const needsProof = Boolean(
+    manualTooEasyChallenge(question)
+    || isSchoolExamPracticeQuestion(question)
+    || isChallengePreAnswerQuestion(question)
+    || questionLearningDepthScore(question) >= 42
+  );
+  if (!needsProof) return false;
+  const proof = methodProofQualityForQuestion(question, index);
+  return !proof.strong;
+}
+
 function preAnswerStarterText(kind = "frame", question = activeQuestions()[state.currentQuestion]) {
   const hint = coachingHintForTurn(question, 0) || question?.coachHints?.[0] || "题目里的关键词或条件";
   if (kind === "concept") {
@@ -4977,23 +4991,23 @@ function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion]
   card.classList.toggle("hidden", !needsPreAnswer);
   if (document.activeElement !== thoughtInput) thoughtInput.value = thought;
   renderPreAnswerChecklist(thought, question);
-  $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "先写一句思路，选项才会解锁。";
+  $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "不会写时先点“知识点没吃透，先教我”或“给我句式”。";
   $("preAnswerNextStep").textContent = preAnswerNextMissingStep(thought, question);
   $("preAnswerSuggestedSentence").textContent = preAnswerSuggestedSentence(thought, question);
   $("preAnswerHelp").textContent = preAnswerReady
-    ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
-    : isSchoolExamPracticeQuestion(question)
-      ? "不要写答案字母。如果不会写，就先点一个句式按钮，写清题目目标、第一步、原因和题目证据。"
+      ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
+      : isSchoolExamPracticeQuestion(question)
+      ? "不要写答案字母；知识点没吃透时先点“先教我”，系统会先讲概念，再让你只补一个空。"
       : isChallengePreAnswerQuestion(question)
-        ? "不要写答案字母。如果不会写，就先点一个句式按钮，写清题目目标、第一步、原因和题目证据。"
-        : "不要写答案字母。如果不会写，就先点一个句式按钮。";
+        ? "不要写答案字母；知识点没吃透时先点“先教我”，系统会先讲概念，再让你只补一个空。"
+        : "不要写答案字母；不会写时先点“给我句式”或“先教我”。";
   document.querySelectorAll("#answerGrid [data-answer-index]").forEach((button) => {
     button.classList.toggle("locked-choice", !preAnswerReady);
     if (!preAnswerReady) button.setAttribute("aria-disabled", "true");
     else button.removeAttribute("aria-disabled");
   });
   if (needsPreAnswer && !preAnswerReady) {
-    $("answerFeedback").textContent = "这是一道深度题。先写一句自己的解题思路，再选择答案。";
+    $("answerFeedback").textContent = "这是一道深度题。不会写时不用硬憋，先点“先教我”或“给我句式”，补一个空后再选择答案。";
   } else if (needsPreAnswer && preAnswerReady && state.selectedAnswers[state.currentQuestion] === undefined) {
     $("answerFeedback").textContent = "思路已记录。现在可以选择答案；答错后系统会讲解并引导。";
   }
@@ -7515,7 +7529,7 @@ function bindEvents() {
     }
     const preAnswerThought = state.preAnswerThoughts[progressKey] || "";
     if (requiresPreAnswerThought(question) && state.selectedAnswers[state.currentQuestion] === undefined && !isPreAnswerThoughtReady(preAnswerThought, question)) {
-      $("answerFeedback").textContent = "先写一句自己的解题思路，再选择答案。不要只写答案字母。";
+      $("answerFeedback").textContent = "先不要选答案；如果知识点没吃透，点“先教我”或“给我句式”，系统会先讲概念，再让你只补一个空。";
       $("preAnswerThought").focus();
       return;
     }

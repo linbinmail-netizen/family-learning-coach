@@ -1475,7 +1475,8 @@ test("challenge pre-answer offers non-answer starters so students are not stuck 
   assert.match(html, /data-pre-answer-starter="frame"/);
   assert.match(html, /data-pre-answer-starter="keyword"/);
   assert.match(html, /data-pre-answer-starter="concept"/);
-  assert.match(html, />先讲知识点</);
+  assert.match(html, />知识点没吃透，先教我</);
+  assert.match(html, /不会说题意时，不用硬写完整解释/);
   assert.match(js, /function preAnswerStarterText/);
   assert.match(js, /function applyPreAnswerStarter/);
   assert.match(js, /data-pre-answer-starter/);
@@ -1483,6 +1484,9 @@ test("challenge pre-answer offers non-answer starters so students are not stuck 
   assert.match(starterBlock, /kind === "concept"/);
   assert.match(starterBlock, /conceptMiniLesson/);
   assert.match(starterBlock, /localStudentFriendlyConceptLine/);
+  assert.match(starterBlock, /老师先给方法/);
+  assert.match(starterBlock, /现在只补一个空/);
+  assert.match(css, /pre-answer-bridge-note/);
   assert.match(starterBlock, /____/);
   assert.match(qualityBlock, /____/);
   assert.doesNotMatch(starterBlock, /正确答案|答案是/);

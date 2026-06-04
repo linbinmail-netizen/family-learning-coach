@@ -1039,6 +1039,14 @@ textarea {
   background: #edf6fb;
 }
 
+.pre-answer-bridge-note {
+  margin: -2px 0 0;
+  color: #456064;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .pre-answer-checklist {
   display: flex;
   flex-wrap: wrap;

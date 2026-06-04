@@ -358,6 +358,22 @@ test("AI coach prompt limits each reply to one micro step", () => {
   assert.match(text, /不要连续抛出多个问题/);
 });
 
+test("AI coach request includes a concrete reply contract", () => {
+  const request = buildTutorRequest({
+    ...baseBody,
+    studentReply: "我不懂，知识点没吃透，打不出来",
+  });
+  const text = JSON.stringify(request);
+
+  assert.match(text, /coachReplyContract/);
+  assert.match(text, /requiredFormat/);
+  assert.match(text, /卡点判断：\.\.\. 小讲解：\.\.\. 现在只做一小步：\.\.\./);
+  assert.match(text, /mustIncludeOneAction/);
+  assert.match(text, /二选一 \/ 半句填空 \/ 只补一句/);
+  assert.match(text, /If your draft does not include a fill-in, a two-choice action, or one concrete next sentence/);
+  assert.doesNotMatch(text, /正确答案是|答案是|选项\s*[A-D]/);
+});
+
 test("AI coach default first step teaches a model before asking for the question goal", () => {
   const request = buildTutorRequest({
     ...baseBody,
@@ -635,6 +651,19 @@ test("safeTutorReply rewrites abstract lectures into a concrete micro action", (
 
   assert.match(reply, /老师先示范|小讲解|现在只|只补一个空|第一步/);
   assert.doesNotMatch(reply, /本质在于理解|综合分析|推理链条|形成完整的判断/);
+});
+
+test("safeTutorReply rewrites stuck replies that lack an executable action", () => {
+  const reply = safeTutorReply("小讲解：证据要支持观点。你需要理解观点和证据之间的关系。", {
+    ...baseBody,
+    studentReply: "我不懂，知识点没吃透，打不出来",
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /老师先示范/);
+  assert.match(reply, /现在只做二选一/);
+  assert.match(reply, /半句填空/);
+  assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
 });
 
 test("safeTutorReply compresses long stuck-student lectures into one short action", () => {

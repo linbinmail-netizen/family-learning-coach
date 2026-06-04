@@ -81,6 +81,9 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (studentCannotProduce && /本质|逻辑关系|综合分析|推理链条|抽象|概念之间|形成完整|整体理解|深入理解|higher.order|conceptual/i.test(text) && !/只补一个空|现在只|第一步先|小讲解|老师先示范|填空/.test(text)) {
     return "abstract_lecture_when_stuck";
   }
+  if (studentCannotProduce && !/现在只|只补|填空|二选一|直接回\s*[AB]|我第一步先|题目里的____|这题要我判断____/.test(text)) {
+    return "missing_micro_action_when_stuck";
+  }
   if (text.length > 180) return "too_long";
   return "";
 }
@@ -88,7 +91,7 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
 export function safeTutorReply(aiReply = "", body = {}) {
   const reason = unsafeTutorReplyReason(aiReply, body);
   if (!reason) return String(aiReply || "").trim();
-  if ((reason === "too_long" || reason === "abstract_lecture_when_stuck") && cannotProduceBecauseConceptGap(body.studentReply || "")) {
+  if ((reason === "too_long" || reason === "abstract_lecture_when_stuck" || reason === "missing_micro_action_when_stuck") && cannotProduceBecauseConceptGap(body.studentReply || "")) {
     const skill = body.skill || "这个知识点";
     const shortExplanation = studentFriendlyConceptLineForApi(skill, body.subject, body.explanation);
     return `老师先示范：${shortExplanation} 现在只做二选一，直接回 A 或 B：A 看题干关键词；B 看答案长短。半句填空：这题要我判断____。`;
@@ -100,6 +103,23 @@ export function safeTutorReply(aiReply = "", body = {}) {
     return `老师先示范一个小讲解：${shortExplanation} 现在只补一个空：${gapSentenceFrame(coachingGap, body)}`;
   }
   return buildFallbackReply(body);
+}
+
+function coachReplyContract(body = {}) {
+  const gap = coachingGapAnalysis(body.studentReply || "");
+  return {
+    requiredFormat: "卡点判断：... 小讲解：... 现在只做一小步：...",
+    diagnosedGap: gap.label,
+    mustIncludeOneAction: "二选一 / 半句填空 / 只补一句",
+    forbiddenMoves: [
+      "只问题目问什么",
+      "要求完整复述",
+      "连续问多个问题",
+      "直接给答案或选项字母",
+      "只说加油或再想想",
+    ],
+    nextMicroAction: gapSentenceFrame(gap, body),
+  };
 }
 
 export function detectNeedsTeaching(studentReply = "") {
@@ -415,6 +435,7 @@ export function buildTutorRequest(body = {}) {
   const replyAnalysis = analyzeStudentReply(studentReply);
   const coachingGap = coachingGapAnalysis(studentReply);
   const sessionMemory = coachSessionMemory({ ...body, history, studentReply });
+  const replyContract = coachReplyContract({ ...body, studentReply });
   const currentStepForRequest = needsTeaching
     ? {
         ...step,
@@ -455,6 +476,8 @@ export function buildTutorRequest(body = {}) {
       "教练式讲解格式：卡点判断：... 小讲解：... 小例子：... 现在只做一小步：...",
       "Do not say Great job for incomplete or wrong reasoning; name the missing piece kindly.",
       "Use coachSessionMemory: 延续上一轮卡点，不要重讲已经给过的同一句提示；如果 lastCoachMove 已经给过填空，就给下一小步。",
+      "Before replying, obey coachReplyContract exactly: include 卡点判断, one short 小讲解, and exactly one executable micro action.",
+      "If your draft does not include a fill-in, a two-choice action, or one concrete next sentence, rewrite it before returning.",
       "Keep the reply under 110 Chinese characters.",
       mistakeNote,
       `Current step: ${currentStepForRequest.label}. ${currentStepForRequest.instruction}`,
@@ -481,6 +504,7 @@ export function buildTutorRequest(body = {}) {
               needsTeaching,
               replyAnalysis,
               coachingGap,
+              coachReplyContract: replyContract,
               coachSessionMemory: sessionMemory,
               recentHistory: history.slice(-8),
               studentReply,

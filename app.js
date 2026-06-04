@@ -5618,6 +5618,7 @@ function raiseDifficultyOnDemand() {
     return;
   }
   const subjectId = state.subject;
+  const currentQuestion = activeQuestions()[state.currentQuestion] || {};
   const currentLevel = adaptiveLevelForSubject(subjectId);
   const nextLevel = Math.min(difficultyLevels.length - 1, currentLevel + 1);
   state.adaptiveLevels[subjectId] = nextLevel;
@@ -5626,7 +5627,8 @@ function raiseDifficultyOnDemand() {
     correctStreak: 0,
     missedStreak: 0,
     challengeBoostRemaining: 3,
-    challengeQueue: buildChallengeMissionQueue(activeQuestions()[state.currentQuestion] || {}, { correctStreak: 2 }),
+    challengeQueue: buildChallengeMissionQueue(currentQuestion, { correctStreak: 2 }),
+    challengeSkill: currentQuestion?.skill || activeDiagnostic().skills[0][0],
     lastManualBoostAt: new Date().toISOString(),
     lastManualBoostReason: "手动升难度",
   };

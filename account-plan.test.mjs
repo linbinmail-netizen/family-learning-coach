@@ -187,6 +187,18 @@ test("manual too-easy message explains same-skill depth verification", () => {
   assert.match(boostBlock, /证明不是靠选项猜对/);
 });
 
+test("manual too-easy boost stores the current skill for same-skill variant missions", () => {
+  const boostBlock = js.match(/function raiseDifficultyOnDemand[\s\S]*?function activeQuestions/)?.[0] || "";
+  const completionBlock = js.match(/function questionCompletesChallengeMission[\s\S]*?function challengeMissionCompletionNotice/)?.[0] || "";
+
+  assert.match(boostBlock, /const currentQuestion = activeQuestions\(\)\[state\.currentQuestion\] \|\| \{\}/);
+  assert.match(boostBlock, /challengeQueue: buildChallengeMissionQueue\(currentQuestion, \{ correctStreak: 2 \}\)/);
+  assert.match(boostBlock, /challengeSkill: currentQuestion\?\.skill \|\| activeDiagnostic\(\)\.skills\[0\]\[0\]/);
+  assert.match(completionBlock, /state\.adaptiveStats\[subjectId\]\?\.challengeSkill/);
+  assert.match(completionBlock, /question\.skill === previousSkill/);
+  assert.doesNotMatch(boostBlock + completionBlock, /正确答案是|答案是/);
+});
+
 test("voice coach input is available as an optional browser feature", () => {
   assert.match(html, /id="coachVoiceButton"/);
   assert.match(html, /id="inlineVoiceButton"/);

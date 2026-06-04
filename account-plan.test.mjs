@@ -509,6 +509,15 @@ test("automatic jump to a harder question explains the reason to the student", (
   assert.doesNotMatch(js, /上一题太轻松[\s\S]*正确答案是/);
 });
 
+test("automatic jump notice explains same-skill school-depth proof", () => {
+  const noticeBlock = js.match(/function advanceNoticeForNextQuestion[\s\S]*?function recordChallengeProof/)?.[0] || "";
+  assert.match(noticeBlock, /isProofCapableSchoolPractice\(nextQuestion\)/);
+  assert.match(noticeBlock, /同一个知识点/);
+  assert.match(noticeBlock, /学校考试深度题/);
+  assert.match(noticeBlock, /不是随机加难/);
+  assert.doesNotMatch(noticeBlock, /正确答案是|答案是/);
+});
+
 test("easy correct promotion explains the evidence behind the harder next question", () => {
   assert.match(js, /function adaptivePromotionEvidence/);
   assert.match(js, /答得快/);
@@ -2003,6 +2012,8 @@ test("inline guidance help names the diagnosed stuck gap", () => {
 test("student can continue after an AI message without inventing what to type", () => {
   const followupBlock = js.match(/function buildCoachFollowupReply[\s\S]*?function applyCoachFollowupAction/)?.[0] || "";
   assert.match(html, /id="coachFollowupActions"/);
+  assert.match(html, /data-coach-followup="unpack"/);
+  assert.match(html, /data-coach-followup="first-sentence"/);
   assert.match(html, /data-coach-followup="stuck"/);
   assert.match(html, /data-coach-followup="example"/);
   assert.match(html, /data-coach-followup="next"/);
@@ -2010,9 +2021,22 @@ test("student can continue after an AI message without inventing what to type", 
   assert.match(js, /function applyCoachFollowupAction/);
   assert.match(js, /coachFollowupActions"\)\.classList\.toggle\("hidden", !showActions\)/);
   assert.match(js, /appendInlineCoach\("student", "我还是没懂，请换一种讲法。"\)/);
+  assert.match(js, /appendInlineCoach\("student", "我不知道这题问什么，请先帮我拆题。"\)/);
+  assert.match(js, /appendInlineCoach\("student", "帮我填第一句。"\)/);
   assert.match(js, /appendInlineCoach\("coach", buildCoachFollowupReply/);
-  assert.match(js, /state\.guidanceLock\.replyDraft = guidanceNextSentenceForLock/);
+  assert.match(js, /guidanceNextSentenceForLock\(state\.guidanceLock, question\)/);
+  assert.match(js, /guidanceQuestionUnpackForLock\(lock, question\)/);
+  assert.match(js, /guidanceStepBuilderSentence\("goal", lock, question\)/);
   assert.match(js, /不用重新组织完整解释/);
+  assert.doesNotMatch(followupBlock, /正确答案是|答案是/);
+});
+
+test("stuck student can click scaffold actions instead of typing the question goal", () => {
+  const followupBlock = js.match(/function buildCoachFollowupReply[\s\S]*?function guidanceMicroDrillForLock/)?.[0] || "";
+  assert.match(followupBlock, /不要求你自己说“这题问什么”/);
+  assert.match(followupBlock, /我先帮你填第一句，不用凭空打字/);
+  assert.match(followupBlock, /state\.guidanceLock\.forceStepBuilder = true/);
+  assert.match(followupBlock, /stepBuilderParts/);
   assert.doesNotMatch(followupBlock, /正确答案是|答案是/);
 });
 

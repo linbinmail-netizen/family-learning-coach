@@ -2746,6 +2746,12 @@ function adaptivePromotionEvidence(adaptiveResult = {}) {
 
 function advanceNoticeForNextQuestion(nextQuestion = {}, mode = "correct", canUsePreferred = false, adaptiveResult = state.lastAdaptiveResult || {}) {
   const questionNumber = state.currentQuestion + 1;
+  if (canUsePreferred && isProofCapableSchoolPractice(nextQuestion)) {
+    const evidence = adaptivePromotionEvidence(adaptiveResult);
+    return mode === "guided"
+      ? `引导完成，系统已切到第 ${questionNumber} 题。同一个知识点继续做学校考试深度题；这不是随机加难，是证明你真的掌握。先写方法，再选答案。`
+      : `上一题太轻松，因为${evidence}，系统已切到第 ${questionNumber} 题。同一个知识点继续做学校考试深度题；这不是随机加难，是证明你不是靠选项猜对。先写方法，再选答案。`;
+  }
   if (canUsePreferred && isExplanationFirstChallenge(nextQuestion)) {
     const evidence = adaptivePromotionEvidence(adaptiveResult);
     return mode === "guided"
@@ -3561,6 +3567,12 @@ function buildCoachFollowupReply(action = "stuck", lock = state.guidanceLock, qu
   const gap = coachingGapForReply($("inlineCoachReply")?.value || lock?.replyDraft || "");
   const nextSentence = guidanceNextSentenceForLock(lock, question);
   const skill = question?.skill || activeDiagnostic().skills[0][0];
+  if (action === "unpack") {
+    return `先拆题，不要求你自己说“这题问什么”。${guidanceQuestionUnpackForLock(lock, question)} 现在只做一个选择：如果你觉得题目在考“${skill}”，点“帮我填第一句”；如果还不懂，点“换个例子”。`;
+  }
+  if (action === "first-sentence") {
+    return `我先帮你填第一句，不用凭空打字：${guidanceStepBuilderSentence("goal", lock, question)} 你只需要读一遍，再点“补下一句”或直接提交给教练检查。`;
+  }
   if (action === "example") {
     return `换个例子讲：${teachingMiniExampleForSkill(question?.skill || "")} 不用重新组织完整解释，只把这个例子的做法迁移回来：${nextSentence}`;
   }
@@ -3580,11 +3592,23 @@ function applyCoachFollowupAction(action = "stuck", input = $("inlineCoachReply"
   if (!hasActiveGuidanceLock()) return;
   const question = activeQuestions()[state.guidanceLock.questionIndex] || activeQuestions()[state.currentQuestion];
   if (action === "stuck") appendInlineCoach("student", "我还是没懂，请换一种讲法。");
+  if (action === "unpack") appendInlineCoach("student", "我不知道这题问什么，请先帮我拆题。");
+  if (action === "first-sentence") appendInlineCoach("student", "帮我填第一句。");
   if (action === "example") appendInlineCoach("student", "换个例子讲。");
   if (action === "next") appendInlineCoach("student", "只给我下一步。");
   state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
   appendInlineCoach("coach", buildCoachFollowupReply(action, state.guidanceLock, question));
-  state.guidanceLock.replyDraft = guidanceNextSentenceForLock(state.guidanceLock, question);
+  state.guidanceLock.replyDraft =
+    action === "first-sentence"
+      ? guidanceStepBuilderSentence("goal", state.guidanceLock, question)
+      : guidanceNextSentenceForLock(state.guidanceLock, question);
+  if (action === "first-sentence") {
+    state.guidanceLock.stepBuilderParts = {
+      ...(state.guidanceLock.stepBuilderParts || {}),
+      goal: state.guidanceLock.replyDraft.replace(/[。.!！]$/, ""),
+    };
+    state.guidanceLock.forceStepBuilder = true;
+  }
   if (input) {
     input.value = state.guidanceLock.replyDraft;
     input.focus();

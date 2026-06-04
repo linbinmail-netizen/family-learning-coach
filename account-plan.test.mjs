@@ -1272,11 +1272,15 @@ test("teacher model submission checks understanding before variant verification"
   const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
   assert.match(js, /teacherModelConfirmed/);
   assert.match(js, /function confirmTeacherModelUnderstanding/);
-  assert.match(js, /先确认你真的看懂了老师示范句/);
-  assert.match(js, /请把这句里的“第一步”换成自己的话/);
+  assert.match(js, /你已经选出第一步了/);
+  assert.match(js, /不用重写整句/);
+  assert.match(js, /直接点“继续补下一句”/);
+  assert.match(js, /state\.guidanceLock\.conceptBridgeReady = true/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = reply/);
   assert.match(submitHandler, /if \(state\.guidanceLock\?\.microChoiceReady && !state\.guidanceLock\?\.teacherModelConfirmed\) \{/);
   assert.match(submitHandler, /confirmTeacherModelUnderstanding\(reply, input\)/);
   assert.doesNotMatch(submitHandler, /microChoiceReady[\s\S]{0,240}transitionGuidanceToVariantImmediately/);
+  assert.doesNotMatch(js, /请把这句里的“第一步”换成自己的话/);
 });
 
 test("complete guidance restatement switches to variant immediately before remote AI returns", () => {

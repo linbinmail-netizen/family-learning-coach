@@ -4434,12 +4434,13 @@ function confirmTeacherModelUnderstanding(reply = "", input = $("inlineCoachRepl
   appendInlineCoach("student", reply);
   appendInlineCoach(
     "coach",
-    "先确认你真的看懂了老师示范句。请把这句里的“第一步”换成自己的话：我第一步先看____，因为____。"
+    "你已经选出第一步了。现在不用重写整句，也不用自己硬想怎么表达；直接点“继续补下一句”，系统会把下一句证据句接上。读懂后再提交给教练检查。"
   );
   state.guidanceLock.teacherModelConfirmed = true;
   state.guidanceLock.microChoiceReady = false;
-  state.guidanceLock.microChoiceNote = "先用自己的话改写第一步；改完再提交，系统再进入变式验证。";
-  state.guidanceLock.replyDraft = "我第一步先看____，因为____。";
+  state.guidanceLock.conceptBridgeReady = true;
+  state.guidanceLock.microChoiceNote = "你已经完成第一步选择。下一步只点“继续补下一句”，不需要重新写完整解释。";
+  state.guidanceLock.replyDraft = reply;
   input.value = state.guidanceLock.replyDraft;
   renderReplyQuality(input.value);
   saveData();

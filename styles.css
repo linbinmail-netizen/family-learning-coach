@@ -1070,6 +1070,18 @@ textarea {
   font-weight: 850;
 }
 
+.pre-answer-suggested-sentence {
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(42, 107, 84, 0.22);
+  border-radius: 8px;
+  background: #f5fbf7;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.42;
+}
+
 .question-requirement-card {
   display: grid;
   gap: 6px;

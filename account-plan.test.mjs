@@ -1500,6 +1500,20 @@ test("challenge pre-answer names the exact missing blank after a starter is inse
   assert.doesNotMatch(nextBlock, /正确答案|答案是/);
 });
 
+test("challenge pre-answer suggests the exact next sentence to write", () => {
+  const suggestionBlock = js.match(/function preAnswerSuggestedSentence[\s\S]*?function renderPreAnswerChecklist/)?.[0] || "";
+  assert.match(html, /id="preAnswerSuggestedSentence"/);
+  assert.match(js, /function preAnswerSuggestedSentence/);
+  assert.match(js, /preAnswerSuggestedSentence\(thought, question\)/);
+  assert.match(css, /pre-answer-suggested-sentence/);
+  assert.match(suggestionBlock, /这题要我判断 \$\{skill\} 里的____/);
+  assert.match(suggestionBlock, /我第一步先看 \$\{hint\}/);
+  assert.match(suggestionBlock, /因为这一步能帮我把题目要求和方法连起来/);
+  assert.match(suggestionBlock, /题目里的____说明我的方法是合理的/);
+  assert.match(suggestionBlock, /方法证明已够完整，可以先选择答案/);
+  assert.doesNotMatch(suggestionBlock, /正确答案是|答案是|选项\s*[A-D]/);
+});
+
 test("challenge pre-answer keyword starter cannot unlock choices without student-specific content", () => {
   const starterBlock = js.match(/function preAnswerStarterText[\s\S]*?function applyPreAnswerStarter/)?.[0] || "";
   const qualityBlock = js.match(/function preAnswerThoughtQuality[\s\S]*?function isChallengePreAnswerQuestion/)?.[0] || "";

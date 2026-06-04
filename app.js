@@ -4936,6 +4936,19 @@ function preAnswerNextMissingStep(thought = "", question = activeQuestions()[sta
   return "下一步：把句子写具体一点，再选择答案。";
 }
 
+function preAnswerSuggestedSentence(thought = "", question = activeQuestions()[state.currentQuestion]) {
+  const quality = preAnswerThoughtQuality(thought);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const hint = coachingHintForTurn(question, 0) || question?.coachHints?.[0] || "题目里的关键词或条件";
+  const needsProof = isSchoolExamPracticeQuestion(question) || isChallengePreAnswerQuestion(question) || manualTooEasyChallenge(question);
+  if (isPreAnswerThoughtReady(thought, question)) return "建议补这一句：方法证明已够完整，可以先选择答案。";
+  if (!quality.hasGoal) return `建议补这一句：这题要我判断 ${skill} 里的____。`;
+  if (!quality.hasMethod) return `建议补这一句：我第一步先看 ${hint}。`;
+  if (needsProof && !quality.hasReason) return "建议补这一句：因为这一步能帮我把题目要求和方法连起来。";
+  if (needsProof && !quality.hasEvidence) return "建议补这一句：题目里的____说明我的方法是合理的。";
+  return "建议补这一句：我还需要把题目里的具体关键词或条件写出来。";
+}
+
 function renderPreAnswerChecklist(thought = "", question = activeQuestions()[state.currentQuestion]) {
   const quality = preAnswerThoughtQuality(thought);
   const needsReason = isSchoolExamPracticeQuestion(question) || isChallengePreAnswerQuestion(question) || manualTooEasyChallenge(question);
@@ -4964,6 +4977,7 @@ function renderPreAnswerGate(question = activeQuestions()[state.currentQuestion]
   renderPreAnswerChecklist(thought, question);
   $("preAnswerStatus").textContent = preAnswerReady ? "思路已记录，选项已解锁。" : "先写一句思路，选项才会解锁。";
   $("preAnswerNextStep").textContent = preAnswerNextMissingStep(thought, question);
+  $("preAnswerSuggestedSentence").textContent = preAnswerSuggestedSentence(thought, question);
   $("preAnswerHelp").textContent = preAnswerReady
     ? "现在可以选择答案；如果不确定，选择“不确定/猜的”，系统会引导。"
     : isSchoolExamPracticeQuestion(question)

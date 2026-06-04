@@ -870,9 +870,21 @@ test("student can build a method sentence by tapping smaller guidance steps", ()
 test("micro choice selection clearly moves the student into submit-ready guidance", () => {
   assert.match(js, /state\.guidanceLock\.microChoiceReady = true/);
   assert.match(js, /已帮你写好一个小步骤，可以直接提交给教练检查。/);
-  assert.match(js, /state\.guidanceLock\?\.microChoiceReady && quality\.ready/);
+  assert.match(js, /if \(lock\?\.microChoiceReady\) return "提交示范句检查"/);
+  assert.match(js, /state\.guidanceLock\?\.microChoiceReady/);
   assert.match(js, /已帮你写好一个小步骤，可以直接提交给教练检查。/);
   assert.match(js, /\$\("inlineCoachSubmit"\)\.focus\(\)/);
+});
+
+test("micro choice confirmation runs before incomplete-reply rescue", () => {
+  const submitHandler = js.match(/\$\("inlineCoachForm"\)\.addEventListener\("submit",[\s\S]*?\$\("inlineCoachReply"\)\.addEventListener/)?.[0] || "";
+  const microConfirmIndex = submitHandler.indexOf("confirmTeacherModelUnderstanding(reply, input)");
+  const rescueIndex = submitHandler.indexOf("rescueIncompleteGuidanceReply(reply, input)", submitHandler.indexOf("if (!quality.ready)"));
+  assert.ok(microConfirmIndex >= 0, "micro choice should confirm understanding");
+  assert.ok(rescueIndex >= 0, "incomplete replies should still have rescue");
+  assert.ok(microConfirmIndex < rescueIndex, "micro choice should not be blocked by incomplete-reply rescue");
+  assert.match(submitHandler, /if \(state\.guidanceLock\?\.microChoiceReady && !state\.guidanceLock\?\.teacherModelConfirmed\) \{/);
+  assert.doesNotMatch(submitHandler, /confirmTeacherModelUnderstanding[\s\S]*正确答案是/);
 });
 
 test("micro choice trap selections become teachable misconception feedback", () => {

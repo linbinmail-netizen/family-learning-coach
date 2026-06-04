@@ -4162,7 +4162,7 @@ function guidanceReplyProgressText(quality = evaluateGuidanceReplyQuality()) {
 }
 
 function guidanceSubmitButtonText(quality = evaluateGuidanceReplyQuality(), lock = state.guidanceLock) {
-  if (lock?.microChoiceReady && quality.ready) return "提交示范句检查";
+  if (lock?.microChoiceReady) return "提交示范句检查";
   if (quality.conceptBridgeReady) return "继续补下一句";
   if (quality.asksForHelp) return "帮我开头";
   if (quality.ready) return "提交给教练";
@@ -4233,7 +4233,7 @@ function renderReplyQuality(reply = $("inlineCoachReply")?.value || "") {
   ].filter(Boolean);
   const starter = guidanceReplyStarterForLock(state.guidanceLock);
   $("replyQualityStatus").textContent =
-    state.guidanceLock?.microChoiceReady && quality.ready
+    state.guidanceLock?.microChoiceReady
       ? state.guidanceLock.microChoiceNote || "已帮你写好一个小步骤，可以直接提交给教练检查。"
       : quality.ready
         ? "这句方法比较完整，可以提交给 AI 教练检查。"
@@ -7736,16 +7736,16 @@ function bindEvents() {
       continueConceptBridgeSentence(input);
       return;
     }
+    if (state.guidanceLock?.microChoiceReady && !state.guidanceLock?.teacherModelConfirmed) {
+      confirmTeacherModelUnderstanding(reply, input);
+      return;
+    }
     if (quality.asksForHelp) {
       rescueIncompleteGuidanceReply(reply, input);
       return;
     }
     if (!quality.ready) {
       rescueIncompleteGuidanceReply(reply, input);
-      return;
-    }
-    if (state.guidanceLock?.microChoiceReady && !state.guidanceLock?.teacherModelConfirmed) {
-      confirmTeacherModelUnderstanding(reply, input);
       return;
     }
     appendInlineCoach("student", reply);

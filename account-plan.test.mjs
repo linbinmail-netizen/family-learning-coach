@@ -2007,6 +2007,17 @@ test("student can continue after an AI message without inventing what to type", 
   assert.doesNotMatch(followupBlock, /正确答案是|答案是/);
 });
 
+test("coach follow-up buttons switch teaching style after repeated stuck clicks", () => {
+  const followupBlock = js.match(/function buildCoachFollowupReply[\s\S]*?function applyCoachFollowupAction/)?.[0] || "";
+  assert.match(followupBlock, /guidanceNeedsWorkedMiniExample\(lock\)/);
+  assert.match(followupBlock, /thirdStuckMiniExampleRescue\(lock, question/);
+  assert.match(followupBlock, /guidanceNeedsLowerStep\(lock\)/);
+  assert.match(followupBlock, /repeatedStuckAlternativeExplanation\(lock, question/);
+  assert.match(followupBlock, /只给下一步/);
+  assert.match(followupBlock, /不用重新组织完整解释/);
+  assert.doesNotMatch(followupBlock, /正确答案是|答案是/);
+});
+
 test("local student coach handles answer letters and stuck replies directly", () => {
   assert.match(js, /function buildLocalCoachReply/);
   assert.match(js, /function coachingGapForReply/);

@@ -3551,11 +3551,18 @@ function renderCoachFollowupActions(lock = state.guidanceLock) {
 function buildCoachFollowupReply(action = "stuck", lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
   const gap = coachingGapForReply($("inlineCoachReply")?.value || lock?.replyDraft || "");
   const nextSentence = guidanceNextSentenceForLock(lock, question);
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
   if (action === "example") {
     return `换个例子讲：${teachingMiniExampleForSkill(question?.skill || "")} 不用重新组织完整解释，只把这个例子的做法迁移回来：${nextSentence}`;
   }
   if (action === "next") {
     return `只给下一步：${gap.next} 不用重新组织完整解释，直接补这一句：${nextSentence}`;
+  }
+  if (guidanceNeedsWorkedMiniExample(lock)) {
+    return thirdStuckMiniExampleRescue(lock, question, skill);
+  }
+  if (guidanceNeedsLowerStep(lock)) {
+    return repeatedStuckAlternativeExplanation(lock, question, skill);
   }
   return `我知道你还是没懂。卡点判断：${gap.label}。小讲解：${localStudentFriendlyConceptLine(question)} 不用重新组织完整解释，现在只补一个空：${nextSentence}`;
 }
@@ -3566,8 +3573,8 @@ function applyCoachFollowupAction(action = "stuck", input = $("inlineCoachReply"
   if (action === "stuck") appendInlineCoach("student", "我还是没懂，请换一种讲法。");
   if (action === "example") appendInlineCoach("student", "换个例子讲。");
   if (action === "next") appendInlineCoach("student", "只给我下一步。");
-  appendInlineCoach("coach", buildCoachFollowupReply(action, state.guidanceLock, question));
   state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+  appendInlineCoach("coach", buildCoachFollowupReply(action, state.guidanceLock, question));
   state.guidanceLock.replyDraft = guidanceNextSentenceForLock(state.guidanceLock, question);
   if (input) {
     input.value = state.guidanceLock.replyDraft;

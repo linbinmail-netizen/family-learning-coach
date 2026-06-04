@@ -696,6 +696,23 @@ test("safeTutorReply rewrites scaffolded replies that still ask too many questio
   assert.doesNotMatch(reply, /这题问什么？关键词是什么？为什么这个证据有用/);
 });
 
+test("safeTutorReply rewrites repeated coach moves into the next smaller step", () => {
+  const repeatedMove = "卡点判断：题意没拆开。小讲解：证据要支持观点。现在只做一小步：这题要我判断____。";
+  const reply = safeTutorReply(repeatedMove, {
+    ...baseBody,
+    studentReply: "还是不会，知识点没吃透，打不出来",
+    history: [
+      { role: "student", text: "我不会，知识点没吃透" },
+      { role: "coach", text: repeatedMove },
+    ],
+    explanation: "Evidence should support a claim or central idea, so identify that idea first.",
+  });
+
+  assert.match(reply, /延续刚才的卡点|下一小步|换一种讲法|任务再降一级/);
+  assert.doesNotMatch(reply, new RegExp(repeatedMove.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.doesNotMatch(reply, /正确答案|答案是|选项\s*[A-D]/);
+});
+
 test("buildMasteryEvaluationRequest grades open explanations without revealing answers", () => {
   const request = buildMasteryEvaluationRequest({
     ...baseBody,

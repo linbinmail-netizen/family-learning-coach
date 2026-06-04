@@ -84,6 +84,7 @@ export function unsafeTutorReplyReason(reply = "", body = {}) {
   if (studentCannotProduce && !/现在只|只补|填空|二选一|直接回\s*[AB]|我第一步先|题目里的____|这题要我判断____/.test(text)) {
     return "missing_micro_action_when_stuck";
   }
+  if (repeatsRecentCoachMove(text, body)) return "repeats_recent_coach_move";
   if (text.length > 180) return "too_long";
   return "";
 }
@@ -120,6 +121,28 @@ function coachReplyContract(body = {}) {
     ],
     nextMicroAction: gapSentenceFrame(gap, body),
   };
+}
+
+function normalizeCoachMove(text = "") {
+  return String(text || "")
+    .replace(/\s+/g, "")
+    .replace(/[，。！？、,.!?;；:："'“”‘’]/g, "")
+    .toLowerCase();
+}
+
+function repeatsRecentCoachMove(reply = "", body = {}) {
+  const normalizedReply = normalizeCoachMove(reply);
+  if (normalizedReply.length < 16) return false;
+  const recentCoachMoves = (body.history || [])
+    .filter((message) => message.role === "coach")
+    .map((message) => normalizeCoachMove(message.text || ""))
+    .filter((text) => text.length >= 16)
+    .slice(-2);
+  return recentCoachMoves.some((move) => {
+    const shorter = move.length < normalizedReply.length ? move : normalizedReply;
+    const longer = move.length < normalizedReply.length ? normalizedReply : move;
+    return longer.includes(shorter) || shorter.includes(longer.slice(0, Math.min(longer.length, 34)));
+  });
 }
 
 export function detectNeedsTeaching(studentReply = "") {

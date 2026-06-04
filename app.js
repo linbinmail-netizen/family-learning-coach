@@ -6179,7 +6179,7 @@ function renderDiagnostic() {
   if (locked) {
     $("answerFeedback").textContent = "这题还在 AI 引导中。完成讲解和变式验证后，下一题会自动解锁。";
   } else if (needsPreAnswer && !preAnswerReady) {
-    $("answerFeedback").textContent = "这是一道深度题。先写一句自己的解题思路，再选择答案。";
+    $("answerFeedback").textContent = "这是一道深度题。不会写时不用硬憋，先点“先教我”或“给我句式”，补一个空后再选择答案。";
   } else if (selectedAnswer === undefined) {
     $("answerFeedback").textContent =
       state.lastAdvanceNotice || "先独立作答。不会、不确定或猜的，提交后系统再讲解和引导。";
@@ -6286,10 +6286,11 @@ function difficultyCoachState(question = activeQuestions()[state.currentQuestion
   const currentLevel = difficultyLevels[adaptiveLevel] || "中等";
   const questionType = questionTypeLabel(question);
   if (challengeMode) {
+    const evidence = adaptivePromotionEvidence(state.lastAdaptiveResult || { isCorrect: true, challengeMode: true });
     return {
       level: `${currentLevel} · 挑战模式`,
-      reason: "答得太顺或手动升难度，系统正在确认你是否真的掌握。",
-      next: "前 6 题会穿插至少 2 道深度题；下一题会优先安排解释型或学校考试深度题，需要写清方法和原因。",
+      reason: `因为${evidence}，系统正在确认你是否真的掌握，不是随机加难。`,
+      next: "下一步优先安排开放解释、错因分析或多步推理题；需要写清第一步、原因和题目证据。",
     };
   }
   if ((stats.correctStreak || 0) >= 1 && adaptiveLevel >= 2) {

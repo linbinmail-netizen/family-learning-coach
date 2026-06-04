@@ -1414,7 +1414,8 @@ test("diagnostic teaches first and only triggers guided mastery when needed", ()
   assert.match(js, /function requiresPreAnswerThought/);
   assert.match(js, /function isPreAnswerThoughtReady/);
   assert.match(js, /function renderPreAnswerGate/);
-  assert.match(js, /先写一句自己的解题思路/);
+  assert.match(js, /不会写时不用硬憋/);
+  assert.match(js, /先点“先教我”或“给我句式”/);
   assert.match(js, /locked-choice/);
   assert.match(js, /guidanceLock/);
   assert.match(js, /conceptMiniLesson/);
@@ -1686,6 +1687,22 @@ test("difficulty coach uses missed streak to steady students after mistakes", ()
   assert.match(coachBlock, /先稳住/);
   assert.match(coachBlock, /先补概念再升难度/);
   assert.doesNotMatch(coachBlock, /stats\.wrongStreak/);
+});
+
+test("challenge difficulty coach names evidence and written reasoning target", () => {
+  const coachBlock = js.match(/function difficultyCoachState[\s\S]*?function renderDifficultyCoachCard/)?.[0] || "";
+  assert.match(coachBlock, /adaptivePromotionEvidence\(state\.lastAdaptiveResult/);
+  assert.match(coachBlock, /因为\$\{evidence\}/);
+  assert.match(coachBlock, /不是随机加难/);
+  assert.match(coachBlock, /开放解释、错因分析或多步推理题/);
+  assert.match(coachBlock, /第一步、原因和题目证据/);
+});
+
+test("deep pre-answer feedback offers scaffolds instead of telling students to invent thoughts", () => {
+  const renderBlock = js.match(/function renderDiagnostic[\s\S]*?function studentNextStepState/)?.[0] || "";
+  assert.match(renderBlock, /不会写时不用硬憋/);
+  assert.match(renderBlock, /先点“先教我”或“给我句式”/);
+  assert.doesNotMatch(renderBlock, /先写一句自己的解题思路，再选择答案/);
 });
 
 test("high-performing students get same-skill explanation challenges before unrelated hard questions", () => {

@@ -810,7 +810,8 @@ test("student guidance offers a two-choice micro task when writing is hard", () 
   assert.match(js, /renderGuidanceMicroChoice/);
   assert.match(js, /applyGuidanceMicroChoice/);
   assert.match(js, /const card = \$\("replyMicroChoiceCard"\)/);
-  assert.match(js, /card\.classList\.toggle\("hidden", quality\.ready\)/);
+  assert.match(js, /const showMicroChoice = !quality\.ready \|\| quality\.asksForHelp \|\| Boolean\(lock\.forceStepBuilder\)/);
+  assert.match(js, /card\.classList\.toggle\("hidden", !showMicroChoice\)/);
   assert.match(js, /choice\.sentence/);
   assert.match(css, /micro-choice-card/);
 });
@@ -909,7 +910,7 @@ test("student stuck replies can submit for rescue instead of staying blocked", (
   assert.match(js, /function buildConceptBridgeMove/);
   assert.match(submitHandler, /rescueIncompleteGuidanceReply\(reply, input\)/);
   assert.match(js, /state\.guidanceLock\.microDrill = guidanceMicroDrillForLock\(state\.guidanceLock\)/);
-  assert.match(js, /state\.guidanceLock\.replyDraft = teachFirstLadderDraft\(reply, state\.guidanceLock\)/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = guidanceCannotProduceThought\(reply\) \? "" : teachFirstLadderDraft\(reply, state\.guidanceLock\)/);
   assert.match(js, /input\.value = state\.guidanceLock\.replyDraft/);
   assert.match(js, /renderReplyQuality\(input\.value\)/);
   assert.doesNotMatch(stuckBranch, /guidanceReplyStarterForLock/);
@@ -922,7 +923,8 @@ test("knowledge gap replies immediately lower to a teach-first ladder", () => {
   assert.match(js, /guidanceCannotProduceThought\(reply\) \|\| quality\.asksForHelp/);
   assert.match(js, /state\.guidanceLock\.forceStepBuilder = shouldUseTeachFirstLadder\(reply, state\.guidanceLock\)/);
   assert.match(js, /state\.guidanceLock\.stepBuilderParts = \{ goal: guidanceStepBuilderSentence\("goal", state\.guidanceLock\) \}/);
-  assert.match(js, /我先帮你写好第一小句/);
+  assert.match(js, /直接点按钮或回 A\/B/);
+  assert.match(js, /选完后系统再帮你补第一小句/);
   assert.match(js, /不要先打完整思路/);
   assert.doesNotMatch(js, /teachFirstLadderDraft[\s\S]*正确答案是/);
 });
@@ -1086,15 +1088,14 @@ test("child quote about not being able to type routes to teacher-first bridge", 
   assert.doesNotMatch(js, /teacherFirstBridgeForMetaComplaint[\s\S]*正确答案是/);
 });
 
-test("cannot-produce replies auto-fill a teacher model instead of asking for more typing", () => {
+test("cannot-produce replies show a two-choice bridge instead of auto-submitting a full model", () => {
   assert.match(js, /guidanceCannotProduceThought\(reply\)/);
-  assert.match(js, /state\.guidanceLock\.replyDraft = guidanceTeacherModelForLock\(state\.guidanceLock\)/);
-  assert.match(js, /state\.guidanceLock\.microChoiceReady = true/);
-  assert.match(js, /先把老师示范句读一遍/);
-  assert.match(js, /不用再写完整解释/);
-  assert.match(js, /lock\?\.microChoiceReady/);
-  assert.match(js, /提交示范句检查/);
-  assert.match(js, /直接点“提交示范句检查”/);
+  assert.match(js, /state\.guidanceLock\.replyDraft = ""/);
+  assert.match(js, /state\.guidanceLock\.microChoiceReady = false/);
+  assert.match(js, /直接点二选一按钮/);
+  assert.match(js, /只打 A \/ B/);
+  assert.match(js, /选完后系统再帮你补第一小句/);
+  assert.match(js, /renderGuidanceMicroChoice/);
   assert.doesNotMatch(js, /guidanceCannotProduceThought\(reply\)[\s\S]*正确答案是/);
 });
 
@@ -1703,6 +1704,28 @@ test("deep pre-answer feedback offers scaffolds instead of telling students to i
   assert.match(renderBlock, /不会写时不用硬憋/);
   assert.match(renderBlock, /先点“先教我”或“给我句式”/);
   assert.doesNotMatch(renderBlock, /先写一句自己的解题思路，再选择答案/);
+});
+
+test("guided mastery follow-up prioritizes same-skill written depth practice", () => {
+  const guidedBlock = js.match(/function guidedFollowupQuestionIndex[\s\S]*?function challengeMissionPreferredQuestion/)?.[0] || "";
+  const completeBlock = js.match(/function completeGuidedMastery[\s\S]*?function resetDiagnosticProgress/)?.[0] || "";
+  assert.match(js, /function guidedFollowupQuestionIndex/);
+  assert.match(completeBlock, /guidedFollowupQuestionIndex\(activeQuestions\(\), state\.guidanceLock\.questionIndex/);
+  assert.match(guidedBlock, /question\.skill === currentSkill/);
+  assert.match(guidedBlock, /isProofCapableSchoolPractice\(question\)/);
+  assert.match(guidedBlock, /isExplanationFirstChallenge\(question\)/);
+  assert.match(guidedBlock, /question\.errorAnalysis/);
+  assert.match(guidedBlock, /question\.multiStepReasoning/);
+  assert.match(guidedBlock, /nextAdaptiveQuestionIndex\(questions, answeredIndex, adaptiveResult\)/);
+  assert.doesNotMatch(guidedBlock, /正确答案是|答案是/);
+});
+
+test("school-depth challenge mission prefers the same skill before jumping elsewhere", () => {
+  const challengeBlock = js.match(/function challengeMissionPreferredQuestion[\s\S]*?function questionCompletesChallengeMission/)?.[0] || "";
+  assert.match(challengeBlock, /queueHead\.label === "学校考试深度题"/);
+  assert.match(challengeBlock, /question\.skill === currentSkill && isProofCapableSchoolPractice\(question\)/);
+  assert.match(challengeBlock, /\|\| ranked\.find\(\(\{ question \}\) => isProofCapableSchoolPractice\(question\)\)/);
+  assert.doesNotMatch(challengeBlock, /正确答案是|答案是/);
 });
 
 test("high-performing students get same-skill explanation challenges before unrelated hard questions", () => {

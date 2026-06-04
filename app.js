@@ -2686,6 +2686,45 @@ function nextAdaptiveQuestionIndex(questions = activeQuestions(), answeredIndex 
   return unanswered.find(({ index }) => index > answeredIndex)?.index ?? unanswered[0].index;
 }
 
+function guidedFollowupQuestionIndex(questions = activeQuestions(), answeredIndex = state.currentQuestion, adaptiveResult = {}) {
+  const currentSkill = questions[answeredIndex]?.skill || "";
+  const unanswered = questions
+    .map((question, index) => ({ question, index }))
+    .filter(({ question, index }) => index !== answeredIndex && state.selectedAnswers[index] === undefined && !hasAnsweredQuestion(question));
+  if (!unanswered.length) return -1;
+
+  const sameSkillWritten = unanswered
+    .filter(({ question }) =>
+      question.skill === currentSkill
+      && (
+        isProofCapableSchoolPractice(question)
+        || isExplanationFirstChallenge(question)
+        || question.errorAnalysis
+        || question.multiStepReasoning
+        || question.openResponse
+        || question.constructedResponse
+      )
+    )
+    .sort(
+      (a, b) =>
+        questionExamDepthScore(b.question) - questionExamDepthScore(a.question)
+        || questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
+        || difficultyScore(b.question.difficulty) - difficultyScore(a.question.difficulty)
+    )[0];
+  if (sameSkillWritten) return sameSkillWritten.index;
+
+  const sameSkillDepth = unanswered
+    .filter(({ question }) => question.skill === currentSkill && isDepthPracticeQuestion(question))
+    .sort(
+      (a, b) =>
+        questionLearningDepthScore(b.question) - questionLearningDepthScore(a.question)
+        || difficultyScore(b.question.difficulty) - difficultyScore(a.question.difficulty)
+    )[0];
+  if (sameSkillDepth) return sameSkillDepth.index;
+
+  return nextAdaptiveQuestionIndex(questions, answeredIndex, adaptiveResult);
+}
+
 function challengeMissionPreferredQuestion(unanswered = [], challengeQueue = [], targetLevel = adaptiveLevelForSubject()) {
   const queueHead = challengeQueue[0] || {};
   const currentSkill = activeQuestions()[state.currentQuestion]?.skill || "";
@@ -2705,7 +2744,8 @@ function challengeMissionPreferredQuestion(unanswered = [], challengeQueue = [],
     return sameSkillExplanation || ranked.find(({ question }) => question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning);
   }
   if (queueHead.label === "学校考试深度题") {
-    return ranked.find(({ question }) => isProofCapableSchoolPractice(question));
+    return ranked.find(({ question }) => question.skill === currentSkill && isProofCapableSchoolPractice(question))
+      || ranked.find(({ question }) => isProofCapableSchoolPractice(question));
   }
   if (queueHead.label === "同技能变式题") {
     return ranked.find(({ question }) => question.skill === currentSkill && isDepthPracticeQuestion(question));
@@ -3690,7 +3730,8 @@ function renderGuidanceMicroChoice(lock = state.guidanceLock, quality = evaluate
   const card = $("replyMicroChoiceCard");
   if (!card || !lock) return;
   const micro = guidanceMicroChoiceForLock(lock);
-  card.classList.toggle("hidden", quality.ready);
+  const showMicroChoice = !quality.ready || quality.asksForHelp || Boolean(lock.forceStepBuilder);
+  card.classList.toggle("hidden", !showMicroChoice);
   $("replyMicroChoicePrompt").textContent = micro.prompt;
   card.querySelectorAll("[data-micro-choice]").forEach((button) => {
     const choice = micro.choices[Number(button.dataset.microChoice)] || micro.choices[0];
@@ -4337,7 +4378,7 @@ function buildConceptBridgeMove(reply = "", lock = state.guidanceLock) {
     return repeatedStuckAlternativeExplanation(lock, question, skill);
   }
   if (guidanceCannotProduceThought(reply)) {
-    return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，不会表达不是问题，不用先证明自己会说。老师先说给你听：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 你只需要选一个按钮或补一个空，可直接点按钮，不用打字。二选一先判断：先看题干关键词，还是先看答案长短？我先帮你写好第一小句：${guidanceStepBuilderSentence("goal", lock, question)}`;
+    return `你说得对，别人知识点没吃透时，人家也打不出来。不要先打完整思路，不会表达不是问题，不用先证明自己会说。老师先说给你听：${localStudentFriendlyConceptLine(question)} 小例子：${teachingMiniExampleForSkill(skill)} 现在不要求你写完整解释；只做一个二选一，直接点按钮或回 A/B：先看题干关键词，还是先看答案长短？A 先看题干关键词、条件或证据；B 先看答案长短。选完后系统再帮你补第一小句。`;
   }
   return `你说得对，知识点没吃透时确实很难自己说题意，也会打不出来、说不出来。先教会，再让你只答一小步，不用自己组织完整答案。老师先示范怎么拆题：1. 题目要判断 ${skill}；2. 第一眼看关键词或条件；3. 用二选一或填空说出第一步。小讲解：${skill} 这类题先抓“题目要判断什么”和“第一步看什么”。小例子：${teachingMiniExampleForSkill(skill)} 现在只补${missing}：${microDrill.starter}`;
 }
@@ -4355,16 +4396,16 @@ function rescueIncompleteGuidanceReply(reply = "", input = $("inlineCoachReply")
     state.guidanceLock.recommendedSupportAction = guidanceCannotProduceThought(reply) ? "build-method" : "fill-goal";
     state.guidanceLock.stepBuilderParts = { goal: guidanceStepBuilderSentence("goal", state.guidanceLock) };
     if (guidanceCannotProduceThought(reply)) {
-      state.guidanceLock.replyDraft = guidanceTeacherModelForLock(state.guidanceLock);
-      state.guidanceLock.microChoiceReady = true;
-      state.guidanceLock.microChoiceNote = "先把老师示范句读一遍。不用再写完整解释，可以提交给教练检查；如果还不懂，点“再讲一遍”。";
+      state.guidanceLock.replyDraft = "";
+      state.guidanceLock.microChoiceReady = false;
+      state.guidanceLock.microChoiceNote = "先别提交完整方法句。直接点二选一按钮，或在输入框只打 A / B；系统会把选择变成第一小句。";
     } else {
       state.guidanceLock.replyDraft = guidanceStepBuilderSentence("goal", state.guidanceLock);
       state.guidanceLock.microChoiceReady = false;
     }
   }
   if (!state.guidanceLock.replyDraft) {
-    state.guidanceLock.replyDraft = teachFirstLadderDraft(reply, state.guidanceLock);
+    state.guidanceLock.replyDraft = guidanceCannotProduceThought(reply) ? "" : teachFirstLadderDraft(reply, state.guidanceLock);
   }
   input.value = state.guidanceLock.replyDraft;
   renderReplyQuality(input.value);
@@ -4486,7 +4527,7 @@ function completeGuidedMastery(variantReply = "") {
     ...outcome,
   };
   state.guidanceLock.complete = true;
-  const preferredIndex = nextAdaptiveQuestionIndex(activeQuestions(), state.guidanceLock.questionIndex, {
+  const preferredIndex = guidedFollowupQuestionIndex(activeQuestions(), state.guidanceLock.questionIndex, {
     isCorrect: true,
     level: adaptiveLevelForSubject(),
     proofQualityStrong: isVariantExplanationStrong(variantReply, state.guidanceLock.variant),

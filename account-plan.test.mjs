@@ -1622,7 +1622,7 @@ test("high-performing students are routed to explanation-first challenge questio
   assert.match(js, /if \(highPerformance && explanationChallengeCandidate\) return explanationChallengeCandidate\.index/);
   assert.match(js, /fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20/);
   assert.match(js, /const raisedLevel = \(nextStats\.correctStreak >= 2 \|\| proofQualityStrong\) && level < difficultyLevels\.length - 1/);
-  assert.match(js, /return \{ isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20, obviousEasyCorrect, proofQualityStrong, raisedLevel, challengeMode \}/);
+  assert.match(js, /return \{ isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion\(\) <= 20, obviousEasyCorrect, proofQualityStrong, proofStreak: nextStats\.proofStreak, raisedLevel, challengeMode \}/);
 });
 
 test("adaptive difficulty uses written method proof quality, not only speed", () => {
@@ -1640,6 +1640,27 @@ test("adaptive difficulty uses written method proof quality, not only speed", ()
   assert.match(nextQuestionBlock, /adaptiveResult\.proofQualityStrong/);
   assert.match(masteryBlock, /proofQualityStrong: isVariantExplanationStrong\(variantReply, state\.guidanceLock\.variant\)/);
   assert.doesNotMatch(adaptiveBlock + nextQuestionBlock, /正确答案是|答案是/);
+});
+
+test("continuous strong method proof is treated as too easy evidence", () => {
+  const adaptiveBlock = js.match(/function updateAdaptiveDifficulty[\s\S]*?function raiseDifficultyOnDemand/)?.[0] || "";
+  const challengeBlock = js.match(/function shouldEnterChallengeBoost[\s\S]*?function isObviousEasyCorrect/)?.[0] || "";
+  const evidenceBlock = js.match(/function adaptivePromotionEvidence[\s\S]*?function advanceNoticeForNextQuestion/)?.[0] || "";
+  assert.match(adaptiveBlock, /proofStreak: proofQualityStrong \? \(current\.proofStreak \|\| 0\) \+ 1 : 0/);
+  assert.match(challengeBlock, /const proofStreak = Number\(nextStats\.proofStreak \|\| 0\) >= 2/);
+  assert.match(challengeBlock, /\|\| proofStreak/);
+  assert.match(adaptiveBlock, /连续证明都很完整/);
+  assert.match(adaptiveBlock, /proofStreak: nextStats\.proofStreak/);
+  assert.match(evidenceBlock, /连续证明完整/);
+  assert.doesNotMatch(adaptiveBlock + challengeBlock, /正确答案是|答案是/);
+});
+
+test("difficulty coach uses missed streak to steady students after mistakes", () => {
+  const coachBlock = js.match(/function difficultyCoachState[\s\S]*?function renderDifficultyCoachCard/)?.[0] || "";
+  assert.match(coachBlock, /stats\.missedStreak/);
+  assert.match(coachBlock, /先稳住/);
+  assert.match(coachBlock, /先补概念再升难度/);
+  assert.doesNotMatch(coachBlock, /stats\.wrongStreak/);
 });
 
 test("high-performing students get same-skill explanation challenges before unrelated hard questions", () => {

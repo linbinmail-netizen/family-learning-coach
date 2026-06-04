@@ -2740,6 +2740,7 @@ function adaptivePromotionEvidence(adaptiveResult = {}) {
   const signals = [];
   if (adaptiveResult.fastCorrect || adaptiveResult.obviousEasyCorrect) signals.push("答得快");
   if (adaptiveResult.proofQualityStrong) signals.push("方法证明完整");
+  if (adaptiveResult.proofStreak >= 2) signals.push("连续证明完整");
   if (adaptiveResult.raisedLevel || adaptiveResult.challengeMode) signals.push("连续答对");
   if (adaptiveResult.isCorrect) signals.push("自己选择了“确定”");
   return signals.length ? signals.join("、") : "这题已经通过";
@@ -5098,7 +5099,8 @@ function shouldEnterChallengeBoost(question = {}, nextStats = {}, isCorrect = fa
   const easyChoice = difficultyScore(question?.difficulty) <= 1 || isShallowChoiceQuestion(question);
   const fastCorrect = secondsOnCurrentQuestion() <= 20;
   const effortlessStreak = Number(nextStats.correctStreak || 0) >= 2;
-  return plan.difficultyMode !== "steady" && isCorrect && easyChoice && (fastCorrect || effortlessStreak);
+  const proofStreak = Number(nextStats.proofStreak || 0) >= 2;
+  return plan.difficultyMode !== "steady" && isCorrect && ((easyChoice && (fastCorrect || effortlessStreak)) || proofStreak);
 }
 
 function isObviousEasyCorrect(question = {}, selectedIndex = -1, confidence = "sure") {
@@ -5500,6 +5502,7 @@ function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") 
   const nextStats = {
     correctStreak: isCorrect ? current.correctStreak + 1 : 0,
     missedStreak: isCorrect ? 0 : current.missedStreak + 1,
+    proofStreak: proofQualityStrong ? (current.proofStreak || 0) + 1 : 0,
     challengeBoostRemaining: completedChallengeMission ? currentChallengeBoost : Math.max(0, currentChallengeBoost - 1),
   };
   let level = adaptiveLevelForSubject(subjectId);
@@ -5513,7 +5516,9 @@ function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") 
     state.adaptiveStats[subjectId].challengeQueue = buildChallengeMissionQueue(question, nextStats);
     state.adaptiveStats[subjectId].challengeSkill = question?.skill || "";
     challengeMode = true;
-    message = "这组题太轻松，接下来进入挑战模式：优先做解释型/学校考试深度题。";
+    message = nextStats.proofStreak >= 2
+      ? "连续证明都很完整，系统判断当前题型偏简单：接下来进入挑战模式，优先做解释型/学校考试深度题。"
+      : "这组题太轻松，接下来进入挑战模式：优先做解释型/学校考试深度题。";
   }
   if (raisedLevel) {
     level += 1;
@@ -5530,7 +5535,7 @@ function updateAdaptiveDifficulty(question, selectedIndex, confidence = "sure") 
 
   state.adaptiveLevels[subjectId] = level;
   state.adaptiveStats[subjectId] = { ...(state.adaptiveStats[subjectId] || {}), ...nextStats };
-  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, obviousEasyCorrect, proofQualityStrong, raisedLevel, challengeMode };
+  return { isCorrect, level, message, fastCorrect: isCorrect && secondsOnCurrentQuestion() <= 20, obviousEasyCorrect, proofQualityStrong, proofStreak: nextStats.proofStreak, raisedLevel, challengeMode };
 }
 
 function raiseDifficultyOnDemand() {
@@ -6262,7 +6267,7 @@ function difficultyCoachState(question = activeQuestions()[state.currentQuestion
       next: "前 6 题会穿插至少 2 道深度题；下一题会优先安排解释型或学校考试深度题，避免只靠排除选项猜对。",
     };
   }
-  if ((stats.wrongStreak || 0) >= 1) {
+  if ((stats.missedStreak || 0) >= 1) {
     return {
       level: `${currentLevel} · 先稳住`,
       reason: "刚才出现错题或不确定，系统会先补概念再升难度。",

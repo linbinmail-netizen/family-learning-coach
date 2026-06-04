@@ -69,6 +69,9 @@ test("buildTutorRequest uses layered hints and common mistakes for smarter coach
   assert.match(text, /commonMistakes/);
   assert.match(text, /先说题目目标/);
   assert.match(text, /只看答案字母/);
+  assert.match(text, /Use layeredHints as teacher scaffolds/);
+  assert.match(text, /model goal sentence or two-choice clue/);
+  assert.doesNotMatch(text, /Use layeredHints in order: first clarify the goal/);
 });
 
 test("student reply analysis detects low quality replies for smoother coaching", () => {
@@ -291,7 +294,8 @@ test("buildTutorRequest switches to teach-then-ask mode for concept confusion", 
 
   assert.match(text, /短讲解/);
   assert.match(text, /小例子/);
-  assert.match(text, /再问一个问题/);
+  assert.match(text, /最后不要开放式追问/);
+  assert.match(text, /二选一、半句填空或可直接照改的小句子/);
   assert.match(text, /仍然不要直接说出正确选项/);
 });
 

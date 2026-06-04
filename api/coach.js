@@ -293,7 +293,7 @@ function buildTeachingNote({ subject, skill, explanation }) {
     `如果学生说知识点没吃透、打不出来、说不出来，先讲清概念，不要要求学生先完整复述题意。`,
     `用 1 句短讲解说明 ${concept}，语言适合 ${subject || "当前学科"} 学生。`,
     `再给 1 个小例子或正反对比，但不要用题目中的正确选项当例子。`,
-    `最后再问一个问题，但要用二选一或填空让学生只回答一个微步骤，把学生带回当前题目。`,
+    `最后不要开放式追问；给一个二选一、半句填空或可直接照改的小句子，让学生只回答一个微步骤，把学生带回当前题目。`,
     `仍然不要直接说出正确选项、答案字母或最终答案。`,
     `可参考但不要照抄的教师说明：${base}`,
   ].join("\n");
@@ -469,7 +469,7 @@ export function buildTutorRequest(body = {}) {
       "不要把“打不出来”当成懒得写；这是前置概念没接上。先补前置概念，再给半句填空，不能继续要求学生先说“问题问什么”。",
       "不要只让学生自己打出题目问什么；如果概念没接上，给两个可选小句或一个半句填空，学生只需要选择或补一个空，再过渡到完整方法句。",
       "Do not quote long English teacher explanations to the student. Rewrite them into short student-friendly Chinese.",
-      "Use layeredHints in order: first clarify the goal, then the clue, then the full method sentence.",
+      "Use layeredHints as teacher scaffolds: first give a model goal sentence or two-choice clue, then ask for one keyword or one blank, then build the full method sentence.",
       "Use commonMistakes to name the likely misconception before asking the next question.",
       "If the student is stuck, give one small hint, then ask the student to try.",
       "If the student is conceptually confused, teach briefly before asking again.",

@@ -1705,6 +1705,14 @@ test("fast easy correct answers first look for same-skill school-depth proof", (
   assert.match(nextQuestionBlock, /if \(highPerformance && explanationChallengeCandidate\) return explanationChallengeCandidate\.index/);
 });
 
+test("school-depth proof candidates must require written reasoning, not tagged choice-only items", () => {
+  const proofBlock = js.match(/function isProofCapableSchoolPractice[\s\S]*?function isExplanationFirstChallenge/)?.[0] || "";
+  assert.match(proofBlock, /question\.schoolExamDepth/);
+  assert.match(proofBlock, /isChallengeProofQuestion\(question\)/);
+  assert.match(proofBlock, /question\.openResponse \|\| question\.constructedResponse \|\| question\.errorAnalysis \|\| question\.multiStepReasoning/);
+  assert.doesNotMatch(proofBlock, /return Boolean\(question\.schoolExamDepth && isChallengeProofQuestion\(question\)\)/);
+});
+
 test("high-performing fallback challenge also stays on the same skill first", () => {
   const nextQuestionBlock = js.match(/function nextAdaptiveQuestionIndex[\s\S]*?function challengeMissionPreferredQuestion/)?.[0] || "";
   const challengeCandidateBlock = nextQuestionBlock.match(/const challengeCandidate = unanswered[\s\S]*?const supportCandidate/)?.[0] || "";

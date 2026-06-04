@@ -5088,7 +5088,11 @@ function isChallengeProofQuestion(question = {}) {
 }
 
 function isProofCapableSchoolPractice(question = {}) {
-  return Boolean(question.schoolExamDepth && isChallengeProofQuestion(question));
+  return Boolean(
+    question.schoolExamDepth
+    && isChallengeProofQuestion(question)
+    && (question.openResponse || question.constructedResponse || question.errorAnalysis || question.multiStepReasoning)
+  );
 }
 
 function isExplanationFirstChallenge(question = {}) {

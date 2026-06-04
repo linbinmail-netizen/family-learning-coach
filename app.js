@@ -3346,7 +3346,8 @@ function renderVariantRubricFeedback(reply = $("variantReply")?.value || "", var
     )
     .join("");
   $("variantFeedback").textContent = variantNextActionText(reply, variant);
-  $("variantSubmit").disabled = !ready;
+  $("variantSubmit").disabled = false;
+  $("variantSubmit").textContent = ready ? "提交变式解释" : "不会写，帮我补下一句";
   renderVariantNextHelp(reply, variant);
   renderGuidanceNextAction();
   renderGuidanceUnlockProgress();
@@ -7908,10 +7909,15 @@ function bindEvents() {
     event.preventDefault();
     if (!hasActiveGuidanceLock()) return;
     const reply = $("variantReply").value.trim();
-    if (!reply) return;
+    if (!reply) {
+      applyVariantStarter(variantNextStepStarterFor("", state.guidanceLock?.variant));
+      $("variantFeedback").textContent = "先不用自己组织完整答案。我已经帮你放入第一句开头，继续补一个关键词或条件。";
+      return;
+    }
     if (!isVariantRubricReady(reply, state.guidanceLock?.variant)) {
       renderVariantRubricFeedback(reply, state.guidanceLock?.variant);
-      $("variantFeedback").textContent = "先补完整各项变式说明，再提交给 AI 批改。";
+      applyVariantStarter(variantNextStepStarterFor(reply, state.guidanceLock?.variant));
+      $("variantFeedback").textContent = "先补完整各项变式说明，再提交给 AI 批改。我已把下一句开头接到输入框。";
       $("variantReply").focus();
       return;
     }

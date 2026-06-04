@@ -2084,11 +2084,26 @@ test("variant verification offers concept help before students type a full proof
 });
 
 test("student cannot submit variant explanation until rubric is complete", () => {
+  const variantHandler = js.match(/\$\("variantForm"\)\.addEventListener\("submit",[\s\S]*?\n  \}\);/)?.[0] || "";
   assert.match(html, /id="variantSubmit"/);
   assert.match(js, /function isVariantRubricReady/);
-  assert.match(js, /\$\("variantSubmit"\)\.disabled = !ready/);
-  assert.match(js, /if \(!isVariantRubricReady\(reply/);
+  assert.match(js, /\$\("variantSubmit"\)\.textContent = ready \? "提交变式解释" : "不会写，帮我补下一句"/);
+  assert.match(variantHandler, /if \(!isVariantRubricReady\(reply/);
   assert.match(js, /先补完整各项变式说明/);
+  assert.match(variantHandler, /return;/);
+});
+
+test("variant primary button helps stuck students instead of blocking on empty text", () => {
+  const renderBlock = js.match(/function renderVariantRubricFeedback[\s\S]*?function setVariantWaitingFeedback/)?.[0] || "";
+  const variantHandler = js.match(/\$\("variantForm"\)\.addEventListener\("submit",[\s\S]*?\n  \}\);/)?.[0] || "";
+  assert.match(renderBlock, /\$\("variantSubmit"\)\.disabled = false/);
+  assert.match(renderBlock, /\$\("variantSubmit"\)\.textContent = ready \? "提交变式解释" : "不会写，帮我补下一句"/);
+  assert.match(variantHandler, /if \(!reply\) \{/);
+  assert.match(variantHandler, /applyVariantStarter\(variantNextStepStarterFor\("", state\.guidanceLock\?\.variant\)\)/);
+  assert.match(variantHandler, /return;/);
+  assert.match(variantHandler, /if \(!isVariantRubricReady\(reply, state\.guidanceLock\?\.variant\)\)/);
+  assert.match(variantHandler, /applyVariantStarter\(variantNextStepStarterFor\(reply, state\.guidanceLock\?\.variant\)\)/);
+  assert.doesNotMatch(variantHandler, /completeGuidedMastery\(reply\)[\s\S]*if \(!isVariantRubricReady/);
 });
 
 test("local strong variant fallback cannot bypass the full rubric", () => {

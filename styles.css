@@ -1563,6 +1563,21 @@ textarea {
   box-shadow: 0 0 0 2px rgba(31, 138, 92, 0.14);
 }
 
+.concept-gap-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #cde6d8;
+}
+
+.concept-gap-actions span {
+  flex-basis: 100%;
+  color: #315446;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .question-unpack-card {
   display: grid;
   gap: 10px;

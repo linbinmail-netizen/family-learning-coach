@@ -984,6 +984,28 @@ test("student stuck on concepts gets a no-typing support card", () => {
   assert.doesNotMatch(js, /conceptSupportForLock[\s\S]*正确答案是/);
 });
 
+test("concept support lets students choose why the knowledge point is stuck", () => {
+  const gapBlock = js.match(/function conceptGapChoiceForLock[\s\S]*?function renderConceptSupportCard/)?.[0] || "";
+  const applyBlock = js.match(/function applyConceptGapChoice[\s\S]*?function continueConceptBridgeSentence/)?.[0] || "";
+  assert.match(html, /id="conceptGapActions"/);
+  assert.match(html, /data-concept-gap="new"/);
+  assert.match(html, /data-concept-gap="forgot"/);
+  assert.match(html, /data-concept-gap="apply"/);
+  assert.match(html, /data-concept-gap="clue"/);
+  assert.match(css, /concept-gap-actions/);
+  assert.match(js, /function conceptGapChoiceForLock/);
+  assert.match(js, /function applyConceptGapChoice/);
+  assert.match(js, /applyConceptGapChoice\(button\.dataset\.conceptGap, \$\("inlineCoachReply"\)\)/);
+  assert.match(gapBlock, /像没学过/);
+  assert.match(gapBlock, /忘了这个知识点的定义/);
+  assert.match(gapBlock, /懂一点概念，但不会用到这题/);
+  assert.match(gapBlock, /看不出题目里的线索/);
+  assert.match(applyBlock, /卡点判断：概念没接上/);
+  assert.match(applyBlock, /state\.guidanceLock\.forceStepBuilder = true/);
+  assert.match(applyBlock, /state\.guidanceLock\.stepBuilderParts/);
+  assert.doesNotMatch(gapBlock + applyBlock, /正确答案是|答案是|选项\s*[A-D]/);
+});
+
 test("wrong-answer guidance shows no-typing support before the student has to explain", () => {
   const startBlock = js.match(/function startGuidedMastery[\s\S]*?\n}/)?.[0] || "";
   assert.match(startBlock, /forceStepBuilder: !startsWithVariant/);

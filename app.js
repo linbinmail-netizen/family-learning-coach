@@ -3828,6 +3828,34 @@ function conceptSupportForLock(lock = state.guidanceLock, question = activeQuest
   };
 }
 
+function conceptGapChoiceForLock(choiceKey = "new", lock = state.guidanceLock, question = activeQuestions()[lock?.questionIndex ?? state.currentQuestion]) {
+  const skill = question?.skill || activeDiagnostic().skills[0][0];
+  const firstStep = coachingHintForTurn(question, 0) || question?.coachHints?.[0] || "题干关键词或已知条件";
+  const choices = {
+    new: {
+      student: "这个知识点像没学过，请先从零讲。",
+      coach: `从零搭桥：${localStudentFriendlyConceptLine(question)} 现在不做原题完整解释，只判断这题属于 ${skill}，再补一个空。`,
+      draft: `这题要我判断 ${skill}。`,
+    },
+    forgot: {
+      student: "我忘了这个知识点的定义。",
+      coach: `先找回定义：${localStudentFriendlyConceptLine(question)} 你不用背完整定义，只说它在这题里要帮你判断什么。`,
+      draft: `先记住：${skill} 是用来判断____的。`,
+    },
+    apply: {
+      student: "我懂一点概念，但不会用到这题。",
+      coach: `从概念接回题目：概念不是背出来就结束，要先找能触发它的线索。现在只做一小步：${firstStep}。`,
+      draft: `我第一步先看 ${firstStep}，因为这能把 ${skill} 接回题目。`,
+    },
+    clue: {
+      student: "我看不出题目里的线索。",
+      coach: `先不看选项，只找线索。线索通常是题干里的关键词、数字、条件或文本证据；找不到时先圈最具体的一处。`,
+      draft: "题目里的____是线索，因为它说明____。",
+    },
+  };
+  return choices[choiceKey] || choices.new;
+}
+
 function renderConceptSupportCard(reply = $("inlineCoachReply")?.value || "", quality = evaluateGuidanceReplyQuality(reply), lock = state.guidanceLock) {
   const card = $("conceptSupportCard");
   if (!card || !lock) return;
@@ -3846,6 +3874,10 @@ function renderConceptSupportCard(reply = $("inlineCoachReply")?.value || "", qu
     const recommended = button.dataset.conceptSupport === recommendedSupportAction;
     button.classList.toggle("recommended", recommended);
     button.toggleAttribute("data-recommended", recommended);
+  });
+  card.querySelectorAll("[data-concept-gap]").forEach((button) => {
+    const choice = conceptGapChoiceForLock(button.dataset.conceptGap, lock);
+    button.setAttribute("aria-label", choice.student);
   });
 }
 
@@ -3876,6 +3908,26 @@ function applyConceptSupportChoice(choiceKey = "fill-goal", input = $("inlineCoa
     goal: sentence.replace(/[。.!！]$/, ""),
   };
   renderReplyQuality(input.value);
+  input.focus();
+}
+
+function applyConceptGapChoice(choiceKey = "new", input = $("inlineCoachReply")) {
+  if (!hasActiveGuidanceLock() || !input) return;
+  const question = activeQuestions()[state.guidanceLock.questionIndex] || activeQuestions()[state.currentQuestion];
+  const choice = conceptGapChoiceForLock(choiceKey, state.guidanceLock, question);
+  appendInlineCoach("student", choice.student);
+  appendInlineCoach("coach", `卡点判断：概念没接上。${choice.coach} 不用完整打字，先读这句再补空：${choice.draft}`);
+  state.guidanceLock.teachingTurns = (state.guidanceLock.teachingTurns || 0) + 1;
+  state.guidanceLock.replyDraft = choice.draft;
+  state.guidanceLock.forceStepBuilder = true;
+  state.guidanceLock.stepBuilderParts = {
+    ...(state.guidanceLock.stepBuilderParts || {}),
+    [choiceKey === "clue" ? "evidence" : choiceKey === "apply" ? "method" : "goal"]: choice.draft.replace(/[。.!！]$/, ""),
+  };
+  input.value = choice.draft;
+  renderReplyQuality(input.value);
+  saveData();
+  renderDiagnostic();
   input.focus();
 }
 
@@ -7614,6 +7666,11 @@ function bindEvents() {
     const button = event.target.closest("[data-concept-support]");
     if (!button) return;
     applyConceptSupportChoice(button.dataset.conceptSupport, $("inlineCoachReply"));
+  });
+  $("conceptGapActions").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-concept-gap]");
+    if (!button) return;
+    applyConceptGapChoice(button.dataset.conceptGap, $("inlineCoachReply"));
   });
   $("applyReplyStarterButton").addEventListener("click", () => {
     const input = $("inlineCoachReply");
